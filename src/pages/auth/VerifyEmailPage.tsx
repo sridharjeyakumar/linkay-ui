@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Box, Paper, Typography, CircularProgress, Alert, Button } from '@mui/material';
+import { Link } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
+
+const verifyChannel = new BroadcastChannel('email_verification');
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -22,6 +25,14 @@ export default function VerifyEmailPage() {
       .then((res) => {
         setStatus('success');
         setMessage(res.data.message || 'Email verified successfully.');
+
+        // ✅ Notify the original tab
+        verifyChannel.postMessage({ type: 'EMAIL_VERIFIED' });
+
+        // ✅ Close this new tab after a short delay
+        setTimeout(() => {
+          window.close();
+        }, 3000);
       })
       .catch((err) => {
         setStatus('error');
@@ -32,27 +43,16 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'background.default',
-        px: 2,
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', px: 2 }}>
       <Paper elevation={6} sx={{ p: 4, width: '100%', maxWidth: 440, textAlign: 'center' }}>
         <Typography variant="h5" sx={{ mb: 3 }}>Email Verification</Typography>
+
         {status === 'loading' && <CircularProgress />}
 
         {status === 'success' && (
-          <>
-            <Alert severity="success" sx={{ mb: 3 }}>{message}</Alert>
-            <Button variant="contained" fullWidth component={Link} to="/login">
-              Go to Login
-            </Button>
-          </>
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {message} — You can close this tab.
+          </Alert>
         )}
 
         {status === 'error' && (

@@ -4,7 +4,7 @@ import {
   Alert, CircularProgress, Paper, InputAdornment, IconButton,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import {Link } from 'react-router-dom';
+import {Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { registerThunk } from '../../features/auth/authThunks';
 import { clearMessages } from '../../features/auth/authSlice';
@@ -42,6 +42,37 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
 export default function RegisterPage() {
   const dispatch = useAppDispatch();
   const { loading, error, successMessage } = useAppSelector((s) => s.auth);
+  const [searchParams] = useSearchParams();
+  const [isVerified, setIsVerified] = useState(searchParams.get('verified') === 'true');
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('email_verification');
+
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'EMAIL_VERIFIED') {
+        setIsVerified(true); // ✅ original tab reacts instantly
+      }
+    };
+
+    return () => channel.close(); // cleanup on unmount
+  }, []);
+  const navigate = useNavigate(); // add this line near other hooks
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('email_verification');
+
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'EMAIL_VERIFIED') {
+        setIsVerified(true);
+        // ✅ Auto-navigate to login after 3 seconds
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 3000);
+      }
+    };
+
+    return () => channel.close();
+  }, []);
 
   const [form, setForm] = useState({
     firstName: '',
@@ -117,7 +148,15 @@ export default function RegisterPage() {
         </Typography>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
+        
+        {isVerified && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            ✅ Your email has been verified! Redirecting to login in 3 seconds...{' '}
+            <Link to="/login" style={{ color: 'inherit', fontWeight: 'bold' }}>
+              Go now
+            </Link>
+          </Alert>
+        )}
         {successMessage ? (
           <Alert severity="success" sx={{ mb: 2 }}>
             {successMessage} — Please check your email to verify your account.
