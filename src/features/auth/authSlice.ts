@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { AuthState } from '../../types/auth.types';
-import { loginThunk, logoutThunk, registerThunk } from './authThunks';
+import { getMeThunk, loginThunk, logoutThunk, registerThunk } from './authThunks';
 
 const initialState: AuthState = {
   user: null,
@@ -57,6 +57,14 @@ const authSlice = createSlice({
       state.accessToken = null;
       localStorage.removeItem('accessToken');
     });
+    builder.addCase(getMeThunk.fulfilled, (state, action) => {
+  state.user = action.payload.user;
+});
+builder.addCase(getMeThunk.rejected, (state) => {
+  state.user = null;
+  state.accessToken = null;
+  localStorage.removeItem('accessToken');
+});
   },
 });
 

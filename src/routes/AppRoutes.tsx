@@ -4,8 +4,8 @@ import LoginPage from '../pages/auth/LoginPage';
 import VerifyEmailPage from '../pages/auth/VerifyEmailPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
-import DashboardPage from '../pages/DashboardPage';
-import ProtectedRoute from '../components/ProtectedRoute';
+import DashboardPage from '../pages/dashboard/DashboardPage';
+import KycPage from '../pages/ekyc/KycPage';
 
 export default function AppRoutes() {
   return (
@@ -15,13 +15,13 @@ export default function AppRoutes() {
       <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-      <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-      </Route>
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/kyc" element={<KycPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
+
 
 
 

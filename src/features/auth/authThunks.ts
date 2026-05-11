@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { registerApi, loginApi, logoutApi } from '../../api/authApi';
+import { registerApi, loginApi, logoutApi, getMeApi } from '../../api/authApi';
 import type { RegisterPayload } from '../../types/auth.types';
 
 export const registerThunk = createAsyncThunk(
@@ -26,6 +26,18 @@ export const loginThunk = createAsyncThunk(
       return rejectWithValue(
         err.response?.data?.message || 'Login failed. Please try again.'
       );
+    }
+  }
+);
+
+export const getMeThunk = createAsyncThunk(
+  'auth/getMe',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await getMeApi();
+      return data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || 'Session expired.');
     }
   }
 );
