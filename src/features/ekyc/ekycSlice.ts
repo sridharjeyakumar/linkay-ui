@@ -17,6 +17,9 @@ const ekycSlice = createSlice({
     clearEkycError(state) {
       state.error = null;
     },
+    setKycStatus(state, action: { payload: EkycState['kycStatus'] }) {
+      state.kycStatus = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(initKycThunk.pending, (state) => {
@@ -48,5 +51,5 @@ const ekycSlice = createSlice({
   },
 });
 
-export const { clearEkycError } = ekycSlice.actions;
+export const { clearEkycError, setKycStatus } = ekycSlice.actions;
 export default ekycSlice.reducer;
