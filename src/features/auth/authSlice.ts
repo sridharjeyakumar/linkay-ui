@@ -4,7 +4,7 @@ import { getMeThunk, loginThunk, logoutThunk, registerThunk } from './authThunks
 
 const initialState: AuthState = {
   user: null,
-  accessToken: localStorage.getItem('accessToken'),
+  accessToken: typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null,
   loading: false,
   error: null,
   successMessage: null,

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000',
+  baseURL: typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:4000'),
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });

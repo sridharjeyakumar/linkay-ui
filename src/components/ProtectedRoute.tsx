@@ -1,7 +1,17 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAppSelector } from '../hooks/useAppDispatch';
+'use client';
 
-export default function ProtectedRoute() {
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/store/hooks/useAppDispatch';
+
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { accessToken } = useAppSelector((s) => s.auth);
-  return accessToken ? <Outlet /> : <Navigate to="/login" replace />;
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!accessToken) router.replace('/login');
+  }, [accessToken, router]);
+
+  if (!accessToken) return null;
+  return <>{children}</>;
 }
