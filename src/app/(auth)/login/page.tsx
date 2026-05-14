@@ -25,8 +25,14 @@ export default function LoginPage() {
     dispatch(clearMessages());
   }, []);
 
-  useEffect(() => {
-    if (user) router.replace('/dashboard');
+   useEffect(() => {
+    if (user) {
+      if (user.is_user === false) {
+        router.replace('/login');
+      } else {
+        router.replace('/user-dashboard');
+      }
+    }
   }, [user, router]);
 
   const validate = () => {

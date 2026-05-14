@@ -14,11 +14,14 @@ export interface AuthUser {
   id: string;
   email: string;
   role: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   walletAddress: string | null;
   kycStatus: string;
-  status: string;
+  status?: string;
+  is_user?: boolean;
+  is_museum_user?: boolean;
+  museum_id?: string | null;
 }
 
 

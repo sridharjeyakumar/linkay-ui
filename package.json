@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "predev": "pkill -f 'next[[:space:]]dev' 2>/dev/null; rm -rf .next; true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -13,13 +14,17 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.0.1",
     "@mui/material": "^9.0.1",
+    "@rainbow-me/rainbowkit": "^2.2.11",
     "@reduxjs/toolkit": "^2.11.2",
     "@sumsub/websdk-react": "^2.6.2",
+    "@tanstack/react-query": "^5.100.10",
     "axios": "^1.16.0",
     "next": "^15.3.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "viem": "^2.48.11",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
