@@ -1,6 +1,7 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState } from '../../types/auth.types';
 import { getMeThunk, loginThunk, logoutThunk, registerThunk } from './authThunks';
+import { saveWalletThunk } from '../wallet/walletThunks';
 
 const initialState: AuthState = {
   user: null,
@@ -17,6 +18,9 @@ const authSlice = createSlice({
     clearMessages(state) {
       state.error = null;
       state.successMessage = null;
+    },
+    setWalletAddress(state, action: PayloadAction<string>) {
+      if (state.user) state.user.walletAddress = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -42,9 +46,16 @@ const authSlice = createSlice({
     });
     builder.addCase(loginThunk.fulfilled, (state, action) => {
       state.loading = false;
-      state.user = action.payload.user;
-      state.accessToken = action.payload.accessToken;
-      localStorage.setItem('accessToken', action.payload.accessToken);
+      const raw = action.payload.user ?? action.payload;
+      state.user = {
+        ...raw,
+        kycStatus: raw.kycStatus ?? raw.kyc_status ?? null,
+      };
+      const token = action.payload.accessToken ?? action.payload.access_token;
+      if (token) {
+        state.accessToken = token;
+        localStorage.setItem('accessToken', token);
+      }
     });
     builder.addCase(loginThunk.rejected, (state, action) => {
       state.loading = false;
@@ -58,15 +69,27 @@ const authSlice = createSlice({
       localStorage.removeItem('accessToken');
     });
     builder.addCase(getMeThunk.fulfilled, (state, action) => {
-  state.user = action.payload.user;
+  const raw = action.payload.user ?? action.payload;
+  // normalize snake_case fields from /me endpoint
+  state.user = {
+    ...raw,
+    kycStatus: raw.kycStatus ?? raw.kyc_status ?? null,
+  };
 });
 builder.addCase(getMeThunk.rejected, (state) => {
   state.user = null;
-  state.accessToken = null;
-  localStorage.removeItem('accessToken');
+  // don't clear token here — axios interceptor handles 401 cleanup
+});
+
+// Save wallet address
+builder.addCase(saveWalletThunk.fulfilled, (state, action) => {
+  if (state.user) {
+    state.user.walletAddress =
+      action.payload.walletAddress ?? action.payload.wallet_address ?? null;
+  }
 });
   },
 });
 
-export const { clearMessages } = authSlice.actions;
+export const { clearMessages, setWalletAddress } = authSlice.actions;
 export default authSlice.reducer;
