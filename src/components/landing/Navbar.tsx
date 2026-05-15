@@ -16,6 +16,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useScrollTrigger } from '@mui/material';
 import MineralModal from './MineralModal';
+import LoginModal from './LoginModal';
+import RegisterModal from './RegisterModal';
 
 type DropdownItem = {
   label: string;
@@ -74,6 +76,8 @@ export default function Navbar() {
   const [anchorEl, setAnchorEl] = useState<Record<string, HTMLElement | null>>({});
   const [registerHovered, setRegisterHovered] = useState(false);
   const [mineralOpen, setMineralOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
 
@@ -216,8 +220,7 @@ export default function Navbar() {
             {/* Desktop auth buttons */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5 }}>
               <Button
-                component={Link}
-                href="/login"
+                onClick={() => setLoginOpen(true)}
                 sx={{
                   color: '#111827',
                   fontWeight: 600,
@@ -230,9 +233,8 @@ export default function Navbar() {
               </Button>
 
               <Button
-                component={Link}
-                href="/register"
                 variant="contained"
+                onClick={() => setRegisterOpen(true)}
                 onMouseEnter={() => setRegisterHovered(true)}
                 onMouseLeave={() => setRegisterHovered(false)}
                 startIcon={
@@ -308,6 +310,12 @@ export default function Navbar() {
       </AppBar>
 
       <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} />
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <RegisterModal
+        open={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSwitchToLogin={() => { setRegisterOpen(false); setLoginOpen(true); }}
+      />
 
       {/* Mobile Drawer */}
       <Drawer
@@ -395,21 +403,17 @@ export default function Navbar() {
 
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
           <Button
-            component={Link}
-            href="/login"
             variant="outlined"
             fullWidth
-            onClick={() => setMobileOpen(false)}
+            onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
             sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: '#111827', color: '#111827' }}
           >
             Login
           </Button>
           <Button
-            component={Link}
-            href="/register"
             variant="contained"
             fullWidth
-            onClick={() => setMobileOpen(false)}
+            onClick={() => { setMobileOpen(false); setRegisterOpen(true); }}
             startIcon={
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#fff', borderRadius: '50%', width: 20, height: 20, p: 0.4 }}>
                 <Image src="/landing/arrow-default.svg" alt="arrow" width={12} height={12} unoptimized />

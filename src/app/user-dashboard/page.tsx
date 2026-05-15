@@ -18,19 +18,19 @@ export default function UserDashboardPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    if (!token) { router.replace('/login'); return; }
+    if (!token) { router.replace('/'); return; }
 
     if (!user) {
       dispatch(getMeThunk())
         .unwrap()
         .then((data) => {
           const resolvedUser = data.user ?? data;
-          if (resolvedUser.is_user === false) router.replace('/login');
+          if (resolvedUser.is_user === false) router.replace('/');
           else dispatch(getKycStatusThunk());
         })
-        .catch(() => router.replace('/login'));
+        .catch(() => router.replace('/'));
     } else if (user.is_user === false) {
-      router.replace('/login');
+      router.replace('/');
     } else {
       dispatch(getKycStatusThunk());
     }
