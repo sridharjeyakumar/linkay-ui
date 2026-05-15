@@ -76,6 +76,17 @@ export default function UserDashboardHeader() {
     ? `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`
     : null;
 
+  // Guard: if wagmi auto-reconnected with a wallet that doesn't belong to this user, disconnect it
+  useEffect(() => {
+    if (walletStatus === 'connected' && wagmiAddress && user) {
+      const savedAddress = user.walletAddress?.toLowerCase();
+      const liveAddress = wagmiAddress.toLowerCase();
+      if (!savedAddress || savedAddress !== liveAddress) {
+        disconnectWallet();
+      }
+    }
+  }, [user?.id, walletStatus]);
+
   // Auto-save wallet address to backend when user connects a wallet
   useEffect(() => {
     if (walletStatus === 'connected' && wagmiAddress && user && !user.walletAddress) {
