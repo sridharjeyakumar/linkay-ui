@@ -9,10 +9,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  webpack(config, { dev }) {
-    // Use memory cache in dev to avoid .pack.gz ENOENT race conditions
-    if (dev) config.cache = { type: 'memory' };
-
+  webpack(config) {
     // Silence missing optional peer deps pulled in by @metamask/sdk and @walletconnect
     config.resolve.fallback = {
       ...config.resolve.fallback,

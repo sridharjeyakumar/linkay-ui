@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Container } from '@mui/material';
 import Image from 'next/image';
-import Link from 'next/link';
 
 const CAROUSEL_IMAGES = [
   { src: '/landing/carousel/slide-1.svg', alt: 'Museum artifacts' },
@@ -124,8 +123,7 @@ export default function HeroSection() {
         {/* Get Started Button */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 5, md: 7 } }}>
           <Button
-            component={Link}
-            href="/register"
+            onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))}
             onMouseEnter={() => setBtnHovered(true)}
             onMouseLeave={() => setBtnHovered(false)}
             startIcon={
