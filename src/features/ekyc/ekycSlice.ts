@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { EkycState } from '../../types/ekyc.types';
 import { initKycThunk, getKycStatusThunk } from './ekycThunks';
+import { logoutThunk } from '../auth/authThunks';
 
 const initialState: EkycState = {
   sdkToken: null,
@@ -41,13 +42,17 @@ const ekycSlice = createSlice({
     });
     builder.addCase(getKycStatusThunk.fulfilled, (state, action) => {
       state.loading = false;
-      state.kycStatus = action.payload.kycStatus;
-      state.applicantId = action.payload.applicantId ?? state.applicantId;
+      // handle both camelCase and snake_case from API
+      state.kycStatus = action.payload.kycStatus ?? action.payload.kyc_status ?? state.kycStatus;
+      state.applicantId = action.payload.applicantId ?? action.payload.applicant_id ?? state.applicantId;
     });
     builder.addCase(getKycStatusThunk.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });
+
+    // reset ekyc state on logout so stale kycStatus doesn't persist across sessions
+    builder.addCase(logoutThunk.fulfilled, () => initialState);
   },
 });
 
