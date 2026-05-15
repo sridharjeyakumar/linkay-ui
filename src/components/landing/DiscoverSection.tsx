@@ -2,20 +2,17 @@
 
 import { Box, Typography, Container, Grid } from '@mui/material';
 import Image from 'next/image';
-import Link from 'next/link';
 
 const ASSET_CLASSES = [
   {
     title: 'Museum Artifacts',
     description:
       'Rare and historically significant assets presented through immersive digital ownership experiences',
-    href: '/register',
   },
   {
     title: 'Real Estate',
     description:
       'Access fractional ownership opportunities across premium real estate developments and properties',
-    href: '/register',
   },
 ];
 
@@ -59,9 +56,9 @@ export default function DiscoverSection() {
             {ASSET_CLASSES.map((asset) => (
               <Grid key={asset.title} size={{ xs: 12, sm: 5 }}>
                 <Box
-                  component={Link}
-                  href={asset.href}
+                  onClick={() => window.dispatchEvent(new Event('linkay:open-register'))}
                   sx={{
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
