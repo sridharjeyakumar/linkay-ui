@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Container } from '@mui/material';
 import Image from 'next/image';
-import Link from 'next/link';
+import RegisterModal from './RegisterModal';
 
 const CAROUSEL_IMAGES = [
   { src: '/landing/carousel/slide-1.svg', alt: 'Museum artifacts' },
@@ -15,6 +15,7 @@ const CAROUSEL_IMAGES = [
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const [btnHovered, setBtnHovered] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const total = CAROUSEL_IMAGES.length;
   const getPrev = () => (current - 1 + total) % total;
@@ -28,7 +29,9 @@ export default function HeroSection() {
   }, [total]);
 
   return (
-    <Box
+    <>
+      <RegisterModal open={registerOpen} onClose={() => setRegisterOpen(false)} />
+      <Box
       sx={{
         background: '#ffffff',
         position: 'relative',
@@ -124,8 +127,7 @@ export default function HeroSection() {
         {/* Get Started Button */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 5, md: 7 } }}>
           <Button
-            component={Link}
-            href="/register"
+            onClick={() => setRegisterOpen(true)}
             onMouseEnter={() => setBtnHovered(true)}
             onMouseLeave={() => setBtnHovered(false)}
             startIcon={
@@ -257,5 +259,6 @@ export default function HeroSection() {
 
       </Container>
     </Box>
+    </>
   );
 }
