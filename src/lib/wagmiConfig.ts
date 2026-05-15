@@ -1,6 +1,6 @@
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import { metaMaskWallet, phantomWallet } from '@rainbow-me/rainbowkit/wallets';
-import { createConfig, http } from 'wagmi';
+import { createConfig, createStorage, noopStorage, http } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 
 // Only injected wallets — no WalletConnect, no projectId calls, no eth.merkle.io CORS errors
@@ -21,8 +21,10 @@ export const wagmiConfig = createConfig({
   chains: [mainnet],
   ssr: true,
   connectors,
+  // Disable localStorage persistence — each user session starts fresh
+  // This prevents one user's wallet from appearing for another user
+  storage: createStorage({ storage: noopStorage }),
   transports: {
-    // Cloudflare's public ETH RPC — allows browser requests (no CORS block)
     [mainnet.id]: http('https://cloudflare-eth.com'),
   },
 });
