@@ -302,26 +302,28 @@ export default function RegisterPage() {
           </span>
         ),       
       MenuProps: {
-        PaperProps: {
-          sx: {
-            mt: 1,
-            borderRadius: '12px',
-            boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
-            border: '1px solid #ECECEC',
-            '& .MuiMenuItem-root': {
-              fontSize: '14px',
-              padding: '10px 14px',
-              borderRadius: '8px',
-              mx: 0.5,
-              my: 0.3,
-            },
-            '& .MuiMenuItem-root:hover': {
-              backgroundColor: '#F5F7FB',
-            },
-            '& .Mui-selected': {
-              backgroundColor: '#EEF3FF !important',
-              color: '#0B2745',
-              fontWeight: 600,
+        slotProps: {
+          paper: {
+            sx: {
+              mt: 1,
+              borderRadius: '12px',
+              boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
+              border: '1px solid #ECECEC',
+              '& .MuiMenuItem-root': {
+                fontSize: '14px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                mx: 0.5,
+                my: 0.3,
+              },
+              '& .MuiMenuItem-root:hover': {
+                backgroundColor: '#F5F7FB',
+              },
+              '& .Mui-selected': {
+                backgroundColor: '#EEF3FF !important',
+                color: '#0B2745',
+                fontWeight: 600,
+              },
             },
           },
         },
