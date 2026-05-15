@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "predev": "pkill -f 'next[[:space:]]dev' 2>/dev/null; rm -rf .next; true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
