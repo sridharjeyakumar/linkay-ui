@@ -102,7 +102,7 @@ export default function UserDashboardHeader() {
     setProfileMenuAnchor(null);
     disconnectWallet();
     await dispatch(logoutThunk());
-    router.replace('/login');
+    router.replace('/');
   };
 
   const handleKycClick = async () => {
