@@ -4,6 +4,7 @@ import { Box, Typography, Container } from '@mui/material';
 import Image from 'next/image';
 import { keyframes } from '@emotion/react';
 
+
 // Asset images data
 const ASSETS = [
   { src: '/landing/visualization/asset-1.png', alt: 'Mineral rock' },
