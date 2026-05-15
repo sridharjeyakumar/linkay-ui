@@ -6,10 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const CAROUSEL_IMAGES = [
-  { src: '/landing/carousel/slide-1.jpg', alt: 'Museum artifacts' },
-  { src: '/landing/carousel/slide-2.jpg', alt: 'Real estate property' },
-  { src: '/landing/carousel/slide-3.jpg', alt: 'Minerals collection' },
-  { src: '/landing/carousel/slide-4.jpg', alt: 'Premium assets' },
+  { src: '/landing/carousel/slide-1.svg', alt: 'Museum artifacts' },
+  { src: '/landing/carousel/slide-2.svg', alt: 'Real estate property' },
+  { src: '/landing/carousel/slide-3.svg', alt: 'Minerals collection' },
+  { src: '/landing/carousel/slide-4.svg', alt: 'Premium assets' },
 ];
 
 export default function HeroSection() {
@@ -30,13 +30,30 @@ export default function HeroSection() {
   return (
     <Box
       sx={{
-        background: 'linear-gradient(135deg, #fdddd4 0%, #fef0ec 20%, #ffffff 55%, #ddeeff 100%)',
-        pt: { xs: 6, md: 8 },
+        background: '#ffffff',
+        position: 'relative',
+        pt: { xs: 10, md: 14 },
         pb: { xs: 0, md: 0 },
         overflow: 'hidden',
       }}
     >
-      <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 } }}>
+      {/* Gradient blob from design spec */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '267px',
+          left: '-99.72px',
+          width: '1614.59px',
+          height: '296px',
+          background: 'linear-gradient(351.31deg, rgba(238, 64, 57, 0.6) 24.61%, rgba(244, 120, 62, 0.6) 31.87%, rgba(247, 148, 65, 0.4) 39.69%, rgba(250, 176, 67, 0.6) 92.67%)',
+          filter: 'blur(80px)',
+          transform: 'rotate(7.52deg)',
+          opacity: 0.4,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+      <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
 
         {/* Top label */}
         <Typography

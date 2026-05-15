@@ -7,36 +7,37 @@ const FEATURES = [
   {
     title: 'Asset Submission',
     description: 'Asset owners submit assets for review and tokenization.',
-    icon: '/landing/ownership-icons/asset-submission.gif',
-    iconFallback: '/landing/ownership-icons/asset-submission.svg',
-    imagePosition: 'right', // Image on RIGHT, text on LEFT
+    icon: '/landing/ownership-icons/asset-submission.png',
+    iconFallback: '/landing/ownership-icons/asset-submission.png',
+    imagePosition: 'right',
   },
   {
     title: 'Asset Tokenization',
     description: 'Assets are digitally tokenized into fractional ownership units.',
-    icon: '/landing/ownership-icons/asset-tokenization.gif',
-    iconFallback: '/landing/ownership-icons/asset-tokenization.svg',
-    imagePosition: 'left', // Image on LEFT, text on RIGHT
+    icon: '/landing/ownership-icons/asset-tokenization.png',
+    iconFallback: '/landing/ownership-icons/asset-tokenization.png',
+    imagePosition: 'left',
   },
   {
     title: 'Investor Access',
     description: 'Verified assets become available to global investors.',
-    icon: '/landing/ownership-icons/investor-access.gif',
-    iconFallback: '/landing/ownership-icons/investor-access.svg',
-    imagePosition: 'right', // Image on RIGHT, text on LEFT
+    icon: '/landing/ownership-icons/investor-access.png',
+    iconFallback: '/landing/ownership-icons/investor-access.png',
+    imagePosition: 'right',
   },
   {
     title: 'Secure Ownership Exchange',
     description: 'Investors seamlessly acquire and trade tokenized assets.',
-    icon: '/landing/ownership-icons/secure-ownership.gif',
-    iconFallback: '/landing/ownership-icons/secure-ownership.svg',
-    imagePosition: 'left', // Image on LEFT, text on RIGHT
+    icon: '/landing/ownership-icons/secure-ownership.png',
+    iconFallback: '/landing/ownership-icons/secure-ownership.png',
+    imagePosition: 'left',
   },
 ];
 
 export default function OwnershipSection() {
   return (
     <Box
+      id="ownership"
       sx={{
         bgcolor: '#FFFFFF',
         py: { xs: 6, sm: 8, md: 10, lg: 12 },

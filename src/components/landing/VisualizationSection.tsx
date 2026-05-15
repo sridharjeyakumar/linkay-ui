@@ -7,12 +7,12 @@ import { keyframes } from '@emotion/react';
 
 // Asset images data
 const ASSETS = [
-  { src: '/landing/visualization/asset-1.png', alt: 'Mineral rock' },
-  { src: '/landing/visualization/asset-2.png', alt: 'Sculpture' },
-  { src: '/landing/visualization/asset-3.png', alt: 'Real estate' },
-  { src: '/landing/visualization/asset-4.png', alt: 'Blue crystal' },
-  { src: '/landing/visualization/asset-5.png', alt: 'Marble bust' },
-  { src: '/landing/visualization/asset-6.png', alt: 'Asset' },
+  { src: '/landing/visualization/asset-1.svg', alt: 'Mineral rock' },
+  { src: '/landing/visualization/asset-2.svg', alt: 'Sculpture' },
+  { src: '/landing/visualization/asset-3.svg', alt: 'Real estate' },
+  { src: '/landing/visualization/asset-4.svg', alt: 'Blue crystal' },
+  { src: '/landing/visualization/asset-5.svg', alt: 'Marble bust' },
+  { src: '/landing/visualization/asset-6.svg', alt: 'Asset' },
 ];
 
 // Rotation animations
@@ -35,7 +35,7 @@ const pulseGlow = keyframes`
 // Orbit duration
 const ORBIT_DURATION = 24;
 // Distance from center (percentage)
-const ORBIT_RADIUS_PCT = 38;
+const ORBIT_RADIUS_PCT = 30;
 
 // Calculate 6 positions evenly spaced on the circle (starting from 12 o'clock)
 const calculatePositions = () => {
@@ -73,7 +73,7 @@ export default function VisualizationSection() {
             borderRadius: { xs: '20px', md: '28px', lg: '32px' },
             background: 'linear-gradient(135deg, #E8F0FE 0%, #DCE8F5 50%, #E4EDF9 100%)',
             pt: { xs: 4, sm: 5, md: 6, lg: 6 },
-            pb: { xs: 3, sm: 4, md: 5, lg: 5 },
+            pb: { xs: 3, sm: 4, md: 5, lg: 0 },
             px: { xs: 3, sm: 5, md: 7, lg: 8 },
             overflow: 'hidden',
             position: 'relative',
@@ -162,8 +162,8 @@ export default function VisualizationSection() {
               sx={{
                 position: 'absolute',
                 left: '50%',
-                top: '0%',
-                transform: 'translateX(-50%)',
+                top: '90%',
+                transform: 'translate(-50%, -50%)',
                 width: { xs: '420px', sm: '540px', md: '700px', lg: '860px', xl: '1000px' },
                 height: { xs: '420px', sm: '540px', md: '700px', lg: '860px', xl: '1000px' },
                 pointerEvents: 'none',
@@ -228,13 +228,13 @@ export default function VisualizationSection() {
                   }}
                 >
                   <Image
-                    src="/landing/Frame 2147225010.svg"
+                    src="/landing/LinkBlock Assets Logo.svg"
                     alt="LinkBlock Assets Logo"
                     width={140}
                     height={140}
                     style={{
-                      width: '100%',
-                      height: '100%',
+                      width: '50%',
+                      height: '50%',
                       objectFit: 'contain',
                     }}
                     priority
@@ -283,8 +283,8 @@ export default function VisualizationSection() {
                       <Box
                         sx={{
                           animation: `${spinCCW} ${ORBIT_DURATION}s linear infinite`,
-                          width: { xs: '55px', sm: '70px', md: '85px', lg: '100px', xl: '115px' },
-                          height: { xs: '55px', sm: '70px', md: '85px', lg: '100px', xl: '115px' },
+                          width: { xs: '90px', sm: '115px', md: '140px', lg: '165px', xl: '190px' },
+                          height: { xs: '90px', sm: '115px', md: '140px', lg: '165px', xl: '190px' },
                           position: 'relative',
                           filter: 'drop-shadow(0 6px 15px rgba(0, 0, 0, 0.1))',
                           transition: 'transform 0.3s ease',
@@ -299,7 +299,7 @@ export default function VisualizationSection() {
                           src={ASSETS[i].src}
                           alt={ASSETS[i].alt}
                           fill
-                          sizes="(max-width: 640px) 55px, (max-width: 768px) 70px, (max-width: 1024px) 85px, (max-width: 1280px) 100px, 115px"
+                          sizes="(max-width: 640px) 90px, (max-width: 768px) 115px, (max-width: 1024px) 140px, (max-width: 1280px) 165px, 190px"
                           style={{ objectFit: 'contain' }}
                           priority={i < 3}
                           unoptimized
@@ -312,7 +312,7 @@ export default function VisualizationSection() {
             </Box>
 
             {/* Top fade gradient - smooth transition from text to semi-circle */}
-            <Box
+            {/* <Box
               sx={{
                 position: 'absolute',
                 top: 0,
@@ -323,7 +323,7 @@ export default function VisualizationSection() {
                 pointerEvents: 'none',
                 zIndex: 15,
               }}
-            />
+            /> */}
           </Box>
         </Box>
       </Container>

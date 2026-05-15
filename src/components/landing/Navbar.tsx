@@ -15,6 +15,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScrollTrigger } from '@mui/material';
+import MineralModal from './MineralModal';
 
 type DropdownItem = {
   label: string;
@@ -32,7 +33,7 @@ type NavLink = {
 const NAV_LINKS: NavLink[] = [
   { label: 'Marketplace', href: '#marketplace' },
   { label: 'Tokenization', href: '#tokenization' },
-  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'How It Works', href: '#ownership' },
   {
     label: 'Asset Classes',
     href: '#asset-classes',
@@ -52,11 +53,27 @@ const NAV_LINKS: NavLink[] = [
   },
 ];
 
+function smoothScrollTo(id: string, duration = 1500) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const start = window.scrollY;
+  const end = target.getBoundingClientRect().top + start;
+  const startTime = performance.now();
+  const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  const step = (now: number) => {
+    const elapsed = Math.min((now - startTime) / duration, 1);
+    window.scrollTo(0, start + (end - start) * ease(elapsed));
+    if (elapsed < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<Record<string, HTMLElement | null>>({});
   const [registerHovered, setRegisterHovered] = useState(false);
+  const [mineralOpen, setMineralOpen] = useState(false);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
 
@@ -139,7 +156,10 @@ export default function Navbar() {
                       {link.dropdown.map((item, idx, arr) => (
                         <Box key={item.label}>
                           <MenuItem
-                            onClick={() => closeDropdown(link.label)}
+                            onClick={() => {
+                              closeDropdown(link.label);
+                              if (item.label === 'Minerals') setMineralOpen(true);
+                            }}
                             sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
                           >
                             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, width: '100%' }}>
@@ -152,7 +172,7 @@ export default function Navbar() {
                                     {item.label}
                                   </Typography>
                                   {item.comingSoon && (
-                                    <Chip label="Coming Soon" size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: '#e8eaf6', color: '#5c6bc0', fontWeight: 500 }} />
+                                    <Chip label="Coming Soon" size="small" sx={{ height: 22, fontSize: '0.875rem', bgcolor: 'rgba(37, 91, 227, 0.2)', color: '#255BE3', fontWeight: 400, borderRadius: '16px', '& .MuiChip-label': { px: '8px', py: '2px' } }} />
                                   )}
                                 </Box>
                                 {item.description && (
@@ -172,6 +192,12 @@ export default function Navbar() {
                   <Button
                     key={link.label}
                     href={link.href}
+                    onClick={(e) => {
+                      if (link.href.startsWith('#')) {
+                        e.preventDefault();
+                        smoothScrollTo(link.href.slice(1));
+                      }
+                    }}
                     sx={{
                       color: '#374151',
                       fontWeight: 400,
@@ -281,6 +307,8 @@ export default function Navbar() {
         </Container>
       </AppBar>
 
+      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} />
+
       {/* Mobile Drawer */}
       <Drawer
         anchor="right"
@@ -317,7 +345,14 @@ export default function Navbar() {
                 <Collapse in={mobileExpanded === link.label}>
                   <List disablePadding>
                     {link.dropdown.map((item) => (
-                      <ListItemButton key={item.label} sx={{ pl: 4 }} onClick={() => setMobileOpen(false)}>
+                      <ListItemButton
+                        key={item.label}
+                        sx={{ pl: 4 }}
+                        onClick={() => {
+                          setMobileOpen(false);
+                          if (item.label === 'Minerals') setMineralOpen(true);
+                        }}
+                      >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
                           <item.icon size={18} color="#6b7280" />
                           <ListItemText
@@ -336,7 +371,17 @@ export default function Navbar() {
               </Box>
             ) : (
               <Box key={link.label}>
-                <ListItemButton component="a" href={link.href} onClick={() => setMobileOpen(false)}>
+                <ListItemButton
+                  component="a"
+                  href={link.href}
+                  onClick={(e: React.MouseEvent) => {
+                    if (link.href.startsWith('#')) {
+                      e.preventDefault();
+                      smoothScrollTo(link.href.slice(1));
+                    }
+                    setMobileOpen(false);
+                  }}
+                >
                   <ListItemText
                     primary={link.label}
                     slotProps={{ primary: { sx: { fontWeight: 500, color: '#111827' } } }}
