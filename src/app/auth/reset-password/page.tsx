@@ -2,57 +2,149 @@
 
 import { useState } from 'react';
 import {
-  Box, Button, TextField, Typography,
-  Alert, CircularProgress, Paper, InputAdornment, IconButton,
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Alert,
+  CircularProgress,
+  Paper,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+
+import {
+  Visibility,
+  VisibilityOff,
+} from '@mui/icons-material';
+
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import axiosInstance from '@/api/axiosInstance';
 
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#F6F6F6',
+    borderRadius: '8px',
+    height: '48px',
+
+    '& fieldset': {
+      borderColor: '#E8E8E8',
+      top: 0,
+    },
+
+    '& legend': { display: 'none' },
+
+    '&:hover fieldset': {
+      borderColor: '#BDBDBD',
+    },
+
+    '&.Mui-focused fieldset': {
+      borderColor: '#0B2745',
+      borderWidth: '1.5px',
+    },
+  },
+
+  '& .MuiInputBase-input': {
+    color: '#0A0A0A',
+    fontSize: '14px',
+    padding: '13px 14px',
+
+    '&::placeholder': {
+      color: '#666666',
+      opacity: 1,
+    },
+  },
+
+  '& input:-webkit-autofill': {
+    WebkitBoxShadow: '0 0 0 1000px #F6F6F6 inset',
+    WebkitTextFillColor: '#0A0A0A',
+  },
+};
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const router = useRouter();
 
-  const [form, setForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [form, setForm] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  });
+
   const [showPassword, setShowPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] =
+    useState<Record<string, string>>({});
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
   const validate = () => {
     const errors: Record<string, string> = {};
-    if (form.newPassword.length < 8 || !PASSWORD_REGEX.test(form.newPassword))
-      errors.newPassword = 'Min 8 chars with uppercase, number & special character.';
-    if (form.newPassword !== form.confirmPassword)
+
+    if (
+      form.newPassword.length < 8 ||
+      !PASSWORD_REGEX.test(form.newPassword)
+    ) {
+      errors.newPassword =
+        'Min 8 chars with uppercase, number & special character.';
+    }
+
+    if (form.newPassword !== form.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match.';
+    }
+
     setFieldErrors(errors);
+
     return Object.keys(errors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setFieldErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      [e.target.name]: '',
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!validate()) return;
+
     setLoading(true);
     setError('');
+
     try {
-      await axiosInstance.post('/api/v1/auth/reset-password', {
-        token,
-        newPassword: form.newPassword,
-      });
+      await axiosInstance.post(
+        '/api/v1/auth/reset-password',
+        {
+          token,
+          newPassword: form.newPassword,
+        }
+      );
+
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 3000);
+
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Reset failed. The link may have expired.');
+      setError(
+        err.response?.data?.message ||
+          'Reset failed. The link may have expired.'
+      );
     } finally {
       setLoading(false);
     }
@@ -60,10 +152,48 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', px: 2 }}>
-        <Paper elevation={6} sx={{ p: 4, width: '100%', maxWidth: 440, textAlign: 'center' }}>
-          <Alert severity="error" sx={{ mb: 2 }}>Invalid reset link.</Alert>
-          <Button variant="outlined" fullWidth component={Link} href="/forgot-password">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: '#0D0D0D',
+          px: 2,
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            width: '100%',
+            maxWidth: '400px',
+            borderRadius: '24px',
+            border: '1px solid #E8E8E8',
+            bgcolor: '#FFFFFF',
+            p: '32px',
+            textAlign: 'center',
+          }}
+        >
+          <Alert severity="error" sx={{ mb: 3 }}>
+            Invalid reset link.
+          </Alert>
+
+          <Button
+            component={Link}
+            href="/forgot-password"
+            variant="contained"
+            fullWidth
+            sx={{
+              height: '52px',
+              borderRadius: '8px',
+              bgcolor: '#0B2745',
+              textTransform: 'none',
+
+              '&:hover': {
+                bgcolor: '#0a2035',
+              },
+            }}
+          >
             Request New Link
           </Button>
         </Paper>
@@ -78,48 +208,138 @@ export default function ResetPasswordPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
+        bgcolor: '#0D0D0D',
         px: 2,
       }}
     >
-      <Paper elevation={6} sx={{ p: 4, width: '100%', maxWidth: 440 }}>
-        <Typography variant="h4" sx={{ textAlign: 'center', mb: 0.5 }}>
-          Reset Password
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 3 }}>
-          Enter your new password below
-        </Typography>
+      <Paper
+        elevation={0}
+        sx={{
+          width: '100%',
+          maxWidth: '400px',
+          borderRadius: '24px',
+          border: '1px solid #E8E8E8',
+          bgcolor: '#FFFFFF',
+          p: '32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '28px',
+        }}
+      >
+        {/* Logo + Title */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '14px',
+          }}
+        >
+          <Image
+            src="/Vector.svg"
+            alt="Linkay Logo"
+            width={38}
+            height={38}
+          />
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <Typography
+            sx={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 700,
+              fontSize: '28px',
+              color: '#3D3D3D',
+              textAlign: 'center',
+            }}
+          >
+            Reset Password
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: '14px',
+              color: '#666666',
+              textAlign: 'center',
+            }}
+          >
+            Enter your new password below
+          </Typography>
+        </Box>
+
+        {error && (
+          <Alert severity="error">
+            {error}
+          </Alert>
+        )}
 
         {success ? (
           <>
-            <Alert severity="success" sx={{ mb: 2 }}>
+            <Alert severity="success">
               Password reset successful! Redirecting to login...
             </Alert>
-            <Button variant="contained" fullWidth component={Link} href="/login">
+
+            <Button
+              component={Link}
+              href="/login"
+              variant="contained"
+              fullWidth
+              sx={{
+                height: '52px',
+                borderRadius: '8px',
+                bgcolor: '#0B2745',
+                textTransform: 'none',
+
+                '&:hover': {
+                  bgcolor: '#0a2035',
+                },
+              }}
+            >
               Go to Login
             </Button>
           </>
         ) : (
-          <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            autoComplete="off"
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px',
+            }}
+          >
             <TextField
-              label="New Password"
+              placeholder="New Password"
               name="newPassword"
               type={showPassword ? 'text' : 'password'}
               value={form.newPassword}
               onChange={handleChange}
               error={!!fieldErrors.newPassword}
-              helperText={fieldErrors.newPassword || 'Min 8 chars, uppercase, number & special char'}
+              helperText={fieldErrors.newPassword}
               fullWidth
               required
-              margin="normal"
+              autoComplete="new-password"
+              sx={fieldSx}
               slotProps={{
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword((v) => !v)} edge="end">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      <IconButton
+                        onClick={() =>
+                          setShowPassword((v) => !v)
+                        }
+                        edge="end"
+                        size="small"
+                        sx={{
+                          color: '#9E9E9E',
+                          mr: 0.5,
+                        }}
+                      >
+                        {showPassword ? (
+                          <VisibilityOff fontSize="small" />
+                        ) : (
+                          <Visibility fontSize="small" />
+                        )}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -128,7 +348,7 @@ export default function ResetPasswordPage() {
             />
 
             <TextField
-              label="Confirm New Password"
+              placeholder="Confirm Password"
               name="confirmPassword"
               type="password"
               value={form.confirmPassword}
@@ -137,18 +357,45 @@ export default function ResetPasswordPage() {
               helperText={fieldErrors.confirmPassword}
               fullWidth
               required
-              margin="normal"
+              autoComplete="new-password"
+              sx={fieldSx}
             />
 
             <Button
               type="submit"
               variant="contained"
               fullWidth
-              size="large"
               disabled={loading}
-              sx={{ mt: 2, mb: 1.5, py: 1.4 }}
+              sx={{
+                height: '52px',
+                borderRadius: '8px',
+                bgcolor: '#0B2745',
+                color: '#FFFFFF',
+                fontWeight: 600,
+                fontSize: '16px',
+                textTransform: 'none',
+                boxShadow: 'none',
+
+                '&:hover': {
+                  bgcolor: '#0a2035',
+                  boxShadow: 'none',
+                },
+
+                '&.Mui-disabled': {
+                  bgcolor: '#0B2745',
+                  color: '#FFFFFF',
+                  opacity: 0.7,
+                },
+              }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
+              {loading ? (
+                <CircularProgress
+                  size={22}
+                  sx={{ color: '#FFFFFF' }}
+                />
+              ) : (
+                'Reset Password'
+              )}
             </Button>
           </Box>
         )}
@@ -156,3 +403,4 @@ export default function ResetPasswordPage() {
     </Box>
   );
 }
+
