@@ -109,7 +109,7 @@ export default function HeroSection() {
             fontWeight: 400,
             fontSize: '16px',
             lineHeight: 1.47,
-            letterSpacing: '-0.03em',
+            letterSpacing: '-0.05em',
             color: '#000000',
             maxWidth: { xs: '100%', sm: 480, md: 540 },
             mx: 'auto',
