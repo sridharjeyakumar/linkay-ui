@@ -36,8 +36,8 @@ const ROLES = [
 ];
 
 const ROLE_FLAGS: Record<string, { isUser: boolean; isMuseumUser: boolean; isSuperAdmin: boolean }> = {
-  INVESTOR:     { isUser: true,  isMuseumUser: false, isSuperAdmin: false },
-  MUSEUM_ADMIN: { isUser: false, isMuseumUser: true,  isSuperAdmin: false },
+  INVESTOR:     { isUser: true, isMuseumUser: false, isSuperAdmin: false },
+  MUSEUM_ADMIN: { isUser: true, isMuseumUser: true,  isSuperAdmin: false },
 };
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
@@ -148,6 +148,11 @@ export default function RegisterPage() {
         {successMessage ? (
           <Alert severity="success" sx={{ mb: 2 }}>
             {successMessage} — Please check your email to verify your account.
+            {form.role === 'MUSEUM_ADMIN' && (
+              <Typography sx={{ fontSize: 12, mt: 0.5 }}>
+                Museum Admin accounts are reviewed by our team. You will be notified once approved.
+              </Typography>
+            )}
           </Alert>
         ) : (
           <Box component="form" onSubmit={handleSubmit} noValidate>

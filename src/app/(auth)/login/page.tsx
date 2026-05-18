@@ -67,7 +67,17 @@ export default function LoginPage() {
           Sign in to your Linkay account
         </Typography>
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+            {error.toLowerCase().includes('not accepted') && (
+              <Typography sx={{ fontSize: 12, mt: 0.5 }}>
+                Museum Admin accounts require admin approval before login. Please contact{' '}
+                <a href="mailto:support@linkay.com" style={{ color: 'inherit' }}>support@linkay.com</a>.
+              </Typography>
+            )}
+          </Alert>
+        )}
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
           <TextField
@@ -81,6 +91,7 @@ export default function LoginPage() {
             fullWidth
             required
             margin="normal"
+            slotProps={{ htmlInput: { suppressHydrationWarning: true } }}
           />
 
           <TextField
@@ -98,12 +109,13 @@ export default function LoginPage() {
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword((v) => !v)} edge="end">
+                    <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" suppressHydrationWarning>
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
               },
+              htmlInput: { suppressHydrationWarning: true },
             }}
           />
 
