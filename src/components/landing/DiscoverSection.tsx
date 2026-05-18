@@ -63,16 +63,17 @@ export default function DiscoverSection() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: { xs: 2, md: 3 },
-                    background: 'transparent',
+                    background: 'rgba(0, 0, 0, 0.15)',
                     border: '1.5px solid rgba(255, 255, 255, 0.3)',
                     borderRadius: { xs: '12px', md: '16px' },
                     px: { xs: 2.5, sm: 3, md: 3.5 },
                     py: { xs: 3.5, sm: 4, md: 5 },
                     textDecoration: 'none',
-                    transition: 'border-color 0.25s ease, transform 0.25s ease',
+                    transition: 'all 0.25s ease',
                     '&:hover': {
                       border: '1.5px solid rgba(255, 255, 255, 0.6)',
                       transform: 'translateY(-3px)',
+                      background: 'rgba(0, 0, 0, 0.15)',
                     },
                   }}
                 >

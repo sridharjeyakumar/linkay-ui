@@ -150,6 +150,7 @@ export default function Navbar() {
                         fontSize: { md: '0.82rem', lg: '0.92rem' },
                         textTransform: 'none',
                         px: { md: 1.2, lg: 1.8 },
+                        whiteSpace: 'nowrap',
                         '&:hover': { color: '#1565c0', bgcolor: 'transparent' },
                       }}
                     >
@@ -214,6 +215,7 @@ export default function Navbar() {
                       fontSize: { md: '0.82rem', lg: '0.92rem' },
                       textTransform: 'none',
                       px: { md: 1.2, lg: 1.8 },
+                       whiteSpace: 'nowrap',
                       '&:hover': { color: '#1565c0', bgcolor: 'transparent' },
                     }}
                   >
@@ -412,7 +414,7 @@ export default function Navbar() {
             variant="outlined"
             fullWidth
             onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
-            sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: '#111827', color: '#111827' }}
+            sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600, borderColor: '#111827', color: '#111827', '&:hover': { color: '#1565c0', borderColor: '#1565c0', bgcolor: 'transparent' } }}
           >
             Login
           </Button>
@@ -420,12 +422,29 @@ export default function Navbar() {
             variant="contained"
             fullWidth
             onClick={() => { setMobileOpen(false); setRegisterOpen(true); }}
+            onMouseEnter={() => setRegisterHovered(true)}
+            onMouseLeave={() => setRegisterHovered(false)}
             startIcon={
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#fff', borderRadius: '50%', width: 20, height: 20, p: 0.4 }}>
-                <Image src="/landing/arrow-default.svg" alt="arrow" width={12} height={12} unoptimized />
+              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#FAFAFA', borderRadius: '50%', width: 36, height: 36, flexShrink: 0 }}>
+                <Image
+                  src="/landing/arrow-default.svg"
+                  alt="arrow"
+                  width={20}
+                  height={20}
+                  unoptimized
+                  style={{ position: 'absolute', opacity: registerHovered ? 0 : 1, transform: registerHovered ? 'scale(0.6)' : 'scale(1)', transition: 'opacity 0.15s ease, transform 0.15s ease' }}
+                />
+                <Image
+                  src="/landing/arrow-hover.svg"
+                  alt="arrow"
+                  width={20}
+                  height={20}
+                  unoptimized
+                  style={{ position: 'absolute', opacity: registerHovered ? 1 : 0, transform: registerHovered ? 'scale(1)' : 'scale(0.6)', transition: 'opacity 0.15s ease, transform 0.15s ease' }}
+                />
               </Box>
             }
-            sx={{ bgcolor: '#0A0A0A', color: '#FAFAFA', borderRadius: '50px', textTransform: 'none', fontWeight: 600, '&:hover': { bgcolor: '#1a1a1a' } }}
+            sx={{ bgcolor: '#0A0A0A', color: '#FAFAFA', borderRadius: '50px', textTransform: 'none', fontWeight: 600, '&:hover': { bgcolor: '#1a1a1a', boxShadow: '0 4px 12px rgba(0,0,0,0.35)' } }}
           >
             Register
           </Button>
