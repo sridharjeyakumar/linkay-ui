@@ -2,10 +2,11 @@ import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: { main: '#6C63FF' },
     secondary: { main: '#FF6584' },
-    background: { default: '#0D0D0D', paper: '#1A1A2E' },
+    background: { default: '#ffffff', paper: '#ffffff' },
+    text: { primary: '#111111', secondary: '#6b7280' },
   },
   typography: {
     fontFamily: '"Inter", "Roboto", sans-serif',

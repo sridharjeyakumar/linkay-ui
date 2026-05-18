@@ -51,3 +51,32 @@
 body {
   margin: 0;
 }
+
+/* Thin scrollbar — all browsers that support it */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Tables scroll horizontally on small screens */
+.MuiTableContainer-root {
+  overflow-x: auto;
+}
