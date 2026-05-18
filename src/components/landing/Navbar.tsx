@@ -34,7 +34,7 @@ type NavLink = {
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Marketplace', href: '#marketplace' },
-  { label: 'Tokenization', href: '#tokenization' },
+  { label: 'Tokenization', href: '/tokenization' },
   { label: 'How It Works', href: '#ownership' },
   {
     label: 'Asset Classes',
