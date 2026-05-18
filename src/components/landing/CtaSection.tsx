@@ -110,8 +110,8 @@ export default function CtaSection() {
                   <Image
                     src="/landing/arrow-default.svg"
                     alt="arrow"
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     unoptimized
                     style={{
                       position: 'absolute',
@@ -123,8 +123,8 @@ export default function CtaSection() {
                   <Image
                     src="/landing/arrow-hover.svg"
                     alt="arrow"
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     unoptimized
                     style={{
                       position: 'absolute',

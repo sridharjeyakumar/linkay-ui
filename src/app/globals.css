@@ -52,15 +52,15 @@ body {
   margin: 0;
 }
 
-/* Thin scrollbar — all browsers that support it */
+/* Smooth scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
+  scrollbar-color: rgba(11, 39, 69, 0.25) transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 *::-webkit-scrollbar-track {
@@ -68,12 +68,17 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 4px;
+  background: rgba(11, 39, 69, 0.2);
+  border-radius: 100px;
+  transition: background 0.3s ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: rgba(11, 39, 69, 0.5);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Tables scroll horizontally on small screens */

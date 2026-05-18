@@ -235,10 +235,8 @@ export default function HeroSection() {
                   overflow: 'hidden',
                   width: { xs: 260, sm: 380, md: 520, lg: 600 },
                   height: { xs: 180, sm: 260, md: 360, lg: 420 },
-                  boxShadow: isCenter
-                    ? '0 24px 64px rgba(0,0,0,0.18)'
-                    : '0 8px 24px rgba(0,0,0,0.1)',
-                  bgcolor: '#f5f5f5',
+                  
+                  bgcolor: '#FAFAFA',
                 }}
               >
                 <Image

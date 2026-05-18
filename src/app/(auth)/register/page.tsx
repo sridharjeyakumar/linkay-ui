@@ -86,7 +86,7 @@ export default function RegisterPage() {
       if (event.data?.type === 'EMAIL_VERIFIED') {
         setIsVerified(true);
         setTimeout(() => {
-          router.replace('/user-dashboard');
+          router.replace('/login');
         }, 3000);
       }
     };

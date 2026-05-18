@@ -97,7 +97,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     channel.onmessage = (event) => {
       if (event.data?.type === 'EMAIL_VERIFIED') {
         onClose();
-        setTimeout(() => router.replace('/user-dashboard'), 3000);
+        onSwitchToLogin?.();
       }
     };
     return () => channel.close();
