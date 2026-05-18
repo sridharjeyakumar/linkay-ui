@@ -51,3 +51,37 @@
 body {
   margin: 0;
 }
+
+/* Smooth scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 39, 69, 0.25) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(11, 39, 69, 0.2);
+  border-radius: 100px;
+  transition: background 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 39, 69, 0.5);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Tables scroll horizontally on small screens */
+.MuiTableContainer-root {
+  overflow-x: auto;
+}

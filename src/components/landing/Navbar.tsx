@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AppBar, Toolbar, Box, Button, IconButton,
   Menu, MenuItem, Drawer, List,
@@ -81,6 +81,12 @@ export default function Navbar() {
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
 
+  useEffect(() => {
+    const handler = () => setRegisterOpen(true);
+    window.addEventListener('linkay:open-register', handler);
+    return () => window.removeEventListener('linkay:open-register', handler);
+  }, []);
+
   const openDropdown = (key: string, e: React.MouseEvent<HTMLElement>) =>
     setAnchorEl((prev) => ({ ...prev, [key]: e.currentTarget }));
 
@@ -102,7 +108,7 @@ export default function Navbar() {
           transition: 'background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
         }}
       >
-        <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 } }}>
+        <Container maxWidth={false} sx={{ maxWidth: '16S00px', px: { xs: 2, sm: 4, md: 6 } }}>
           <Toolbar disableGutters sx={{ py: { xs: 0.5, md: 1 }, minHeight: { xs: 56, md: 64 } }}>
 
             {/* Logo */}

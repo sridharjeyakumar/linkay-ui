@@ -1,35 +1,39 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Box, Typography, Container, Grid } from '@mui/material';
-import Image from 'next/image';
+import type { ShapeType } from './Ownership3DShape';
 
-const FEATURES = [
+const Ownership3DShape = dynamic(() => import('./Ownership3DShape'), { ssr: false });
+
+const FEATURES: {
+  title: string;
+  description: string;
+  shape: ShapeType;
+  imagePosition: 'left' | 'right';
+}[] = [
   {
     title: 'Asset Submission',
     description: 'Asset owners submit assets for review and tokenization.',
-    icon: '/landing/ownership-icons/asset-submission.png',
-    iconFallback: '/landing/ownership-icons/asset-submission.png',
+    shape: 'cube',
     imagePosition: 'right',
   },
   {
     title: 'Asset Tokenization',
     description: 'Assets are digitally tokenized into fractional ownership units.',
-    icon: '/landing/ownership-icons/asset-tokenization.png',
-    iconFallback: '/landing/ownership-icons/asset-tokenization.png',
+    shape: 'icosahedron',
     imagePosition: 'left',
   },
   {
     title: 'Investor Access',
     description: 'Verified assets become available to global investors.',
-    icon: '/landing/ownership-icons/investor-access.png',
-    iconFallback: '/landing/ownership-icons/investor-access.png',
+    shape: 'disc',
     imagePosition: 'right',
   },
   {
     title: 'Secure Ownership Exchange',
     description: 'Investors seamlessly acquire and trade tokenized assets.',
-    icon: '/landing/ownership-icons/secure-ownership.png',
-    iconFallback: '/landing/ownership-icons/secure-ownership.png',
+    shape: 'knot',
     imagePosition: 'left',
   },
 ];
@@ -67,8 +71,7 @@ export default function OwnershipSection() {
           >
             Digital Ownership with Confidence
           </Typography>
-          
-          {/* Paragraph below title */}
+
           <Typography
             sx={{
               textAlign: 'center',
@@ -84,12 +87,12 @@ export default function OwnershipSection() {
               fontWeight: 400,
             }}
           >
-            Participate in a marketplace designed for liquidity, transparency and seamless 
+            Participate in a marketplace designed for liquidity, transparency and seamless
             ownership transfers across tokenized real world assets.
           </Typography>
         </Box>
 
-        {/* Feature Rows - Alternating Layout */}
+        {/* Feature Rows */}
         <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
           {FEATURES.map((feature, index) => (
             <Grid
@@ -105,7 +108,7 @@ export default function OwnershipSection() {
                 },
               }}
             >
-              {/* Image/Icon Column */}
+              {/* 3D Shape Column */}
               <Grid size={{ xs: 12, md: 5 }}>
                 <Box
                   sx={{
@@ -117,50 +120,11 @@ export default function OwnershipSection() {
                 >
                   <Box
                     sx={{
-                      width: { xs: 180, sm: 220, md: 260, lg: 300 },
-                      height: { xs: 180, sm: 220, md: 260, lg: 300 },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
+                      width: { xs: 200, sm: 240, md: 280, lg: 320 },
+                      height: { xs: 200, sm: 240, md: 280, lg: 320 },
                     }}
                   >
-                    {/* Placeholder for 3D GIF */}
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: '#F5F8FF',
-                        borderRadius: '24px',
-                      }}
-                    >
-                      <Image
-                        src={feature.iconFallback}
-                        alt={feature.title}
-                        width={180}
-                        height={180}
-                        style={{
-                          width: 'auto',
-                          height: 'auto',
-                          maxWidth: '80%',
-                          maxHeight: '80%',
-                          objectFit: 'contain',
-                        }}
-                        unoptimized
-                      />
-                    </Box>
-                    
-                    {/* Uncomment when GIFs are ready */}
-                    {/* <Image
-                      src={feature.icon}
-                      alt={feature.title}
-                      fill
-                      style={{ objectFit: 'contain' }}
-                      unoptimized
-                    /> */}
+                    <Ownership3DShape type={feature.shape} />
                   </Box>
                 </Box>
               </Grid>
@@ -173,7 +137,6 @@ export default function OwnershipSection() {
                     px: { xs: 1, md: 2 },
                   }}
                 >
-                  {/* Title */}
                   <Typography
                     component="h3"
                     sx={{

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Box, Typography, Container, Button } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
-import Link from 'next/link';
 
 const floatBlob = keyframes`
   0%   { transform: translate(0%,   0%)   scale(1);    }
@@ -14,6 +13,9 @@ const floatBlob = keyframes`
   80%  { transform: translate(-10%, 15%)  scale(0.98); }
   100% { transform: translate(0%,   0%)   scale(1);    }
 `;
+
+const openRegister = () =>
+  window.dispatchEvent(new CustomEvent('linkay:open-register'));
 
 export default function CtaSection() {
   const [hovered, setHovered] = useState(false);
@@ -86,10 +88,9 @@ export default function CtaSection() {
               justifyContent: 'center',
             }}
           >
-            {/* Get Started — dark pill with animated arrow */}
+            {/* Get Started */}
             <Button
-              component={Link}
-              href="/register"
+              onClick={openRegister}
               onMouseEnter={() => setHovered(true)}
               onMouseLeave={() => setHovered(false)}
               startIcon={
@@ -109,8 +110,8 @@ export default function CtaSection() {
                   <Image
                     src="/landing/arrow-default.svg"
                     alt="arrow"
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     unoptimized
                     style={{
                       position: 'absolute',
@@ -122,8 +123,8 @@ export default function CtaSection() {
                   <Image
                     src="/landing/arrow-hover.svg"
                     alt="arrow"
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     unoptimized
                     style={{
                       position: 'absolute',
@@ -144,20 +145,16 @@ export default function CtaSection() {
                 fontSize: { xs: '0.88rem', md: '0.95rem' },
                 textTransform: 'none',
                 boxShadow: 'none',
-                '&:hover': {
-                  bgcolor: '#1a1a1a',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.22)',
-                },
+                '&:hover': { bgcolor: '#1a1a1a', boxShadow: '0 6px 20px rgba(0,0,0,0.22)' },
                 transition: 'all 0.2s ease',
               }}
             >
               Get Started
             </Button>
 
-            {/* List Your Asset — outline pill */}
+            {/* List Your Asset */}
             <Button
-              component={Link}
-              href="/register"
+              onClick={openRegister}
               variant="outlined"
               sx={{
                 borderRadius: '50px',
@@ -169,11 +166,7 @@ export default function CtaSection() {
                 borderColor: '#d1d5db',
                 color: '#111827',
                 bgcolor: 'transparent',
-                '&:hover': {
-                  borderColor: '#0A0A0A',
-                  bgcolor: '#0A0A0A',
-                  color: '#ffffff',
-                },
+                '&:hover': { borderColor: '#0A0A0A', bgcolor: '#0A0A0A', color: '#ffffff' },
                 transition: 'all 0.2s ease',
               }}
             >

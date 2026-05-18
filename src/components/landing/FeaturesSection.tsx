@@ -71,63 +71,93 @@ export default function FeaturesSection() {
             <Grid
               key={feature.title}
               size={{ xs: 12, sm: 6, md: 4 }}
-              sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}
+              sx={{ display: 'flex' }}
             >
-              {/* Icon box */}
+              {/* Card */}
               <Box
+                className="card-hover"
                 sx={{
-                  width: { xs: 60, md: 68 },
-                  height: { xs: 60, md: 68 },
-                  borderRadius: '14px',
-                  bgcolor: '#eef1ff',
+                  flex: 1,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid #1E40AF',
-                  mb: 2.5,
-                  transition: 'all 0.3s ease',
+                  textAlign: 'center',
+                  bgcolor: 'transparent',
+                  borderRadius: '20px',
+                  border: '1.5px solid transparent',
+                  px: { xs: 3, md: 4 },
+                  py: { xs: 4, md: 5 },
                   cursor: 'pointer',
+
+                  // Slower and smoother transition
+                  transition: 'background-color 0.8s ease-in-out',
+
                   '&:hover': {
-                    bgcolor: '#1E40AF',
-                    borderColor: '#1E40AF',
-                    boxShadow: '0 10px 25px -5px rgba(30, 64, 175, 0.4), 0 0 0 1px rgba(30, 64, 175, 0.1)',
-                  },
-                  '&:hover svg': {
-                    color: '#ffffff !important',
-                  },
-                  '& svg': {
-                    color: '#1E40AF',
-                    transition: 'color 0.3s ease',
+                    bgcolor: '#EEF1FF',
                   },
                 }}
               >
-                {feature.icon}
+                {/* Icon box — changes with card hover */}
+                <Box
+                  sx={{
+                    width: { xs: 60, md: 68 },
+                    height: { xs: 60, md: 68 },
+                    borderRadius: '14px',
+                    bgcolor: '#eef1ff',
+                    border: '1px solid #1E40AF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 2.5,
+                    flexShrink: 0,
+
+                    transition: 'all 0.8s ease-in-out',
+
+                    '& svg': {
+                      color: '#1E40AF',
+                      transition: 'color 0.8s ease-in-out',
+                    },
+
+                    '.card-hover:hover &': {
+                      bgcolor: '#1E40AF',
+                      borderColor: '#1E40AF',
+                    },
+
+                    '.card-hover:hover & svg': {
+                      color: '#ffffff',
+                    },
+                  }}
+                >
+                  {feature.icon}
+                </Box>
+
+                {/* Title */}
+                <Typography
+                  component="h3"
+                  sx={{
+                    fontWeight: feature.active ? 700 : 600,
+                    fontFamily: 'var(--font-archivo), sans-serif',
+                    fontSize: { xs: '1rem', md: '1.05rem' },
+                    color: '#0A0A0A',
+                    mb: 1,
+                  }}
+                >
+                  {feature.title}
+                </Typography>
+
+                {/* Description */}
+                <Typography
+                  sx={{
+                    color: '#6b7280',
+                    fontSize: { xs: '0.85rem', md: '0.9rem' },
+                    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                    lineHeight: 1.7,
+                    maxWidth: 220,
+                  }}
+                >
+                  {feature.description}
+                </Typography>
               </Box>
-
-              {/* Title */}
-              <Typography
-                component="h3"
-                sx={{
-                  fontWeight: feature.active ? 700 : 600,
-                  fontSize: { xs: '1rem', md: '1.05rem' },
-                  color: '#0A0A0A',
-                  mb: 1,
-                }}
-              >
-                {feature.title}
-              </Typography>
-
-              {/* Description */}
-              <Typography
-                sx={{
-                  color: '#6b7280',
-                  fontSize: { xs: '0.85rem', md: '0.9rem' },
-                  lineHeight: 1.7,
-                  maxWidth: 220,
-                }}
-              >
-                {feature.description}
-              </Typography>
             </Grid>
           ))}
         </Grid>
