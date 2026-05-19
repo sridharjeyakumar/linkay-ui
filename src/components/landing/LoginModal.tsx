@@ -85,7 +85,8 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     if (user) {
       setNavigating(true);
       onClose();
-      router.replace('/user-dashboard');
+      if (user.is_museum_user) router.replace('/museum-dashboard');
+      else router.replace('/user-dashboard');
     }
   }, [user, router, onClose]);
 
