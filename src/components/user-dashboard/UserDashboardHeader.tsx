@@ -23,10 +23,10 @@ import { initKycThunk } from '@/features/ekyc/ekycThunks';
 import { saveWalletThunk } from '@/features/wallet/walletThunks';
 
 const NAV_LINKS = [
-  { label: 'Home',        href: '/user-dashboard' },
-  { label: 'Explore',     href: '/user-dashboard/explore' },
-  { label: 'Portfolio',   href: '/user-dashboard/portfolio' },
-  { label: 'Auctions',    href: '/user-dashboard/auctions' },
+  { label: 'Home', href: '/user-dashboard' },
+  { label: 'Explore', href: '/user-dashboard/explore' },
+  { label: 'Portfolio', href: '/user-dashboard/portfolio' },
+  { label: 'Auctions', href: '/user-dashboard/auctions' },
   { label: 'Marketplace', href: '/user-dashboard/marketplace' },
 ];
 
@@ -81,23 +81,30 @@ export default function UserDashboardHeader() {
     if (walletStatus === 'connected' && wagmiAddress && user) {
       const savedAddress = user.walletAddress?.toLowerCase();
       const liveAddress = wagmiAddress.toLowerCase();
-      if (!savedAddress || savedAddress !== liveAddress) {
+      if (savedAddress && savedAddress !== liveAddress) {
         disconnectWallet();
       }
     }
-  }, [user?.id, walletStatus]);
+  }, [user?.id, walletStatus, wagmiAddress]);
 
   // Auto-save wallet address to backend when user connects a wallet
   useEffect(() => {
     if (walletStatus === 'connected' && wagmiAddress && user && !user.walletAddress) {
       dispatch(saveWalletThunk(wagmiAddress))
         .unwrap()
+        .then(() => dispatch(getMeThunk()))
         .catch(() => {
           setToastMsg('Wallet connected but could not be saved — backend endpoint not ready yet.');
         });
     }
   }, [walletStatus, wagmiAddress, user?.walletAddress]);
-
+  useEffect(() => {
+    if (user?.kycStatus !== 'PENDING') return;
+    const interval = setInterval(() => {
+      dispatch(getMeThunk());
+    }, 5_000);
+    return () => clearInterval(interval);
+  }, [user?.kycStatus]);
   const handleLogout = async () => {
     setProfileMenuAnchor(null);
     disconnectWallet();
@@ -114,12 +121,16 @@ export default function UserDashboardHeader() {
     }
   };
 
-  const handleSdkMessage = (type: string) => {
+ const handleSdkMessage = (type: string) => {
     if (
       type === 'idCheck.onApplicantSubmitted' ||
       type === 'idCheck.onApplicantResubmissionRequested'
     ) {
       setKycModalOpen(false);
+      dispatch(getMeThunk());
+    }
+    // ← ADD: when Sumsub confirms approval, re-fetch immediately
+    if (type === 'idCheck.onApplicantStatusChanged') {
       dispatch(getMeThunk());
     }
   };
