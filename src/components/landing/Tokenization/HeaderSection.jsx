@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Box, Typography, Container } from '@mui/material';
 import { Plus_Jakarta_Sans, Archivo, Inter } from 'next/font/google';
 import Image from 'next/image';
-import Link from 'next/link';
+import ArrowButton from '@/components/ui/ArrowButton';
 import { CheckCircle, ArrowsLeftRight, TreeStructure, CoinsIcon, SealCheckIcon, CirclesThreeIcon } from '@phosphor-icons/react';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -27,8 +26,6 @@ const inter = Inter({
 });
 
 export default function HeaderSection() {
-  const [btnHovered, setBtnHovered] = useState(false);
-
   return (
     <Box
       sx={{
@@ -117,94 +114,7 @@ export default function HeaderSection() {
           accessibility, liquidity and secure ownership participation.
         </Typography>
 
-        {/* ── CTA Button ── */}
-        <Box
-          component={Link}
-          href="/tokenize"
-          onMouseEnter={() => setBtnHovered(true)}
-          onMouseLeave={() => setBtnHovered(false)}
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            bgcolor: '#0A0A0A',
-            borderRadius: '30px',
-            pl: '13px',
-            pr: '16px',
-            py: '6px',
-            textDecoration: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.25s ease',
-            '&:hover': {
-              bgcolor: '#1a1a1a',
-              boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-            },
-          }}
-        >
-          
-
-          {/* Arrow circle */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: '#FAFAFA',
-              borderRadius: '14px',
-              width: 28,
-              height: 28,
-              padding: '2px',
-              flexShrink: 0,
-              position: 'relative',
-              transform: 'rotate(-48.72deg)',
-            }}
-          >
-            {/* Default arrow */}
-            <Image
-              src="/landing/arrow-default.svg"
-              alt="arrow"
-              width={24}
-              height={24}
-              unoptimized
-              style={{
-                position: 'absolute',
-                opacity: btnHovered ? 0 : 1,
-                transform: `rotate(41.28deg) ${btnHovered ? 'scale(0.6)' : 'scale(1)'}`,
-                transition: 'opacity 0.2s ease, transform 0.2s ease',
-              }}
-            />
-            {/* Hover arrow */}
-            <Image
-              src="/landing/arrow-hover.svg"
-              alt="arrow"
-              width={24}
-              height={24}
-              unoptimized
-              style={{
-                position: 'absolute',
-                opacity: btnHovered ? 1 : 0,
-                transform: `rotate(41.28deg) ${btnHovered ? 'scale(1)' : 'scale(0.6)'}`,
-                transition: 'opacity 0.2s ease, transform 0.2s ease',
-              }}
-            />
-          </Box>
-
-          {/* Button label */}
-          <Typography
-            component="span"
-            sx={{
-              fontFamily: '"Inter", sans-serif',
-              fontWeight: 500,
-              fontSize: '16px',
-              lineHeight: '100%',
-              letterSpacing: '0%',
-              color: '#FFFFFF',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Tokenize an Asset
-          </Typography>
-        </Box>
+        <ArrowButton label="Tokenize an Asset" href="/tokenize" />
       </Container>
 
       {/* ══════════════════════════════════════════════

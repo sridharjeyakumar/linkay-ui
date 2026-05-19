@@ -8,9 +8,9 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import Image from 'next/image';
-import Link from 'next/link';
 import { Archivo, Inter } from 'next/font/google';
+import ArrowButton from '@/components/ui/ArrowButton';
+import OutlineButton from '@/components/ui/OutlineButton';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const archivo = Archivo({
@@ -61,7 +61,6 @@ const faqData = [
  
 export default function OwnershipSection() {
   const [expanded, setExpanded] = useState<string | false>('panel0');
-  const [btnHovered, setBtnHovered] = useState(false);
 
   const handleChange =
     (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
@@ -191,28 +190,33 @@ export default function OwnershipSection() {
             border-radius: 28px, border: 2px solid #ABE2FB
             background gradient: #0EA5E9 → #C2FFFB → #0EA5E9
         ═══════════════════════════════════════════════ */}
-        <Box
-          sx={{
-            width: '100%',
-            maxWidth: '1196px',
-            height: { xs: 'auto', md: '239px' },
-            mx: 'auto',
-            mt: { xs: '60px', md: '80px' },
-            mb: { xs: '100px', md: '10px' },
-            borderRadius: '28px',
-            border: '2px solid #ABE2FB',
-            background:
-              'linear-gradient(90deg, #0EA5E9 0%, #C2FFFB 50%, #0EA5E9 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            px: { xs: '30px', md: '60px' },
-            py: { xs: '40px', md: '0' },
-            gap: { xs: '24px', md: '30px' },
-            boxSizing: 'border-box',
-          }}
-        >
+       <Box
+  sx={{
+    width: '100%',
+    maxWidth: '1196px',
+    height: { xs: 'auto', md: '239px' },
+    mx: 'auto',
+    mt: { xs: '60px', md: '80px' },
+    mb: { xs: '100px', md: '10px' },
+    borderRadius: '28px',
+    border: '2px solid #ABE2FB',
+
+    // ✅ FIXED GRADIENT
+    background: 'linear-gradient(90deg, #0EA5E9 -10%, #C2FFFB 50%, #0EA5E9 115%)',
+
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    px: { xs: '30px', md: '60px' },
+    py: { xs: '40px', md: '0' },
+    gap: { xs: '24px', md: '30px' },
+    boxSizing: 'border-box',
+
+    // ✅ Optional: subtle inner glow like Figma
+    boxShadow: 'inset 0 0 40px rgba(83, 181, 246, 0.25)',
+  }}
+>
           {/* ── Heading ── */}
           <Typography
             component="h2"
@@ -240,141 +244,8 @@ export default function OwnershipSection() {
               flexShrink: 0,
             }}
           >
-            {/* Get Started — dark button with arrow */}
-            <Box
-              component={Link}
-              href="/tokenize"
-              onMouseEnter={() => setBtnHovered(true)}
-              onMouseLeave={() => setBtnHovered(false)}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                bgcolor: '#0A0A0A',
-                borderRadius: '30px',
-                pl: '13px',
-            pr: '16px',
-            py: '6px',
-                textDecoration: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.25s ease',
-                height: '40px',
-                boxSizing: 'border-box',
-                '&:hover': {
-                  bgcolor: '#1a1a1a',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-                },
-              }}
-            >
-              
-
-              {/* Arrow circle */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: '#FAFAFA',
-                  borderRadius: '14px',
-                  width: 28,
-                  height: 28,
-                  padding: '2px',
-                  flexShrink: 0,
-                  position: 'relative',
-                  transform: 'rotate(-48.72deg)',
-                }}
-              >
-                {/* Default arrow */}
-                <Image
-                  src="/landing/arrow-default.svg"
-                  alt="arrow"
-                  width={24}
-                  height={24}
-                  unoptimized
-                  style={{
-                    position: 'absolute',
-                    opacity: btnHovered ? 0 : 1,
-                    transform: `rotate(41.28deg) ${btnHovered ? 'scale(0.6)' : 'scale(1)'}`,
-                    transition: 'opacity 0.2s ease, transform 0.2s ease',
-                  }}
-                />
-                {/* Hover arrow */}
-                <Image
-                  src="/landing/arrow-hover.svg"
-                  alt="arrow"
-                  width={24}
-                  height={24}
-                  unoptimized
-                  style={{
-                    position: 'absolute',
-                    opacity: btnHovered ? 1 : 0,
-                    transform: `rotate(41.28deg) ${btnHovered ? 'scale(1)' : 'scale(0.6)'}`,
-                    transition: 'opacity 0.2s ease, transform 0.2s ease',
-                  }}
-                />
-              </Box>
-              <Typography
-                component="span"
-                className={inter.className}
-                sx={{
-                  fontWeight: 500,
-                  fontSize: '16px',
-                  lineHeight: '100%',
-                  letterSpacing: '0%',
-                  color: '#FFFFFF',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Get Started
-              </Typography>
-            </Box>
-
-            {/* List Your Asset — outline button */}
-            <Box
-  component={Link}
-  href="/list-asset"
-  sx={{
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50px',
-    border: '1.5px solid #0A0A0A',
-    bgcolor: 'transparent',
-    px: '31px',
-    py: '8px',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.25s ease',
-    height: '35px',
-    boxSizing: 'border-box',
-    color: '#070707',
-
-    '&:hover': {
-      bgcolor: '#0A0A0A',
-      color: '#FAFAFA',
-    },
-
-    '&:hover .list-asset-text': {
-      color: '#FAFAFA',
-    },
-  }}
->
-  <Typography
-    component="span"
-    className={`list-asset-text ${inter.className}`}
-    sx={{
-      fontWeight: 500,
-      fontSize: '16px',
-      lineHeight: '100%',
-      letterSpacing: '0%',
-      color: '#070707',
-      whiteSpace: 'nowrap',
-      transition: 'color 0.25s ease',
-    }}
-  >
-    List Your Asset
-  </Typography>
-</Box>
+            <ArrowButton label="Get Started" href="/tokenize" />
+            <OutlineButton label="List Your Asset" href="/list-asset" />
           </Box>
         </Box>
       </Box>

@@ -15,6 +15,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScrollTrigger } from '@mui/material';
+import { usePathname } from 'next/navigation';
 import MineralModal from './MineralModal';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
@@ -71,6 +72,7 @@ function smoothScrollTo(id: string, duration = 1500) {
 }
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<Record<string, HTMLElement | null>>({});
@@ -80,6 +82,12 @@ export default function Navbar() {
   const [registerOpen, setRegisterOpen] = useState(false);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
+
+  // Check if a link is active (only for non-hash links)
+  const isLinkActive = (href: string) => {
+    if (href.startsWith('#')) return false; // Hash links are not considered "active"
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   useEffect(() => {
     const handler = () => setRegisterOpen(true);
@@ -209,12 +217,23 @@ export default function Navbar() {
                       }
                     }}
                     sx={{
-                      color: '#374151',
-                      fontWeight: 400,
+                      color: isLinkActive(link.href) ? '#010303' : '#374151',
+                      fontWeight: isLinkActive(link.href) ? 600 : 400,
                       fontSize: { md: '0.82rem', lg: '0.92rem' },
                       textTransform: 'none',
                       px: { md: 1.2, lg: 1.8 },
-                      '&:hover': { color: '#1565c0', bgcolor: 'transparent' },
+                      position: 'relative',
+                      '&:hover': { color: '#1E40AF', bgcolor: 'transparent' },
+                      '&::after': isLinkActive(link.href) ? {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: -8,
+                        left: 0,
+                        right: 0,
+                        height: 2,
+                        bgcolor: '#1f9fd6',
+                        borderRadius: 1,
+                      } : {},
                     }}
                   >
                     {link.label}
@@ -395,10 +414,13 @@ export default function Navbar() {
                     }
                     setMobileOpen(false);
                   }}
+                  sx={{
+                    bgcolor: isLinkActive(link.href) ? 'rgba(21, 101, 192, 0.1)' : 'transparent',
+                  }}
                 >
                   <ListItemText
                     primary={link.label}
-                    slotProps={{ primary: { sx: { fontWeight: 500, color: '#111827' } } }}
+                    slotProps={{ primary: { sx: { fontWeight: isLinkActive(link.href) ? 600 : 500, color: isLinkActive(link.href) ? '#1565c0' : '#111827' } } }}
                   />
                 </ListItemButton>
                 <Divider />
