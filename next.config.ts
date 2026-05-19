@@ -3,6 +3,20 @@ import type { NextConfig } from 'next';
 const GATEWAY = process.env.API_GATEWAY_URL || 'http://localhost:4000';
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/login',
+        destination: '/',
+        permanent: false,
+      },
+      {
+        source: '/register',
+        destination: '/',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
@@ -16,7 +30,6 @@ const nextConfig: NextConfig = {
     ];
   },
   webpack(config) {
-    // Silence missing optional peer deps pulled in by @metamask/sdk and @walletconnect
     config.resolve.fallback = {
       ...config.resolve.fallback,
       '@react-native-async-storage/async-storage': false,
