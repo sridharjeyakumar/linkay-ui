@@ -50,6 +50,8 @@ const authSlice = createSlice({
       state.user = {
         ...raw,
         kycStatus: raw.kycStatus ?? raw.kyc_status ?? null,
+        is_museum_user: raw.is_museum_user ?? raw.isMuseumUser,
+        is_user: raw.is_user ?? raw.isUser,
       };
       const token = action.payload.accessToken ?? action.payload.access_token;
       if (token) {
@@ -68,17 +70,22 @@ const authSlice = createSlice({
       state.accessToken = null;
       localStorage.removeItem('accessToken');
     });
-    builder.addCase(getMeThunk.fulfilled, (state, action) => {
+    builder.addCase(getMeThunk.pending, (state) => {
+  state.loading = true;
+});
+builder.addCase(getMeThunk.fulfilled, (state, action) => {
+  state.loading = false;
   const raw = action.payload.user ?? action.payload;
-  // normalize snake_case fields from /me endpoint
   state.user = {
     ...raw,
     kycStatus: raw.kycStatus ?? raw.kyc_status ?? null,
+    is_museum_user: raw.is_museum_user ?? raw.isMuseumUser,
+    is_user: raw.is_user ?? raw.isUser,
   };
 });
 builder.addCase(getMeThunk.rejected, (state) => {
+  state.loading = false;
   state.user = null;
-  // don't clear token here — axios interceptor handles 401 cleanup
 });
 
 // Save wallet address
