@@ -40,11 +40,11 @@ function Shape({ type }: { type: ShapeType }) {
     );
   }
 
-  // p=3, q=5 → elegant star knot
+  // p=2, q=3 → trefoil knot (original)
   return (
-    <group rotation={[0.4, 0.3, 0]}>
+    <group rotation={[0.3, 0.2, 0]}>
       <mesh>
-        <torusKnotGeometry args={[0.85, 0.28, 300, 32, 3, 5]} />
+        <torusKnotGeometry args={[0.9, 0.38, 220, 24, 2, 3]} />
         <meshStandardMaterial color={BLUE} roughness={0.2} metalness={0.1} />
       </mesh>
     </group>
