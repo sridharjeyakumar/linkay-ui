@@ -1,4 +1,4 @@
-export type AssetStatus = 'DRAFT' | 'REVIEW' | 'LIVE' | 'AUCTION' | 'PENDING' | 'SOLD' | 'ARCHIVED';
+export type AssetStatus = 'DRAFT' | 'REVIEW' | 'LIVE' | 'AUCTION' | 'PENDING' | 'SOLD' | 'ARCHIVED' | 'PUBLISHED' | 'TOKENIZED';
 
 export type AssetCategory =
   | 'REAL_ESTATE'
@@ -30,6 +30,15 @@ export interface Asset {
   ipfsUrl?: string;
   ipfsMetadataUrl?: string;
   museumName?: string;
+  // New fields
+  custodian?: string;
+  ownershipEntity?: string;
+  historicalContext?: string;
+  conditionReport?: string;
+  certificationRef?: string;
+  tokenizePercentage?: number;
+  royalty?: string;
+  royaltyWallet?: string;
 }
 
 export interface CreateAssetPayload {
@@ -42,6 +51,16 @@ export interface CreateAssetPayload {
   threeDFiles?: string;
   liveStream?: string;
   status?: string;
+  custodian?: string;
+  ownershipEntity?: string;
+  historicalContext?: string;
+  conditionReport?: string;
+  certificationRef?: string;
+  tokenizePercentage?: number;
+  totalFractions?: number;
+  pricePerFraction?: number;
+  royalty?: string;
+  royaltyWallet?: string;
 }
 
 export type UpdateAssetPayload = Partial<CreateAssetPayload>;
