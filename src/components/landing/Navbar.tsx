@@ -321,7 +321,7 @@ export default function Navbar() {
         </Container>
       </AppBar>
 
-      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} />
+      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} onOpenRegister={() => setRegisterOpen(true)} />
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <RegisterModal
         open={registerOpen}
