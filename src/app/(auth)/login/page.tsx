@@ -51,7 +51,10 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (user) router.replace('/user-dashboard');
+    if (user) {
+      if (user.is_museum_user) router.replace('/museum-dashboard');
+      else router.replace('/user-dashboard');
+    }
   }, [user, router]);
 
   const validate = () => {

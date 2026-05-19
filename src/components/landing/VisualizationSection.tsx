@@ -200,7 +200,7 @@ export default function VisualizationSection() {
                   sx={{
                     position: 'absolute',
                     left: '50%',
-                    top: '50%',
+                    top: '45%',
                     transform: 'translate(-50%, -50%)',
                     width: { xs: '120px', sm: '150px', md: '180px', lg: '220px', xl: '260px' },
                     height: { xs: '120px', sm: '150px', md: '180px', lg: '220px', xl: '260px' },
@@ -216,7 +216,7 @@ export default function VisualizationSection() {
                   sx={{
                     position: 'absolute',
                     left: '50%',
-                    top: '50%',
+                    top: '45%',
                     transform: 'translate(-50%, -50%)',
                     width: { xs: '65px', sm: '80px', md: '100px', lg: '120px', xl: '140px' },
                     height: { xs: '65px', sm: '80px', md: '100px', lg: '120px', xl: '140px' },
