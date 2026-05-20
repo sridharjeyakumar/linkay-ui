@@ -81,30 +81,24 @@ export default function UserDashboardHeader() {
     if (walletStatus === 'connected' && wagmiAddress && user) {
       const savedAddress = user.walletAddress?.toLowerCase();
       const liveAddress = wagmiAddress.toLowerCase();
-      if (savedAddress && savedAddress !== liveAddress) {
+      if (!savedAddress || savedAddress !== liveAddress) {
         disconnectWallet();
+
       }
     }
-  }, [user?.id, walletStatus, wagmiAddress]);
+  }, [user?.id, walletStatus]);
 
   // Auto-save wallet address to backend when user connects a wallet
   useEffect(() => {
     if (walletStatus === 'connected' && wagmiAddress && user && !user.walletAddress) {
       dispatch(saveWalletThunk(wagmiAddress))
         .unwrap()
-        .then(() => dispatch(getMeThunk()))
         .catch(() => {
           setToastMsg('Wallet connected but could not be saved — backend endpoint not ready yet.');
         });
     }
   }, [walletStatus, wagmiAddress, user?.walletAddress]);
-  useEffect(() => {
-    if (user?.kycStatus !== 'PENDING') return;
-    const interval = setInterval(() => {
-      dispatch(getMeThunk());
-    }, 5_000);
-    return () => clearInterval(interval);
-  }, [user?.kycStatus]);
+
   const handleLogout = async () => {
     setProfileMenuAnchor(null);
     disconnectWallet();
@@ -129,12 +123,7 @@ export default function UserDashboardHeader() {
       setKycModalOpen(false);
       dispatch(getMeThunk());
     }
-    // ← ADD: when Sumsub confirms approval, re-fetch immediately
-    if (type === 'idCheck.onApplicantStatusChanged') {
-      dispatch(getMeThunk());
-    }
   };
-
   const handleSdkError = () => {
     setToastMsg('An error occurred during verification. Please try again.');
     setKycModalOpen(false);
