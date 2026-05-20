@@ -16,6 +16,8 @@ import { getMeThunk } from '@/features/auth/authThunks';
 import { fetchAssetsThunk } from '@/features/assets/assetThunks';
 import CreateAssetModal from '@/components/assets/CreateAssetModal';
 import DraftsModal from '@/components/assets/DraftsModal';
+import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
+import type { Asset } from '@/types/asset.types';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -66,6 +68,7 @@ export default function MuseumDashboardPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [draftsOpen, setDraftsOpen] = useState(false);
+  const [auctionAsset, setAuctionAsset] = useState<Asset | null>(null);
 
   /* auth guard – step 1: ensure user data is loaded */
   useEffect(() => {
@@ -314,7 +317,7 @@ export default function MuseumDashboardPage() {
               <Table sx={{ minWidth: 500 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#fafafa', borderTop: '1px solid #f3f4f6' }}>
-                    {['Asset', 'Category', 'Valuation', 'Status', 'Jurisdiction'].map((col) => (
+                    {['Asset', 'Category', 'Valuation', 'Status', 'Jurisdiction', ''].map((col) => (
                       <TableCell key={col} sx={thCellSx}>
                         <TableSortLabel sx={{ color: '#6b7280 !important', '& .MuiTableSortLabel-icon': { color: '#6b7280 !important' } }}>
                           {col}
@@ -375,6 +378,22 @@ export default function MuseumDashboardPage() {
                           <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: '#6b7280' }}>
                             {asset.jurisdiction ?? '—'}
                           </Typography>
+                        </TableCell>
+                        <TableCell sx={{ ...tdCellSx, whiteSpace: 'nowrap' }}>
+                          <Box
+                            component="button"
+                            onClick={() => setAuctionAsset(asset)}
+                            sx={{
+                              px: 1.5, py: 0.5,
+                              bgcolor: '#ede9fe', color: '#5b21b6',
+                              border: 'none', borderRadius: '6px',
+                              fontSize: 11, fontWeight: 700,
+                              cursor: 'pointer', letterSpacing: 0.3,
+                              '&:hover': { bgcolor: '#ddd6fe' },
+                            }}
+                          >
+                            Auction
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))
@@ -496,6 +515,13 @@ export default function MuseumDashboardPage() {
         onEdit={() => {}}
         onTokenize={() => {}}
       />
+      {auctionAsset && (
+        <CreateAuctionModal
+          open={!!auctionAsset}
+          asset={auctionAsset}
+          onClose={() => setAuctionAsset(null)}
+        />
+      )}
     </>
   );
 }
