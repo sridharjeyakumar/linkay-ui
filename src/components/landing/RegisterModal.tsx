@@ -25,21 +25,21 @@ const modalEnter = keyframes`
 `;
 
 const COUNTRIES = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'NG', name: 'Nigeria' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'KE', name: 'Kenya' },
-  { code: 'GH', name: 'Ghana' },
-  { code: 'IN', name: 'India' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'BR', name: 'Brazil' },
+  { code: 'US', name: 'United States',        flag: '/flags/us.png' },
+  { code: 'GB', name: 'United Kingdom',        flag: '/flags/gb.png' },
+  { code: 'AE', name: 'United Arab Emirates',  flag: '/flags/ae.png' },
+  { code: 'NG', name: 'Nigeria',               flag: '/flags/ng.png' },
+  { code: 'ZA', name: 'South Africa',          flag: '/flags/za.png' },
+  { code: 'KE', name: 'Kenya',                 flag: '/flags/ke.png' },
+  { code: 'GH', name: 'Ghana',                 flag: '/flags/gh.png' },
+  { code: 'IN', name: 'India',                 flag: '/flags/in.png' },
+  { code: 'CA', name: 'Canada',                flag: '/flags/ca.png' },
+  { code: 'AU', name: 'Australia',             flag: '/flags/au.png' },
+  { code: 'DE', name: 'Germany',               flag: '/flags/de.png' },
+  { code: 'FR', name: 'France',                flag: '/flags/fr.png' },
+  { code: 'SG', name: 'Singapore',             flag: '/flags/sg.png' },
+  { code: 'JP', name: 'Japan',                 flag: '/flags/jp.png' },
+  { code: 'BR', name: 'Brazil',                flag: '/flags/br.png' },
 ];
 
 const ROLE_FLAGS: Record<string, { isUser: boolean; isMuseumUser: boolean; isSuperAdmin: boolean }> = {
@@ -301,14 +301,18 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                 select: {
                   displayEmpty: true,
                   IconComponent: KeyboardArrowDownRoundedIcon,
-                  renderValue: (v: unknown) =>
-                    v ? (
-                      <span style={{ color: '#0A0A0A', fontSize: '14px' }}>
-                        {COUNTRIES.find((c) => c.code === v)?.name}
+                  renderValue: (v: unknown) => {
+                    const country = COUNTRIES.find((c) => c.code === v);
+                    return country ? (
+                      <span style={{ color: '#0A0A0A', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={country.flag} alt={country.name} width={20} height={14} style={{ borderRadius: '2px', objectFit: 'cover' }} />
+                        {country.name}
                       </span>
                     ) : (
                       <span style={{ color: '#666666', fontSize: '14px' }}>Country of Residence</span>
-                    ),
+                    );
+                  },
                   MenuProps: {
                     slotProps: {
                       paper: {
@@ -327,7 +331,11 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
               }}
             >
               {COUNTRIES.map((c) => (
-                <MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>
+                <MenuItem key={c.code} value={c.code} sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.flag} alt={c.name} width={22} height={16} style={{ borderRadius: '2px', objectFit: 'cover', flexShrink: 0 }} />
+                  {c.name}
+                </MenuItem>
               ))}
             </TextField>
 

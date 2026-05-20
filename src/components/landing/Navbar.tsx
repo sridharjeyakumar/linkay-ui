@@ -206,7 +206,11 @@ export default function Navbar() {
                     onClick={(e) => {
                       if (link.href.startsWith('#')) {
                         e.preventDefault();
-                        smoothScrollTo(link.href.slice(1));
+                        if (window.location.pathname !== '/') {
+                          window.location.href = '/' + link.href;
+                        } else {
+                          smoothScrollTo(link.href.slice(1));
+                        }
                       }
                     }}
                     sx={{
@@ -317,7 +321,7 @@ export default function Navbar() {
         </Container>
       </AppBar>
 
-      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} />
+      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} onOpenRegister={() => setRegisterOpen(true)} />
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <RegisterModal
         open={registerOpen}
@@ -393,7 +397,11 @@ export default function Navbar() {
                   onClick={(e: React.MouseEvent) => {
                     if (link.href.startsWith('#')) {
                       e.preventDefault();
-                      smoothScrollTo(link.href.slice(1));
+                      if (window.location.pathname !== '/') {
+                        window.location.href = '/' + link.href;
+                      } else {
+                        smoothScrollTo(link.href.slice(1));
+                      }
                     }
                     setMobileOpen(false);
                   }}

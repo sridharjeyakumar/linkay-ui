@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
-import Link from 'next/link';
 
 const backdropFade = keyframes`
   from { opacity: 0; }
@@ -28,9 +27,10 @@ const floatBlob = keyframes`
 interface MineralModalProps {
   open: boolean;
   onClose: () => void;
+  onOpenRegister: () => void;
 }
 
-export default function MineralModal({ open, onClose }: MineralModalProps) {
+export default function MineralModal({ open, onClose, onOpenRegister }: MineralModalProps) {
   const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
@@ -158,8 +158,7 @@ export default function MineralModal({ open, onClose }: MineralModalProps) {
         {/* Button */}
         <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Button
-            component={Link}
-            href="/register"
+            onClick={() => { onClose(); onOpenRegister(); }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             startIcon={
@@ -179,8 +178,8 @@ export default function MineralModal({ open, onClose }: MineralModalProps) {
                 <Image
                   src="/landing/arrow-default.svg"
                   alt="arrow"
-                  width={16}
-                  height={16}
+                  width={25}
+                  height={25}
                   unoptimized
                   style={{
                     position: 'absolute',
@@ -192,8 +191,8 @@ export default function MineralModal({ open, onClose }: MineralModalProps) {
                 <Image
                   src="/landing/arrow-hover.svg"
                   alt="arrow"
-                  width={16}
-                  height={16}
+                  width={25}
+                  height={25}
                   unoptimized
                   style={{
                     position: 'absolute',
