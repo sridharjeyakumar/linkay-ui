@@ -79,8 +79,8 @@ builder.addCase(getMeThunk.fulfilled, (state, action) => {
   state.user = {
     ...raw,
     kycStatus: raw.kycStatus ?? raw.kyc_status ?? null,
-    is_museum_user: raw.is_museum_user ?? raw.isMuseumUser,
-    is_user: raw.is_user ?? raw.isUser,
+    is_museum_user: raw.is_museum_user ?? raw.isMuseumUser ?? (raw.role === 'MUSEUM_ADMIN'),
+    is_user: raw.is_user ?? raw.isUser ?? (raw.role === 'INVESTOR' || raw.role === 'MUSEUM_ADMIN'),
   };
 });
 builder.addCase(getMeThunk.rejected, (state) => {
