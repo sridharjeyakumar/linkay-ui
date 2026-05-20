@@ -415,7 +415,11 @@ export default function MuseumDashboardPage() {
                     <TableRow>
                       <TableCell colSpan={5} sx={{ border: 0, py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
-                          <CircularProgress size={32} thickness={3} sx={{ color: '#3b52a5' }} />
+                          <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
+                            <polygon points="24,4 44,24 24,44 4,24" stroke="#3b52a5" strokeWidth="2" fill="none" />
+                            <polygon points="24,4 44,24 24,24" stroke="#3b52a5" strokeWidth="1.5" fill="rgba(59,82,165,0.1)" />
+                            <polygon points="24,44 4,24 24,24" stroke="#3b52a5" strokeWidth="1.5" fill="rgba(59,82,165,0.15)" />
+                          </svg>
                           <Typography sx={{ color: '#3b52a5', fontWeight: 500, fontSize: { xs: 13, sm: 14 } }}>
                             Start your first tokenization draft
                           </Typography>
