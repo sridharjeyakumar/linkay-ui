@@ -68,6 +68,21 @@ export const deleteAssetThunk = createAsyncThunk(
   },
 );
 
+export const changeStatusThunk = createAsyncThunk(
+  'assets/changeStatus',
+  async ({ assetId, status }: { assetId: string; status: string }, { rejectWithValue }) => {
+    try {
+      const { data } = await assetApi.changeStatus(assetId, status);
+      return data.data ?? data;
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Failed to change asset status';
+      return rejectWithValue(msg);
+    }
+  },
+);
+
 export const previewAssetThunk = createAsyncThunk(
   'assets/preview',
   async (assetId: string, { rejectWithValue }) => {

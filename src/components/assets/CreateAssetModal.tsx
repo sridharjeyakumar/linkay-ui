@@ -11,7 +11,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
-import { createAssetThunk, updateAssetThunk, fetchAssetsThunk } from '@/features/assets/assetThunks';
+import { createAssetThunk, updateAssetThunk, fetchAssetsThunk, changeStatusThunk } from '@/features/assets/assetThunks';
 import { clearError } from '@/features/assets/assetSlice';
 import type { Asset } from '@/types/asset.types';
 
@@ -189,9 +189,9 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setCertificationRef(editAsset.certificationRef ?? '');
       setValuation(editAsset.valuation != null ? String(editAsset.valuation) : '');
       setJurisdiction(editAsset.jurisdiction ?? '');
-      setTokenizePercent(editAsset.tokenizePercentage ?? 5);
+      setTokenizePercent(editAsset.tokenizedPercent != null ? Number(editAsset.tokenizedPercent) : 5);
       setTotalFractions(editAsset.totalFractions != null ? String(editAsset.totalFractions) : '');
-      setRoyalty(editAsset.royalty ?? '');
+      setRoyalty(editAsset.royaltyPercent != null ? `${editAsset.royaltyPercent}%` : '');
       setRoyaltyWallet(editAsset.royaltyWallet ?? '');
       setThreeDFiles(editAsset.threeDFiles ?? '');
       setLiveStream(editAsset.liveStream ?? '');
@@ -248,21 +248,27 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       ...(certificationRef && { certificationRef }),
       ...(valuation        && { valuation: parseFloat(valuation) }),
       ...(jurisdiction     && { jurisdiction }),
-      tokenizePercentage: tokenizePercent,
-      ...(totalFractions   && { totalFractions: parseInt(totalFractions, 10) }),
-      ...(pricePerFraction  && { pricePerFraction: parseFloat(pricePerFraction) }),
-      ...(royalty          && { royalty }),
-      ...(royaltyWallet    && { royaltyWallet }),
+      tokenizedPercent:  tokenizePercent,
+      retainedPercent:   100 - tokenizePercent,
+      ...(totalFractions  && { totalFractions: parseInt(totalFractions, 10) }),
+      ...(pricePerFraction && { pricePerFraction: parseFloat(pricePerFraction) }),
+      ...(royalty         && { royaltyPercent: Math.round(parseFloat(royalty.replace('%', ''))) }),
+      ...(royaltyWallet   && { royaltyWallet: royaltyWallet.trim() }),
       ...(threeDFiles      && { threeDFiles }),
       ...(liveStream       && { liveStream }),
-      ...(asDraft          && { status: 'DRAFT' }),
     };
 
     try {
+      let savedId: string;
       if (editAsset) {
-        await dispatch(updateAssetThunk({ assetId: editAsset.id, payload, files: mediaFiles })).unwrap();
+        const updated = await dispatch(updateAssetThunk({ assetId: editAsset.id, payload, files: mediaFiles })).unwrap();
+        savedId = updated.id;
       } else {
-        await dispatch(createAssetThunk({ payload, files: mediaFiles })).unwrap();
+        const created = await dispatch(createAssetThunk({ payload, files: mediaFiles })).unwrap();
+        savedId = created.id;
+      }
+      if (!asDraft) {
+        await dispatch(changeStatusThunk({ assetId: savedId, status: 'REVIEW' })).unwrap();
       }
       dispatch(fetchAssetsThunk());
       onSuccess?.();
@@ -489,10 +495,24 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1.4fr 1.4fr' }, gap: 2, alignItems: 'start' }}>
                 {/* Slider */}
                 <Box>
-                  <Label required>Percentage % to Tokenize</Label>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
+                    <Label required>Percentage % to Tokenize</Label>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                      <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#3b6ef8' }}>
+                          {tokenizePercent}% tokenized
+                        </Typography>
+                      </Box>
+                      <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
+                          {100 - tokenizePercent}% retained
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
                   <Box sx={{ px: 0.5, pt: 0.5 }}>
                     <Slider
-                      value={tokenizePercent}
+                      value={Number(tokenizePercent) || 0}
                       onChange={(_, v) => setTokenizePercent(v as number)}
                       min={0} max={49} step={1}
                       sx={{
@@ -569,7 +589,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Box>
                   <Label>Royalty Wallet</Label>
                   <TextField fullWidth size="small" value={royaltyWallet}
-                    onChange={(e) => setRoyaltyWallet(e.target.value)} sx={inputSx} />
+                    onChange={(e) => setRoyaltyWallet(e.target.value.trim())} sx={inputSx} />
                 </Box>
               </Box>
             </Box>

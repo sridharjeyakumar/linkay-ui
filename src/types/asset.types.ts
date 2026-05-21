@@ -36,8 +36,9 @@ export interface Asset {
   historicalContext?: string;
   conditionReport?: string;
   certificationRef?: string;
-  tokenizePercentage?: number;
-  royalty?: string;
+  tokenizedPercent?: number;
+  retainedPercent?: number;
+  royaltyPercent?: number;
   royaltyWallet?: string;
 }
 
@@ -56,10 +57,11 @@ export interface CreateAssetPayload {
   historicalContext?: string;
   conditionReport?: string;
   certificationRef?: string;
-  tokenizePercentage?: number;
+  tokenizedPercent?: number;
+  retainedPercent?: number;
   totalFractions?: number;
   pricePerFraction?: number;
-  royalty?: string;
+  royaltyPercent?: number;
   royaltyWallet?: string;
 }
 
