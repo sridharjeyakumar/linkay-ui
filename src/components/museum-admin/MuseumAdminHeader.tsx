@@ -3,16 +3,45 @@
 import {
   AppBar, Toolbar, Box, Button, IconButton,
   Avatar, Badge, Menu, MenuItem, Divider, Tooltip, Typography,
+  Snackbar, Alert, Dialog, DialogTitle, DialogContent, CircularProgress,
   Drawer, List, ListItemButton, ListItemText, useMediaQuery, useTheme,
 } from '@mui/material';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import SumsubWebSdk from '@sumsub/websdk-react';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useAccount, useDisconnect } from 'wagmi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
-import { logoutThunk } from '@/features/auth/authThunks';
+import { logoutThunk, getMeThunk } from '@/features/auth/authThunks';
+import { initKycThunk } from '@/features/ekyc/ekycThunks';
+import { saveWalletThunk } from '@/features/wallet/walletThunks';
+
+type KycBtnConfig = { label: string; bgColor: string; clickable: boolean } | null;
+
+function kycButtonConfig(status: string | null | undefined): KycBtnConfig {
+  switch (status) {
+    case null:
+    case undefined:
+    case 'NOT_STARTED':
+      return { label: 'Complete KYC', bgColor: '#1a73e8', clickable: true };
+    case 'RESUBMIT_REQUIRED':
+      return { label: 'Resubmit KYC', bgColor: '#f59e0b', clickable: true };
+    case 'PENDING':
+      return { label: 'KYC Pending', bgColor: '#f59e0b', clickable: false };
+    case 'REJECTED':
+      return { label: 'KYC Rejected', bgColor: '#ef4444', clickable: false };
+    case 'APPROVED':
+      return null;
+    default:
+      return null;
+  }
+}
 
 const NAV_LINKS = [
   { label: 'Dashboard',  href: '/museum-dashboard' },
@@ -31,9 +60,69 @@ export default function MuseumAdminHeader() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const { user } = useAppSelector((s) => s.auth);
+  const { sdkToken, loading: kycLoading } = useAppSelector((s) => s.ekyc);
 
-  const [drawerOpen,  setDrawerOpen]  = useState(false);
-  const [menuAnchor,  setMenuAnchor]  = useState<null | HTMLElement>(null);
+  const { openConnectModal } = useConnectModal();
+  const { address: wagmiAddress, status: walletStatus } = useAccount();
+  const { disconnect: disconnectWallet } = useDisconnect();
+
+  const [drawerOpen,   setDrawerOpen]   = useState(false);
+  const [menuAnchor,   setMenuAnchor]   = useState<null | HTMLElement>(null);
+  const [toastMsg,     setToastMsg]     = useState<string | null>(null);
+  const [kycModalOpen, setKycModalOpen] = useState(false);
+
+  const connectedAddress = (walletStatus === 'connected' && wagmiAddress) ? wagmiAddress : null;
+  const shortAddress = connectedAddress
+    ? `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`
+    : null;
+
+  // Guard: disconnect if wallet doesn't belong to this admin
+  useEffect(() => {
+    if (walletStatus === 'connected' && wagmiAddress && user) {
+      const savedAddress = user.walletAddress?.toLowerCase();
+      const liveAddress = wagmiAddress.toLowerCase();
+      if (!savedAddress || savedAddress !== liveAddress) {
+        disconnectWallet();
+      }
+    }
+  }, [user?.id, walletStatus]);
+
+  // Auto-save wallet address to backend on first connect
+  useEffect(() => {
+    if (walletStatus === 'connected' && wagmiAddress && user && !user.walletAddress) {
+      dispatch(saveWalletThunk(wagmiAddress))
+        .unwrap()
+        .catch(() => {
+          setToastMsg('Wallet connected but could not be saved — please try again.');
+        });
+    }
+  }, [walletStatus, wagmiAddress, user?.walletAddress]);
+
+  const kycBtn = kycButtonConfig(user?.kycStatus ?? null);
+
+  const handleKycClick = async () => {
+    try {
+      await dispatch(initKycThunk()).unwrap();
+      setKycModalOpen(true);
+    } catch {
+      setToastMsg('Failed to start KYC. Please try again.');
+    }
+  };
+
+  const handleSdkMessage = (type: string) => {
+    if (
+      type === 'idCheck.onApplicantSubmitted' ||
+      type === 'idCheck.onApplicantResubmissionRequested'
+    ) {
+      setKycModalOpen(false);
+      dispatch(getMeThunk());
+    }
+  };
+
+  const handleSdkError = () => {
+    setToastMsg('An error occurred during verification. Please try again.');
+    setKycModalOpen(false);
+  };
 
   const displayName = user?.firstName
     ? `${user.firstName} ${user.lastName ?? ''}`.trim()
@@ -47,6 +136,7 @@ export default function MuseumAdminHeader() {
 
   const handleLogout = async () => {
     setMenuAnchor(null);
+    disconnectWallet();
     await dispatch(logoutThunk());
     router.replace('/');
   };
@@ -104,7 +194,7 @@ export default function MuseumAdminHeader() {
             </Box>
           )}
 
-          {/* Right: bell + avatar */}
+          {/* Right: bell + wallet + avatar */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'flex-end' }}>
             <Tooltip title="Notifications">
               <IconButton size="medium" sx={{ color: '#555' }}>
@@ -113,6 +203,58 @@ export default function MuseumAdminHeader() {
                 </Badge>
               </IconButton>
             </Tooltip>
+
+            {/* KYC button — desktop */}
+            {!isMobile && user && kycBtn && (
+              <Button
+                variant="contained"
+                disabled={!kycBtn.clickable || kycLoading}
+                onClick={kycBtn.clickable ? handleKycClick : undefined}
+                startIcon={kycLoading ? null : <VerifiedUserIcon sx={{ fontSize: 18 }} />}
+                sx={{
+                  bgcolor: kycBtn.bgColor,
+                  '&:hover': { bgcolor: kycBtn.bgColor, filter: 'brightness(0.92)' },
+                  '&.Mui-disabled': { bgcolor: kycBtn.bgColor, opacity: 0.7, color: '#fff' },
+                  borderRadius: 6, px: 2, py: 0.8,
+                  textTransform: 'none', fontWeight: 600, fontSize: 14,
+                  color: '#fff', minWidth: 150, boxShadow: 'none',
+                }}
+              >
+                {kycLoading ? <CircularProgress size={16} color="inherit" /> : kycBtn.label}
+              </Button>
+            )}
+
+            {/* Connect Wallet — desktop, only when KYC approved */}
+            {!isMobile && user && user.kycStatus === 'APPROVED' && (
+              shortAddress ? (
+                <Button
+                  variant="outlined"
+                  startIcon={<AccountBalanceWalletOutlinedIcon sx={{ fontSize: 16 }} />}
+                  sx={{
+                    borderRadius: 6, px: 2, py: 0.8,
+                    textTransform: 'none', fontWeight: 600, fontSize: 13,
+                    color: '#111', borderColor: '#ccc', minWidth: 160, boxShadow: 'none',
+                    '&:hover': { borderColor: '#111', bgcolor: 'transparent' },
+                  }}
+                >
+                  {shortAddress}
+                </Button>
+              ) : (
+                <Button
+                  variant="outlined"
+                  onClick={openConnectModal}
+                  startIcon={<AccountBalanceWalletOutlinedIcon sx={{ fontSize: 18 }} />}
+                  sx={{
+                    borderRadius: 6, px: 2, py: 0.8,
+                    textTransform: 'none', fontWeight: 600, fontSize: 14,
+                    color: '#111', borderColor: '#ccc', minWidth: 160, boxShadow: 'none',
+                    '&:hover': { borderColor: '#111', bgcolor: 'transparent' },
+                  }}
+                >
+                  Connect Wallet
+                </Button>
+              )
+            )}
 
             <Tooltip title={displayName}>
               <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)} sx={{ p: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -159,6 +301,56 @@ export default function MuseumAdminHeader() {
           <img src="/logo.png" alt="LinkBlockAssets" style={{ height: 40, width: 'auto' }} />
           <IconButton onClick={() => setDrawerOpen(false)}><CloseIcon /></IconButton>
         </Box>
+        {/* KYC button in drawer */}
+        {user && kycBtn && (
+          <Box sx={{ px: 2, py: 1.5 }}>
+            <Button
+              fullWidth
+              variant="contained"
+              disabled={!kycBtn.clickable || kycLoading}
+              onClick={() => { setDrawerOpen(false); if (kycBtn.clickable) handleKycClick(); }}
+              sx={{
+                bgcolor: kycBtn.bgColor,
+                '&:hover': { bgcolor: kycBtn.bgColor, filter: 'brightness(0.92)' },
+                '&.Mui-disabled': { bgcolor: kycBtn.bgColor, opacity: 0.7, color: '#fff' },
+                borderRadius: 6,
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#fff',
+                boxShadow: 'none',
+              }}
+            >
+              {kycBtn.label}
+            </Button>
+          </Box>
+        )}
+
+        {/* Connect Wallet in drawer — only when KYC approved */}
+        {user && user.kycStatus === 'APPROVED' && (
+          <Box sx={{ px: 2, py: 1.5 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<AccountBalanceWalletOutlinedIcon sx={{ fontSize: 18 }} />}
+              onClick={() => {
+                setDrawerOpen(false);
+                if (!shortAddress) openConnectModal?.();
+              }}
+              sx={{
+                borderRadius: 6,
+                textTransform: 'none',
+                fontWeight: 600,
+                color: '#111',
+                borderColor: '#ccc',
+                boxShadow: 'none',
+                '&:hover': { borderColor: '#111', bgcolor: 'transparent' },
+              }}
+            >
+              {shortAddress ?? 'Connect Wallet'}
+            </Button>
+          </Box>
+        )}
+
         <List>
           {NAV_LINKS.map(({ label, href }) => (
             <ListItemButton
@@ -174,6 +366,37 @@ export default function MuseumAdminHeader() {
           ))}
         </List>
       </Drawer>
+
+      {/* KYC Modal */}
+      <Dialog open={kycModalOpen} onClose={() => setKycModalOpen(false)} maxWidth="md" fullWidth disableScrollLock>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Identity Verification
+          <IconButton onClick={() => setKycModalOpen(false)} size="small"><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, minHeight: 500 }}>
+          {sdkToken && (
+            <SumsubWebSdk
+              accessToken={sdkToken}
+              expirationHandler={async () => {
+                const result = await dispatch(initKycThunk()).unwrap();
+                return result.sdkToken;
+              }}
+              config={{ levelName: 'id-and-liveness' }}
+              onMessage={handleSdkMessage}
+              onError={handleSdkError}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Snackbar
+        open={!!toastMsg}
+        autoHideDuration={5000}
+        onClose={() => setToastMsg(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={() => setToastMsg(null)}>{toastMsg}</Alert>
+      </Snackbar>
     </>
   );
 }
