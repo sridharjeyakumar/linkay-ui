@@ -1,0 +1,9 @@
+{
+  "title": "Built for Modern Asset Owners",
+  "cards": [
+    { "title": "Museums & Collections", "description": "Digitally expand access to historically significant assets.", "image": "/Modern_Asset/White heart icon.svg" },
+    { "title": "Private Collectors", "description": "Unlock digital investment access to premium assets.", "image": "/Modern_Asset/key icon.svg" },
+    { "title": "Real Estate Owners", "description": "Access premium properties through structured ownership.", "image": "/Modern_Asset/pin icon.svg" },
+    { "title": "Institutional Asset Holders", "description": "Enable transparent ownership distribution in a secure ecosystem.", "image": "/Modern_Asset/Metal icon-white spring.svg" }
+  ]
+}

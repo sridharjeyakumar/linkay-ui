@@ -5,7 +5,7 @@ import { Box, Typography, Container } from '@mui/material';
 import { Plus_Jakarta_Sans, Archivo, Inter } from 'next/font/google';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CheckCircle, ArrowsLeftRight, TreeStructure, CoinsIcon, SealCheckIcon, CirclesThreeIcon } from '@phosphor-icons/react';
+import { SealCheckIcon, CoinsIcon, CirclesThreeIcon } from '@phosphor-icons/react';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -26,7 +26,9 @@ const inter = Inter({
   display: 'swap',
 });
 
-export default function HeaderSection() {
+const FEATURE_ICONS = [SealCheckIcon, CoinsIcon, CirclesThreeIcon];
+
+export default function HeaderSection({ content }) {
   const [btnHovered, setBtnHovered] = useState(false);
 
   return (
@@ -38,14 +40,7 @@ export default function HeaderSection() {
         width: '100%',
       }}
     >
-      {/* ── Gradient blur backdrop (Rectangle 7056) ──
-           Figma specs:
-           width: 1614.59px, height: 296px
-           top: 217px, left: -99.72px
-           angle: 7.52deg, opacity: 0.4
-           background: linear-gradient(171.31deg, ...)
-           backdrop-filter: blur(126px)
-      ── */}
+      {/* Gradient blur backdrop */}
       <Box
         sx={{
           position: 'absolute',
@@ -62,9 +57,7 @@ export default function HeaderSection() {
         }}
       />
 
-      {/* ══════════════════════════════════════════════
-          HERO / HEADER SECTION
-      ══════════════════════════════════════════════ */}
+      {/* HERO / HEADER SECTION */}
       <Container
         maxWidth={false}
         sx={{
@@ -79,7 +72,6 @@ export default function HeaderSection() {
           pb: { xs: 6, md: 10 },
         }}
       >
-        {/* ── Heading ── */}
         <Typography
           component="h1"
           className={plusJakarta.className}
@@ -95,10 +87,9 @@ export default function HeaderSection() {
             mb: { xs: 2, md: 3 },
           }}
         >
-          Transform Real-World Assets Into Digital Ownership Opportunities
+          {content.heading}
         </Typography>
 
-        {/* ── Subtitle ── */}
         <Typography
           sx={{
             textAlign: 'center',
@@ -113,11 +104,10 @@ export default function HeaderSection() {
             mb: { xs: 3, md: 4 },
           }}
         >
-          Tokenize premium assets through a structured marketplace designed for
-          accessibility, liquidity and secure ownership participation.
+          {content.subtitle}
         </Typography>
 
-        {/* ── CTA Button ── */}
+        {/* CTA Button */}
         <Box
           component={Link}
           href="/tokenize"
@@ -135,15 +125,9 @@ export default function HeaderSection() {
             textDecoration: 'none',
             cursor: 'pointer',
             transition: 'all 0.25s ease',
-            '&:hover': {
-              bgcolor: '#1a1a1a',
-              boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-            },
+            '&:hover': { bgcolor: '#1a1a1a', boxShadow: '0 6px 20px rgba(0,0,0,0.25)' },
           }}
         >
-          
-
-          {/* Arrow circle */}
           <Box
             sx={{
               display: 'flex',
@@ -159,7 +143,6 @@ export default function HeaderSection() {
               transform: 'rotate(-48.72deg)',
             }}
           >
-            {/* Default arrow */}
             <Image
               src="/landing/arrow-default.svg"
               alt="arrow"
@@ -173,7 +156,6 @@ export default function HeaderSection() {
                 transition: 'opacity 0.2s ease, transform 0.2s ease',
               }}
             />
-            {/* Hover arrow */}
             <Image
               src="/landing/arrow-hover.svg"
               alt="arrow"
@@ -189,7 +171,6 @@ export default function HeaderSection() {
             />
           </Box>
 
-          {/* Button label */}
           <Typography
             component="span"
             sx={{
@@ -202,15 +183,12 @@ export default function HeaderSection() {
               whiteSpace: 'nowrap',
             }}
           >
-            Tokenize an Asset
+            {content.button_text}
           </Typography>
         </Box>
       </Container>
 
-      {/* ══════════════════════════════════════════════
-          WHY TOKENIZATION SECTION
-          (merged from WhyTokenization component)
-      ══════════════════════════════════════════════ */}
+      {/* WHY TOKENIZATION SECTION */}
       <Box
         sx={{
           maxWidth: '1440px',
@@ -220,7 +198,6 @@ export default function HeaderSection() {
           px: { xs: '20px', md: '0' },
         }}
       >
-        {/* ── Header Block – centered, width 1036 ── */}
         <Box
           sx={{
             width: '100%',
@@ -234,7 +211,6 @@ export default function HeaderSection() {
             gap: '15px',
           }}
         >
-          {/* WHY TOKENIZATION tag */}
           <Typography
             className={archivo.className}
             sx={{
@@ -248,10 +224,9 @@ export default function HeaderSection() {
               textTransform: 'uppercase',
             }}
           >
-            WHY TOKENIZATION
+            {content.why_tag}
           </Typography>
 
-          {/* Main heading */}
           <Typography
             component="h2"
             className={archivo.className}
@@ -264,11 +239,10 @@ export default function HeaderSection() {
               color: '#0A0A0A',
             }}
           >
-            Unlock New Value Through Asset Tokenization
+            {content.why_title}
           </Typography>
         </Box>
 
-        {/* ── Content Area – Cards LEFT + ETH RIGHT ── */}
         <Box
           sx={{
             display: 'flex',
@@ -281,7 +255,7 @@ export default function HeaderSection() {
             position: 'relative',
           }}
         >
-          {/* ── LEFT: Stacked feature cards ── */}
+          {/* LEFT: Feature cards */}
           <Box
             sx={{
               width: { xs: '100%', md: '436px' },
@@ -294,206 +268,70 @@ export default function HeaderSection() {
               zIndex: 1,
             }}
           >
-            {/* Card 1 — Increased Accessibility */}
-            <Box
-              sx={{
-                width: '100%',
-                borderRadius: '20px',
-                p: '30px',
-                display: 'flex',
-                flexDirection: 'row',
-                gap: '33px',
-                alignItems: 'flex-start',
-              }}
-            >
-              {/* Icon box */}
-              <Box
-                sx={{
-                  width: 84,
-                  minWidth: 84,
-                  height: 84,
-                  borderRadius: '10px',
-                  border: '1px solid #1E40AF',
-                  bgcolor: '#1E40AF1A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <SealCheckIcon size={32} color="#1E40AF" weight="regular" />
-              </Box>
+            {content.features.map((feature, index) => {
+              const Icon = FEATURE_ICONS[index % FEATURE_ICONS.length];
+              return (
+                <Box
+                  key={feature.title}
+                  sx={{
+                    width: '100%',
+                    borderRadius: '20px',
+                    p: '30px',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '33px',
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 84,
+                      minWidth: 84,
+                      height: 84,
+                      borderRadius: '10px',
+                      border: '1px solid #1E40AF',
+                      bgcolor: '#1E40AF1A',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon size={32} color="#1E40AF" weight="regular" />
+                  </Box>
 
-              {/* Text content */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  width: 280,
-                }}
-              >
-                <Typography
-                  className={archivo.className}
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: '24px',
-                    lineHeight: '100%',
-                    letterSpacing: '-0.03em',
-                    color: '#0A0A0A',
-                  }}
-                >
-                  Increased Accessibility
-                </Typography>
-                <Typography
-                  className={inter.className}
-                  sx={{
-                    fontWeight: 400,
-                    fontSize: '16px',
-                    lineHeight: '145%',
-                    letterSpacing: '-0.03em',
-                    color: '#737373',
-                  }}
-                >
-                  Enable broader participation through fractional ownership opportunities.
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Card 2 — Enhanced Liquidity */}
-            <Box
-              sx={{
-                width: '100%',
-                borderRadius: '20px',
-                p: '30px',
-                display: 'flex',
-                flexDirection: 'row',
-                gap: '33px',
-                alignItems: 'flex-start',
-              }}
-            >
-              {/* Icon box */}
-              <Box
-                sx={{
-                  width: 84,
-                  minWidth: 84,
-                  height: 84,
-                  borderRadius: '10px',
-                  border: '1px solid #1E40AF',
-                  bgcolor: '#1E40AF1A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <CoinsIcon size={32} color="#1E40AF" weight="regular" />
-              </Box>
-
-              {/* Text content */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  width: 280,
-                }}
-              >
-                <Typography
-                  className={archivo.className}
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: '24px',
-                    lineHeight: '100%',
-                    letterSpacing: '-0.03em',
-                    color: '#0A0A0A',
-                  }}
-                >
-                  Enhanced Liquidity
-                </Typography>
-                <Typography
-                  className={inter.className}
-                  sx={{
-                    fontWeight: 400,
-                    fontSize: '16px',
-                    lineHeight: '145%',
-                    letterSpacing: '0%',
-                    color: '#737373',
-                  }}
-                >
-                  Create marketplace activity around traditionally illiquid assets.
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Card 3 — Structured Ownership */}
-            <Box
-              sx={{
-                width: '100%',
-                borderRadius: '20px',
-                p: '30px',
-                display: 'flex',
-                flexDirection: 'row',
-                gap: '33px',
-                alignItems: 'flex-start',
-              }}
-            >
-              {/* Icon box */}
-              <Box
-                sx={{
-                  width: 84,
-                  minWidth: 84,
-                  height: 84,
-                  borderRadius: '10px',
-                  border: '1px solid #1E40AF',
-                  bgcolor: '#1E40AF1A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <CirclesThreeIcon size={32} color="#1E40AF" weight="regular" />
-              </Box>
-
-              {/* Text content */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  width: 280,
-                }}
-              >
-                <Typography
-                  className={archivo.className}
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: '24px',
-                    lineHeight: '100%',
-                    letterSpacing: '0%',
-                    color: '#0A0A0A',
-                  }}
-                >
-                  Structured Ownership
-                </Typography>
-                <Typography
-                  className={inter.className}
-                  sx={{
-                    fontWeight: 400,
-                    fontSize: '16px',
-                    lineHeight: '145%',
-                    letterSpacing: '0%',
-                    color: '#737373',
-                  }}
-                >
-                  Digitally organize and manage ownership participation with transparency.
-                </Typography>
-              </Box>
-            </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px', width: 280 }}>
+                    <Typography
+                      className={archivo.className}
+                      sx={{
+                        fontWeight: 500,
+                        fontSize: '24px',
+                        lineHeight: '100%',
+                        letterSpacing: '-0.03em',
+                        color: '#0A0A0A',
+                      }}
+                    >
+                      {feature.title}
+                    </Typography>
+                    <Typography
+                      className={inter.className}
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: '16px',
+                        lineHeight: '145%',
+                        letterSpacing: '-0.03em',
+                        color: '#737373',
+                      }}
+                    >
+                      {feature.description}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
           </Box>
 
-          {/* ── RIGHT: Floating ETH Image ── */}
+          {/* RIGHT: Floating ETH Image */}
           <Box
             sx={{
               width: { xs: '280px', md: '398px' },
@@ -501,20 +339,11 @@ export default function HeaderSection() {
               position: 'relative',
               flexShrink: 0,
               mt: { xs: '40px', md: 2 },
-
-              // Smooth floating animation
               animation: 'ethFloat 6s ease-in-out infinite',
-
               '@keyframes ethFloat': {
-                '0%': {
-                  transform: 'translateY(0px)',
-                },
-                '50%': {
-                  transform: 'translateY(-30px)',
-                },
-                '100%': {
-                  transform: 'translateY(0px)',
-                },
+                '0%': { transform: 'translateY(0px)' },
+                '50%': { transform: 'translateY(-30px)' },
+                '100%': { transform: 'translateY(0px)' },
               },
             }}
           >
@@ -522,9 +351,7 @@ export default function HeaderSection() {
               src="/ETH.svg"
               alt="Ethereum"
               fill
-              style={{
-                objectFit: 'contain',
-              }}
+              style={{ objectFit: 'contain' }}
               priority
             />
           </Box>

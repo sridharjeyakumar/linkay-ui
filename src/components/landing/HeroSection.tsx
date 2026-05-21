@@ -3,19 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Container } from '@mui/material';
 import Image from 'next/image';
+import type { HeroContent } from '@/lib/content';
 
-const CAROUSEL_IMAGES = [
-  { src: '/landing/carousel/slide-1.svg', alt: 'Museum artifacts' },
-  { src: '/landing/carousel/slide-2.svg', alt: 'Real estate property' },
-  { src: '/landing/carousel/slide-3.svg', alt: 'Minerals collection' },
-  { src: '/landing/carousel/slide-4.svg', alt: 'Premium assets' },
-];
-
-export default function HeroSection() {
+export default function HeroSection({ content }: { content: HeroContent }) {
   const [current, setCurrent] = useState(0);
   const [btnHovered, setBtnHovered] = useState(false);
 
-  const total = CAROUSEL_IMAGES.length;
+  const total = content.carousel.length;
   const getPrev = () => (current - 1 + total) % total;
   const getNext = () => (current + 1) % total;
 
@@ -65,7 +59,7 @@ export default function HeroSection() {
             letterSpacing: 0.3,
           }}
         >
-          Future of Asset Ownership
+          {content.label}
         </Typography>
 
         {/* Headline line 1 */}
@@ -81,7 +75,7 @@ export default function HeroSection() {
             letterSpacing: '-0.03em',
           }}
         >
-          Invest in Tokenized
+          {content.headline_line1}
         </Typography>
 
         {/* Headline line 2 — blue */}
@@ -98,7 +92,7 @@ export default function HeroSection() {
             mb: { xs: 2, md: 3 },
           }}
         >
-          Real World Assets
+          {content.headline_line2}
         </Typography>
 
         {/* Sub-copy */}
@@ -116,8 +110,7 @@ export default function HeroSection() {
             mb: { xs: 3, md: 4 },
           }}
         >
-          Access verified opportunities in museum artifacts, premium real estate and emerging
-          asset classes through secure digital ownership and marketplace trading
+          {content.subheading}
         </Typography>
 
         {/* Get Started Button */}
@@ -182,7 +175,7 @@ export default function HeroSection() {
               transition: 'all 0.2s ease',
             }}
           >
-            Get Started
+            {content.button_text}
           </Button>
         </Box>
 
@@ -197,7 +190,7 @@ export default function HeroSection() {
             justifyContent: 'center',
           }}
         >
-          {CAROUSEL_IMAGES.map((img, i) => {
+          {content.carousel.map((img, i) => {
             const isCenter = i === current;
             const isPrev = i === getPrev();
             const isNext = i === getNext();
@@ -235,7 +228,6 @@ export default function HeroSection() {
                   overflow: 'hidden',
                   width: { xs: 260, sm: 380, md: 520, lg: 600 },
                   height: { xs: 180, sm: 260, md: 360, lg: 420 },
-                  
                   bgcolor: '#FAFAFA',
                 }}
               >

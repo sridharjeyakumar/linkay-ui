@@ -3,6 +3,7 @@
 import { Box, Typography } from '@mui/material';
 import Image from 'next/image';
 import { Archivo, Inter } from 'next/font/google';
+import type { ModernAssetContent } from '@/lib/content';
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -17,30 +18,7 @@ const inter = Inter({
   display: 'swap',
 });
 
-const cards = [
-  {
-    title: 'Museums & Collections',
-    description: 'Digitally expand access to historically significant assets.',
-    image: '/Modern_Asset/White heart icon.svg',
-  },
-  {
-    title: 'Private Collectors',
-    description: 'Unlock digital investment access to premium assets.',
-    image: '/Modern_Asset/key icon.svg',
-  },
-  {
-    title: 'Real Estate Owners',
-    description: 'Access premium properties through structured ownership.',
-    image: '/Modern_Asset/pin icon.svg',
-  },
-  {
-    title: 'Institutional Asset Holders',
-    description: 'Enable transparent ownership distribution in a secure ecosystem.',
-    image: '/Modern_Asset/Metal icon-white spring.svg',
-  },
-];
-
-export default function ModernAsset() {
+export default function ModernAsset({ content }: { content: ModernAssetContent }) {
   return (
     <Box
       sx={{
@@ -49,19 +27,9 @@ export default function ModernAsset() {
         width: '100%',
       }}
     >
-      {/* ── 1440 container ── */}
-      <Box
-        sx={{
-          maxWidth: '1440px',
-          mx: 'auto',
-          px: { xs: '20px', md: '0' },
-        }}
-      >
-        {/* ═══════════════════════════════════════════
-            HEADING BLOCK
-            Figma: width 1196, height 100, left 122
-            → centered in 1440  (122 + 1196 + 122 = 1440)
-        ═══════════════════════════════════════════ */}
+      <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: '20px', md: '0' } }}>
+
+        {/* Heading */}
         <Box
           sx={{
             width: '100%',
@@ -86,15 +54,11 @@ export default function ModernAsset() {
               color: '#0A0A0A',
             }}
           >
-            Built for Modern Asset Owners
+            {content.title}
           </Typography>
         </Box>
 
-        {/* ═══════════════════════════════════════════
-            2×2 CARD GRID
-            Each card: 340×371, gap-x: 42px, gap-y: 8px
-            Total grid: 722px wide, centered
-        ═══════════════════════════════════════════ */}
+        {/* 2×2 Card Grid */}
         <Box
           sx={{
             display: 'flex',
@@ -112,7 +76,7 @@ export default function ModernAsset() {
               justifyContent: 'center',
             }}
           >
-            {cards.map((card, index) => (
+            {content.cards.map((card, index) => (
               <Box
                 key={index}
                 sx={{
@@ -127,15 +91,7 @@ export default function ModernAsset() {
                   boxSizing: 'border-box',
                 }}
               >
-                {/* ── Card Image: 200×200 ── */}
-                <Box
-                  sx={{
-                    width: 200,
-                    height: 200,
-                    position: 'relative',
-                    flexShrink: 0,
-                  }}
-                >
+                <Box sx={{ width: 200, height: 200, position: 'relative', flexShrink: 0 }}>
                   <Image
                     src={card.image}
                     alt={card.title}
@@ -144,7 +100,6 @@ export default function ModernAsset() {
                   />
                 </Box>
 
-                {/* ── Card Text: 280×78, gap 6px ── */}
                 <Box
                   sx={{
                     width: { xs: '100%', sm: '280px' },
@@ -163,12 +118,7 @@ export default function ModernAsset() {
                       letterSpacing: '0%',
                       textAlign: 'center',
                       color: '#0A0A0A',
-                      
-                      whiteSpace:
-      card.title === 'Institutional Asset Holders'
-        ? 'nowrap'
-        : 'normal',
-  
+                      whiteSpace: card.title === 'Institutional Asset Holders' ? 'nowrap' : 'normal',
                     }}
                   >
                     {card.title}

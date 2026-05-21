@@ -1,6 +1,7 @@
 import { Box, Typography, Container } from '@mui/material';
+import type { TransformBannerContent } from '@/lib/content';
 
-export default function TransformBanner() {
+export default function TransformBanner({ content }: { content: TransformBannerContent }) {
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: '#ffffff' }}>
       <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 } }}>
@@ -35,7 +36,7 @@ export default function TransformBanner() {
               mb: { xs: 2.5, md: 3 },
             }}
           >
-            Transforming Physical Assets into Digital Ownership
+            {content.title}
           </Typography>
 
           {/* Paragraph 1 */}
@@ -52,9 +53,7 @@ export default function TransformBanner() {
               maxWidth: 1100,
             }}
           >
-            LinkBlock Assets transforms premium real-world assets into digitally accessible
-            investment opportunities through secure fractional ownership and institutional
-            grade marketplace infrastructure.
+            {content.paragraph1}
           </Typography>
 
           {/* Paragraph 2 */}
@@ -70,10 +69,7 @@ export default function TransformBanner() {
               maxWidth: 1100,
             }}
           >
-            By combining structured tokenization with transparent trading mechanisms, the
-            platform enables broader participation, improved liquidity and seamless access
-            to historically exclusive asset classes while preserving verifiable asset
-            backed ownership.
+            {content.paragraph2}
           </Typography>
         </Box>
       </Container>
