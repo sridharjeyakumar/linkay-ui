@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, Button, Container } from '@mui/material';
+import { Box, Typography, Container } from '@mui/material';
 import Image from 'next/image';
 import type { HeroContent } from '@/lib/content';
+import ArrowButton from '@/components/ui/ArrowButton';
 
 export default function HeroSection({ content }: { content: HeroContent }) {
   const [current, setCurrent] = useState(0);
-  const [btnHovered, setBtnHovered] = useState(false);
 
   const total = content.carousel.length;
   const getPrev = () => (current - 1 + total) % total;
@@ -113,70 +113,11 @@ export default function HeroSection({ content }: { content: HeroContent }) {
           {content.subheading}
         </Typography>
 
-        {/* Get Started Button */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: { xs: 5, md: 7 } }}>
-          <Button
+          <ArrowButton
+            label={content.button_text}
             onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))}
-            onMouseEnter={() => setBtnHovered(true)}
-            onMouseLeave={() => setBtnHovered(false)}
-            startIcon={
-              <Box
-                sx={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: '#FAFAFA',
-                  borderRadius: '50%',
-                  width: 36,
-                  height: 36,
-                  flexShrink: 0,
-                }}
-              >
-                <Image
-                  src="/landing/arrow-default.svg"
-                  alt="arrow"
-                  width={20}
-                  height={20}
-                  unoptimized
-                  style={{
-                    position: 'absolute',
-                    opacity: btnHovered ? 0 : 1,
-                    transform: btnHovered ? 'scale(0.6)' : 'scale(1)',
-                    transition: 'opacity 0.15s ease, transform 0.15s ease',
-                  }}
-                />
-                <Image
-                  src="/landing/arrow-hover.svg"
-                  alt="arrow"
-                  width={20}
-                  height={20}
-                  unoptimized
-                  style={{
-                    position: 'absolute',
-                    opacity: btnHovered ? 1 : 0,
-                    transform: btnHovered ? 'scale(1)' : 'scale(0.6)',
-                    transition: 'opacity 0.15s ease, transform 0.15s ease',
-                  }}
-                />
-              </Box>
-            }
-            sx={{
-              bgcolor: '#0A0A0A',
-              color: '#FAFAFA',
-              borderRadius: '50px',
-              px: { xs: 2.5, md: 3 },
-              py: { xs: 1, md: 1.2 },
-              fontWeight: 600,
-              fontSize: { xs: '0.9rem', md: '1rem' },
-              textTransform: 'none',
-              boxShadow: 'none',
-              '&:hover': { bgcolor: '#1a1a1a', boxShadow: '0 6px 20px rgba(0,0,0,0.25)' },
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {content.button_text}
-          </Button>
+          />
         </Box>
 
         {/* Carousel */}
