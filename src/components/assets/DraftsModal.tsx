@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TableSortLabel, Typography,
 } from '@mui/material';
-import BoltIcon from '@mui/icons-material/Bolt';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useAppSelector } from '@/store/hooks/useAppDispatch';
 import type { Asset } from '@/types/asset.types';
 
@@ -34,7 +34,7 @@ interface Props {
   onTokenize: (asset: Asset) => void;
 }
 
-export default function DraftsModal({ open, onClose, onEdit: _onEdit, onTokenize }: Props) {
+export default function DraftsModal({ open, onClose, onEdit, onTokenize: _onTokenize }: Props) {
   const { assets } = useAppSelector((s) => s.assets);
   const drafts = assets.filter((a) => a.status === 'DRAFT');
 
@@ -113,11 +113,11 @@ export default function DraftsModal({ open, onClose, onEdit: _onEdit, onTokenize
                       <Button
                         size="small"
                         variant="contained"
-                        startIcon={<BoltIcon sx={{ fontSize: '14px !important' }} />}
-                        onClick={() => onTokenize(asset)}
+                        startIcon={<EditOutlinedIcon sx={{ fontSize: '14px !important' }} />}
+                        onClick={() => { onClose(); onEdit(asset); }}
                         sx={{
-                          bgcolor: '#f59e0b',
-                          '&:hover': { bgcolor: '#d97706' },
+                          bgcolor: '#3b6ef8',
+                          '&:hover': { bgcolor: '#2d5fe8' },
                           fontSize: 12,
                           px: 2,
                           py: 0.75,
@@ -126,7 +126,7 @@ export default function DraftsModal({ open, onClose, onEdit: _onEdit, onTokenize
                           boxShadow: 'none',
                         }}
                       >
-                        Tokenize
+                        Edit
                       </Button>
                     </TableCell>
                   </TableRow>
