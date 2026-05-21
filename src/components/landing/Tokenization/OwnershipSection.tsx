@@ -173,8 +173,8 @@ export default function OwnershipSection({ content }: { content: FaqContent }) {
               flexShrink: 0,
             }}
           >
-            <ArrowButton label={content.cta_button_primary} href="/tokenize" />
-            <OutlineButton label={content.cta_button_secondary} href="/list-asset" />
+            <ArrowButton label={content.cta_button_primary} onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))} />
+            <OutlineButton label={content.cta_button_secondary} onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))}/>
           </Box>
         </Box>
       </Box>
