@@ -9,9 +9,10 @@ interface Props {
   onCancel: () => void;
   onConfirm: () => void;
   loading?: boolean;
+  error?: string | null;
 }
 
-export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading }: Props) {
+export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error }: Props) {
   return (
     <Dialog
       open={open}
@@ -57,6 +58,12 @@ export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading }: Pro
           You are about to schedule this auction for investors. Once the auction goes live, pricing,
           allocation, and timing settings cannot be edited.
         </Typography>
+
+        {error && (
+          <Typography sx={{ mt: 1.5, fontSize: 13, color: '#dc2626', fontWeight: 600 }}>
+            {error}
+          </Typography>
+        )}
       </Box>
 
       {/* Footer */}

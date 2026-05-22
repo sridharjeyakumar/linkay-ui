@@ -40,6 +40,9 @@ export interface Asset {
   retainedPercent?: number;
   royaltyPercent?: number;
   royaltyWallet?: string;
+  tokenization?: {
+    tokenizationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  } | null;
 }
 
 export interface CreateAssetPayload {
