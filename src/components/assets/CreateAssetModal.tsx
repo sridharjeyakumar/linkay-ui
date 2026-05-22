@@ -19,14 +19,16 @@ import type { Asset } from '@/types/asset.types';
 
 function parseMediaFiles(raw: unknown): string[] {
   if (!raw) return [];
-  if (Array.isArray(raw)) return (raw as string[]).filter(Boolean);
-  if (typeof raw === 'string') {
+  let arr: string[] = [];
+  if (Array.isArray(raw)) {
+    arr = (raw as string[]).filter(Boolean);
+  } else if (typeof raw === 'string') {
     try {
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      arr = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
     } catch { return []; }
   }
-  return [];
+  return arr.filter(Boolean);
 }
 
 function countWords(text: string): number {
@@ -191,7 +193,11 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setJurisdiction(editAsset.jurisdiction ?? '');
       setTokenizePercent(editAsset.tokenizedPercent != null ? Number(editAsset.tokenizedPercent) : 5);
       setTotalFractions(editAsset.totalFractions != null ? String(editAsset.totalFractions) : '');
-      setRoyalty(editAsset.royaltyPercent != null ? `${editAsset.royaltyPercent}%` : '');
+      setRoyalty(
+        editAsset.royaltyPercent != null
+          ? (ROYALTY_OPTIONS.find((o) => parseFloat(o) === Number(editAsset.royaltyPercent)) ?? `${editAsset.royaltyPercent}%`)
+          : ''
+      );
       setRoyaltyWallet(editAsset.royaltyWallet ?? '');
       setThreeDFiles(editAsset.threeDFiles ?? '');
       setLiveStream(editAsset.liveStream ?? '');
@@ -252,7 +258,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       retainedPercent:   100 - tokenizePercent,
       ...(totalFractions  && { totalFractions: parseInt(totalFractions, 10) }),
       ...(pricePerFraction && { pricePerFraction: parseFloat(pricePerFraction) }),
-      ...(royalty         && { royaltyPercent: Math.round(parseFloat(royalty.replace('%', ''))) }),
+      ...(royalty         && { royaltyPercent: parseFloat(royalty.replace('%', '')) }),
       ...(royaltyWallet   && { royaltyWallet: royaltyWallet.trim() }),
       ...(threeDFiles      && { threeDFiles }),
       ...(liveStream       && { liveStream }),
@@ -820,10 +826,12 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             <CloseIcon />
           </IconButton>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightboxSrc ?? ''} alt="Preview"
-            style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 12, display: 'block', objectFit: 'contain' }}
-          />
+          {lightboxSrc && (
+            <img
+              src={lightboxSrc} alt="Preview"
+              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 12, display: 'block', objectFit: 'contain' }}
+            />
+          )}
         </Box>
       </Dialog>
     </>
