@@ -38,6 +38,7 @@ export interface CreateAuctionModalProps {
 }
 
 export interface AuctionDraftData {
+  assetId: string;
   auctionTitle: string;
   auctionDescription: string;
   pricing: SupplyPricingValues;
@@ -89,6 +90,7 @@ export function CreateAuctionModal({
 }: CreateAuctionModalProps) {
   const [view, setView] = useState<View>('step1');
   const [submitting, setSubmitting] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   // Step 1
   const [auctionTitle, setAuctionTitle] = useState('');
@@ -123,15 +125,19 @@ export function CreateAuctionModal({
   }
 
   function handleSaveDraft() {
-    onSaveDraft?.({ auctionTitle, auctionDescription, pricing });
+    onSaveDraft?.({ assetId: asset.id, auctionTitle, auctionDescription, pricing });
   }
 
   async function handleConfirmSchedule() {
     if (!onSchedule) { setView('success'); return; }
     setSubmitting(true);
+    setScheduleError(null);
     try {
-      await onSchedule({ auctionTitle, auctionDescription, pricing, schedule });
+      await onSchedule({ assetId: asset.id, auctionTitle, auctionDescription, pricing, schedule });
       setView('success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to schedule auction';
+      setScheduleError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -339,6 +345,7 @@ export function CreateAuctionModal({
       <AuctionConfirmDialog
         open={open && view === 'confirm'}
         loading={submitting}
+        error={scheduleError}
         onCancel={() => setView('schedule')}
         onConfirm={handleConfirmSchedule}
       />
