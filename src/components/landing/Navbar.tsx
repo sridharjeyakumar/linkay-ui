@@ -16,10 +16,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useScrollTrigger } from '@mui/material';
 import { usePathname } from 'next/navigation';
-import MineralModal from './MineralModal';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
-import type { NavbarContent, MineralModalContent } from '@/lib/content';
+import { useRouter } from 'next/navigation';
+import type { NavbarContent } from '@/lib/content';
 
 const ICON_MAP: Record<string, Icon> = {
   bank: Bank,
@@ -46,16 +46,15 @@ function smoothScrollTo(id: string, duration = 1500) {
 
 interface NavbarProps {
   content: NavbarContent;
-  mineralModal: MineralModalContent;
 }
 
-export default function Navbar({ content, mineralModal }: NavbarProps) {
+export default function Navbar({ content }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<Record<string, HTMLElement | null>>({});
   const [registerHovered, setRegisterHovered] = useState(false);
-  const [mineralOpen, setMineralOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
 
@@ -157,7 +156,7 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                             <MenuItem
                               onClick={() => {
                                 closeDropdown(link.label);
-                                if (item.label === 'Minerals') setMineralOpen(true);
+                                if (item.label === 'Minerals') router.push('/asset-class/minerals');
                               }}
                               sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
                             >
@@ -312,7 +311,6 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
         </Container>
       </AppBar>
 
-      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} onOpenRegister={() => setRegisterOpen(true)} content={mineralModal} />
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <RegisterModal
         open={registerOpen}
@@ -363,7 +361,7 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                           sx={{ pl: 4 }}
                           onClick={() => {
                             setMobileOpen(false);
-                            if (item.label === 'Minerals') setMineralOpen(true);
+                            if (item.label === 'Minerals') router.push('/asset-class/minerals');
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
