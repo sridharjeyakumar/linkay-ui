@@ -122,6 +122,7 @@ export default function MuseumDashboardPage() {
   const [draftsOpen,    setDraftsOpen]    = useState(false);
   const [editAsset,     setEditAsset]     = useState<Asset | null>(null);
   const [auctionAsset,  setAuctionAsset]  = useState<Asset | null>(null);
+  const [scheduledAssets, setScheduledAssets] = useState<Set<string>>(new Set());
   const [confirmAsset,  setConfirmAsset]  = useState<Asset | null>(null);
   const [statusFilter,  setStatusFilter]  = useState<string | null>(null);
   const [snack,         setSnack]         = useState<{ msg: string; severity: 'success'|'error'|'info' } | null>(null);
@@ -265,6 +266,7 @@ export default function MuseumDashboardPage() {
   async function handleAuctionSchedule(data: AuctionScheduleData) {
     const result = await dispatch(createAuctionThunk(buildAuctionPayload(data.assetId, data) as Parameters<typeof createAuctionThunk>[0]));
     if (createAuctionThunk.fulfilled.match(result)) {
+      setScheduledAssets(prev => new Set(prev).add(data.assetId));
       setSnack({ msg: 'Auction scheduled successfully!', severity: 'success' });
     } else {
       throw new Error(String(result.payload ?? 'Failed to schedule auction'));
@@ -523,9 +525,17 @@ export default function MuseumDashboardPage() {
                                 </Box>
                               )}
                               {isTokenized && !isTokenizing && (
-                                <Box component="button" onClick={() => setAuctionAsset(asset)}
-                                  sx={{ ...btnBase, bgcolor: '#ede9fe', color: '#5b21b6', '&:hover': { bgcolor: '#ddd6fe' } }}>
-                                  Auction
+                                <Box component="button"
+                                  onClick={() => !scheduledAssets.has(asset.id) && setAuctionAsset(asset)}
+                                  disabled={scheduledAssets.has(asset.id)}
+                                  sx={{
+                                    ...btnBase,
+                                    bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ede9fe',
+                                    color: scheduledAssets.has(asset.id) ? '#9ca3af' : '#5b21b6',
+                                    cursor: scheduledAssets.has(asset.id) ? 'not-allowed' : 'pointer',
+                                    '&:hover': { bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ddd6fe' },
+                                  }}>
+                                  {scheduledAssets.has(asset.id) ? 'Scheduled' : 'Auction'}
                                 </Box>
                               )}
                             </Box>
