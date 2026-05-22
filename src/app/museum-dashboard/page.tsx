@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert, Box, Chip, CircularProgress, Paper, Snackbar, Table, TableBody,
+  Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
+  DialogTitle, Paper, Snackbar, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TableSortLabel,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
@@ -14,11 +15,12 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { getMeThunk } from '@/features/auth/authThunks';
 import { fetchAssetsThunk, changeStatusThunk } from '@/features/assets/assetThunks';
+import { createAuctionThunk, saveDraftAuctionThunk } from '@/features/auction/auctionThunks';
 import { loadStoredJobs, clearError } from '@/features/tokenization/tokenizationSlice';
 import { initiateTokenizationThunk, pollJobStatusThunk } from '@/features/tokenization/tokenizationThunks';
 import CreateAssetModal from '@/components/assets/CreateAssetModal';
 import DraftsModal from '@/components/assets/DraftsModal';
-import { CreateAuctionModal } from '@/components/auction/CreateAuctionModal';
+import { CreateAuctionModal, type AuctionDraftData, type AuctionScheduleData } from '@/components/auction/CreateAuctionModal';
 import type { Asset } from '@/types/asset.types';
 import type { TokenizationJob } from '@/types/tokenization.types';
 
@@ -116,13 +118,16 @@ export default function MuseumDashboardPage() {
   const { assets }                        = useAppSelector((s) => s.assets);
   const { jobs, loading: tkLoading, error: tkError } = useAppSelector((s) => s.tokenization);
 
-  const [createOpen,   setCreateOpen]   = useState(false);
-  const [draftsOpen,   setDraftsOpen]   = useState(false);
-  const [editAsset,    setEditAsset]    = useState<Asset | null>(null);
-  const [auctionAsset, setAuctionAsset] = useState<Asset | null>(null);
-  const [snack,        setSnack]        = useState<{ msg: string; severity: 'success'|'error'|'info' } | null>(null);
+  const [createOpen,    setCreateOpen]    = useState(false);
+  const [draftsOpen,    setDraftsOpen]    = useState(false);
+  const [editAsset,     setEditAsset]     = useState<Asset | null>(null);
+  const [auctionAsset,  setAuctionAsset]  = useState<Asset | null>(null);
+  const [confirmAsset,  setConfirmAsset]  = useState<Asset | null>(null);
+  const [statusFilter,  setStatusFilter]  = useState<string | null>(null);
+  const [snack,         setSnack]         = useState<{ msg: string; severity: 'success'|'error'|'info' } | null>(null);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevJobsRef = useRef<typeof jobs>([]);
 
   /* auth guard */
   useEffect(() => {
@@ -140,6 +145,22 @@ export default function MuseumDashboardPage() {
       dispatch(loadStoredJobs());
     }
   }, [user?.id]);
+
+  /* re-fetch assets when any job transitions to completed/failed */
+  useEffect(() => {
+    const justFinished = jobs.filter((j) => {
+      const prev = prevJobsRef.current.find((p) => p.jobId === j.jobId);
+      return (j.status === 'completed' || j.status === 'failed') && prev?.status !== j.status;
+    });
+    if (justFinished.length > 0) {
+      dispatch(fetchAssetsThunk());
+      const completed = justFinished.filter((j) => j.status === 'completed');
+      if (completed.length > 0) {
+        setSnack({ msg: `"${completed[0].assetTitle ?? 'Asset'}" tokenization complete!`, severity: 'success' });
+      }
+    }
+    prevJobsRef.current = jobs;
+  }, [jobs]);
 
   /* poll active jobs every 4 seconds */
   useEffect(() => {
@@ -174,16 +195,19 @@ export default function MuseumDashboardPage() {
   }
 
   /* ── handlers ── */
-  async function handleTokenize(asset: Asset) {
-    if (asset.status !== 'LIVE') {
-      setSnack({ msg: 'Asset must be LIVE to tokenize. Change status to REVIEW → LIVE first.', severity: 'info' });
-      return;
-    }
+  function handleTokenizeClick(asset: Asset) {
     const existing = jobs.find((j) => j.assetId === asset.id && (j.status === 'pending' || j.status === 'processing'));
     if (existing) {
       setSnack({ msg: 'Tokenization already in progress for this asset.', severity: 'info' });
       return;
     }
+    setConfirmAsset(asset);
+  }
+
+  async function handleTokenizeConfirm() {
+    if (!confirmAsset) return;
+    const asset = confirmAsset;
+    setConfirmAsset(null);
     const result = await dispatch(initiateTokenizationThunk(asset));
     if (initiateTokenizationThunk.fulfilled.match(result)) {
       setSnack({ msg: `Tokenization started for "${asset.title}"`, severity: 'success' });
@@ -200,10 +224,69 @@ export default function MuseumDashboardPage() {
     }
   }
 
+  function buildAuctionPayload(assetId: string, data: AuctionScheduleData | AuctionDraftData) {
+    const p = data.pricing;
+    return {
+      assetId,
+      title:              data.auctionTitle,
+      description:        data.auctionDescription || undefined,
+      fractionsAllocated: Number(p.fractionsAllocated),
+      minPurchaseQty:     Number(p.minPurchaseQty),
+      maxPurchaseQty:     Number(p.maxPurchaseQty),
+      startingBidPrice:   Number(p.startingBidPrice),
+      reservePrice:       Number(p.reservePrice),
+      minIncrement:       Number(p.minIncrement),
+      ...('schedule' in data ? {
+        startDate:     data.schedule.startDate,
+        startTime:     data.schedule.startTime,
+        endDate:       data.schedule.endDate,
+        endTime:       data.schedule.endTime,
+        timezone:      data.schedule.timezone,
+        showCountdown: data.schedule.showCountdown,
+      } : {
+        startDate: '', startTime: '', endDate: '', endTime: '',
+        timezone: 'UTC', showCountdown: true,
+      }),
+    };
+  }
+
+  function handleAuctionSaveDraft(data: AuctionDraftData) {
+    dispatch(saveDraftAuctionThunk(buildAuctionPayload(data.assetId, data) as Parameters<typeof saveDraftAuctionThunk>[0]))
+      .then((result) => {
+        if (saveDraftAuctionThunk.fulfilled.match(result)) {
+          setSnack({ msg: 'Auction saved as draft.', severity: 'success' });
+          setAuctionAsset(null);
+        } else {
+          setSnack({ msg: String(result.payload ?? 'Failed to save draft'), severity: 'error' });
+        }
+      });
+  }
+
+  async function handleAuctionSchedule(data: AuctionScheduleData) {
+    const result = await dispatch(createAuctionThunk(buildAuctionPayload(data.assetId, data) as Parameters<typeof createAuctionThunk>[0]));
+    if (createAuctionThunk.fulfilled.match(result)) {
+      setSnack({ msg: 'Auction scheduled successfully!', severity: 'success' });
+    } else {
+      throw new Error(String(result.payload ?? 'Failed to schedule auction'));
+    }
+  }
+
+  const isAssetTokenized = (a: typeof assets[0]) =>
+    a.tokenization?.tokenizationStatus === 'COMPLETED';
+
   /* derived counts */
   const drafts    = assets.filter((a) => a.status === 'DRAFT');
-  const published = assets.filter((a) => a.status === 'PUBLISHED');
-  const tokenized = assets.filter((a) => a.status === 'TOKENIZED');
+  const published = assets.filter((a) => a.status === 'REVIEW' || (a.status === 'LIVE' && !isAssetTokenized(a)));
+  const tokenized = assets.filter((a) => a.status === 'LIVE' && isAssetTokenized(a));
+
+  const filteredAssets = statusFilter
+    ? assets.filter((a) => {
+        if (statusFilter === 'DRAFT')     return a.status === 'DRAFT';
+        if (statusFilter === 'PUBLISHED') return a.status === 'REVIEW' || (a.status === 'LIVE' && !isAssetTokenized(a));
+        if (statusFilter === 'TOKENIZED') return a.status === 'LIVE' && isAssetTokenized(a);
+        return true;
+      })
+    : assets;
 
   const totalValue    = assets.reduce((s, a) => s + (Number(a.valuation) || 0), 0);
   const fractionsSold = assets.reduce((s, a) => s + (Number(a.fractionsSold) || 0), 0);
@@ -219,32 +302,32 @@ export default function MuseumDashboardPage() {
       icon: <AddBoxOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#3b82f6', flexShrink: 0 }} />,
       label: 'CREATE ASSET',
       sub: 'Create a new real world asset',
-      onClick: () => setCreateOpen(true),
-      active: true,
+      onClick: () => { setStatusFilter(null); setCreateOpen(true); },
+      filter: null,
     },
     {
       key: 'drafts',
       icon: <DraftsOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#f59e0b', flexShrink: 0 }} />,
       label: 'DRAFTS',
       sub: drafts.length ? `${drafts.length} asset${drafts.length > 1 ? 's' : ''} in drafts` : 'No assets in drafts',
-      onClick: () => setDraftsOpen(true),
-      active: false,
+      onClick: () => setStatusFilter(statusFilter === 'DRAFT' ? null : 'DRAFT'),
+      filter: 'DRAFT',
     },
     {
       key: 'published',
       icon: <FolderOpenOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#d97706', flexShrink: 0 }} />,
       label: 'PUBLISHED',
       sub: published.length ? `${published.length} published asset${published.length > 1 ? 's' : ''}` : 'No published assets',
-      onClick: undefined,
-      active: false,
+      onClick: () => setStatusFilter(statusFilter === 'PUBLISHED' ? null : 'PUBLISHED'),
+      filter: 'PUBLISHED',
     },
     {
       key: 'tokenized',
       icon: <TokenOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#10b981', flexShrink: 0 }} />,
       label: 'TOKENIZED',
       sub: tokenized.length ? `${tokenized.length} tokenized asset${tokenized.length > 1 ? 's' : ''}` : 'No tokenized assets',
-      onClick: undefined,
-      active: false,
+      onClick: () => setStatusFilter(statusFilter === 'TOKENIZED' ? null : 'TOKENIZED'),
+      filter: 'TOKENIZED',
     },
   ];
 
@@ -311,26 +394,30 @@ export default function MuseumDashboardPage() {
 
           {/* Action stat cards */}
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 } }}>
-            {statCards.map((card) => (
-              <Paper key={card.key} elevation={0} onClick={card.onClick} sx={{
-                p: { xs: '10px 12px', sm: 2 }, borderRadius: { xs: 2, sm: 3 },
-                border: card.active ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-                cursor: card.onClick ? 'pointer' : 'default',
-                display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 },
-                bgcolor: '#fff', minWidth: 0, overflow: 'hidden', transition: 'box-shadow 0.15s',
-                '&:hover': card.onClick ? { boxShadow: '0 2px 12px rgba(0,0,0,0.08)' } : {},
-              }}>
-                <Box sx={{ flexShrink: 0, display: 'flex' }}>{card.icon}</Box>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontSize: { xs: 9, sm: 11, md: 12 }, fontWeight: 700, color: card.active ? '#3b82f6' : '#374151', letterSpacing: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {card.label}
-                  </Typography>
-                  <Typography sx={{ fontSize: { xs: 9, sm: 11, md: 12 }, color: '#6b7280', mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                    {card.sub}
-                  </Typography>
-                </Box>
-              </Paper>
-            ))}
+            {statCards.map((card) => {
+              const isActive = card.filter ? statusFilter === card.filter : false;
+              return (
+                <Paper key={card.key} elevation={0} onClick={card.onClick} sx={{
+                  p: { xs: '10px 12px', sm: 2 }, borderRadius: { xs: 2, sm: 3 },
+                  border: isActive ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 },
+                  bgcolor: isActive ? '#eff6ff' : '#fff',
+                  minWidth: 0, overflow: 'hidden', transition: 'all 0.15s',
+                  '&:hover': { boxShadow: '0 2px 12px rgba(0,0,0,0.08)' },
+                }}>
+                  <Box sx={{ flexShrink: 0, display: 'flex' }}>{card.icon}</Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: { xs: 9, sm: 11, md: 12 }, fontWeight: 700, color: isActive ? '#3b82f6' : '#374151', letterSpacing: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {card.label}
+                    </Typography>
+                    <Typography sx={{ fontSize: { xs: 9, sm: 11, md: 12 }, color: '#6b7280', mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                      {card.sub}
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
           </Box>
 
           {/* ── Recent Assets table ── */}
@@ -356,7 +443,7 @@ export default function MuseumDashboardPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {assets.length === 0 ? (
+                  {filteredAssets.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} sx={{ border: 0, py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
@@ -366,16 +453,17 @@ export default function MuseumDashboardPage() {
                             <polygon points="24,44 4,24 24,24" stroke="#3b52a5" strokeWidth="1.5" fill="rgba(59,82,165,0.15)" />
                           </svg>
                           <Typography sx={{ color: '#3b52a5', fontWeight: 500, fontSize: { xs: 13, sm: 14 } }}>
-                            Start your first tokenization draft
+                            {statusFilter ? `No ${statusFilter.toLowerCase()} assets` : 'Start your first tokenization draft'}
                           </Typography>
                         </Box>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    assets.map((asset) => {
+                    filteredAssets.map((asset) => {
                       const isDraft      = asset.status === 'DRAFT';
                       const isLive       = asset.status === 'LIVE';
                       const isReview     = asset.status === 'REVIEW';
+                      const isTokenized  = isLive && isAssetTokenized(asset);
                       const activeJob    = jobs.find((j) => j.assetId === asset.id && (j.status === 'pending' || j.status === 'processing'));
                       const isTokenizing = !!activeJob;
 
@@ -394,8 +482,13 @@ export default function MuseumDashboardPage() {
                             <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: '#374151' }}>{fmt(asset.valuation)}</Typography>
                           </TableCell>
                           <TableCell sx={tdCellSx}>
-                            <Chip label={asset.status} size="small"
-                              sx={{ bgcolor: STATUS_COLORS[asset.status]?.bg ?? '#f3f4f6', color: STATUS_COLORS[asset.status]?.color ?? '#374151', fontWeight: 600, fontSize: { xs: 10, sm: 11 } }} />
+                            {(() => {
+                              const displayStatus = asset.status;
+                              return (
+                                <Chip label={displayStatus} size="small"
+                                  sx={{ bgcolor: STATUS_COLORS[displayStatus]?.bg ?? '#f3f4f6', color: STATUS_COLORS[displayStatus]?.color ?? '#374151', fontWeight: 600, fontSize: { xs: 10, sm: 11 } }} />
+                              );
+                            })()}
                           </TableCell>
                           <TableCell sx={{ ...tdCellSx, whiteSpace: 'nowrap' }}>
                             <Typography sx={{ fontSize: { xs: 12, sm: 13 }, color: '#6b7280' }}>{asset.jurisdiction ?? '—'}</Typography>
@@ -410,18 +503,12 @@ export default function MuseumDashboardPage() {
                               )}
                               {isReview && (
                                 <Box component="button" onClick={() => handleSetLive(asset)}
-                                  sx={{
-                                    ...btnBase,
-                                    bgcolor: '#dbeafe',
-                                    color: '#1d4ed8',
-                                    '&:hover': { bgcolor: '#bfdbfe' },
-                                  }}
-                                >
+                                  sx={{ ...btnBase, bgcolor: '#dbeafe', color: '#1d4ed8', '&:hover': { bgcolor: '#bfdbfe' } }}>
                                   Set Live
                                 </Box>
                               )}
-                              {isLive && (
-                                <Box component="button" onClick={() => handleTokenize(asset)}
+                              {isLive && !isTokenized && (
+                                <Box component="button" onClick={() => handleTokenizeClick(asset)}
                                   disabled={isTokenizing || tkLoading}
                                   sx={{
                                     ...btnBase,
@@ -435,10 +522,12 @@ export default function MuseumDashboardPage() {
                                   {isTokenizing ? 'Minting…' : 'Tokenize'}
                                 </Box>
                               )}
-                              <Box component="button" onClick={() => setAuctionAsset(asset)}
-                                sx={{ ...btnBase, bgcolor: '#ede9fe', color: '#5b21b6', '&:hover': { bgcolor: '#ddd6fe' } }}>
-                                Auction
-                              </Box>
+                              {isTokenized && !isTokenizing && (
+                                <Box component="button" onClick={() => setAuctionAsset(asset)}
+                                  sx={{ ...btnBase, bgcolor: '#ede9fe', color: '#5b21b6', '&:hover': { bgcolor: '#ddd6fe' } }}>
+                                  Auction
+                                </Box>
+                              )}
                             </Box>
                           </TableCell>
                         </TableRow>
@@ -546,6 +635,28 @@ export default function MuseumDashboardPage() {
 
       </Box>
 
+      {/* Confirmation dialog – Tokenize */}
+      <Dialog open={!!confirmAsset} onClose={() => setConfirmAsset(null)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 16 }}>Confirm Tokenization</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 14, color: '#374151' }}>
+            Are you sure you want to tokenize <strong>&quot;{confirmAsset?.title}&quot;</strong>?
+            This will deploy smart contracts on the blockchain and cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={() => setConfirmAsset(null)}
+            variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', borderColor: '#d1d5db', color: '#374151' }}>
+            Cancel
+          </Button>
+          <Button onClick={handleTokenizeConfirm}
+            variant="contained" sx={{ borderRadius: 2, textTransform: 'none', bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}>
+            Yes, Tokenize
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Modals */}
       <CreateAssetModal open={createOpen} onClose={() => setCreateOpen(false)} onSuccess={() => dispatch(fetchAssetsThunk())} />
       <DraftsModal
@@ -554,7 +665,7 @@ export default function MuseumDashboardPage() {
         onEdit={(asset) => setEditAsset(asset)}
         onTokenize={(asset) => {
           setDraftsOpen(false);
-          handleTokenize(asset);
+          setConfirmAsset(asset);
         }}
       />
       <CreateAssetModal
@@ -564,7 +675,13 @@ export default function MuseumDashboardPage() {
         onSuccess={() => { setEditAsset(null); dispatch(fetchAssetsThunk()); }}
       />
       {auctionAsset && (
-        <CreateAuctionModal open={!!auctionAsset} asset={auctionAsset} onClose={() => setAuctionAsset(null)} />
+        <CreateAuctionModal
+          open={!!auctionAsset}
+          asset={auctionAsset}
+          onClose={() => setAuctionAsset(null)}
+          onSaveDraft={handleAuctionSaveDraft}
+          onSchedule={handleAuctionSchedule}
+        />
       )}
 
       {/* Snackbar */}
