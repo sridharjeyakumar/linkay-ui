@@ -21,6 +21,7 @@ import { initiateTokenizationThunk, pollJobStatusThunk } from '@/features/tokeni
 import CreateAssetModal from '@/components/assets/CreateAssetModal';
 import DraftsModal from '@/components/assets/DraftsModal';
 import { CreateAuctionModal, type AuctionDraftData, type AuctionScheduleData } from '@/components/auction/CreateAuctionModal';
+import { auctionApi } from '@/api/auctionApi';
 import type { Asset } from '@/types/asset.types';
 import type { TokenizationJob } from '@/types/tokenization.types';
 
@@ -144,6 +145,10 @@ export default function MuseumDashboardPage() {
     } else {
       dispatch(fetchAssetsThunk());
       dispatch(loadStoredJobs());
+      auctionApi.list({ status: 'SCHEDULED' }).then((res) => {
+        const ids = new Set<string>(res.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []);
+        setScheduledAssets(ids);
+      }).catch(() => {});
     }
   }, [user?.id]);
 
