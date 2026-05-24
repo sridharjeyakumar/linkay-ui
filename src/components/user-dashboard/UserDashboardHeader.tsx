@@ -81,9 +81,8 @@ export default function UserDashboardHeader() {
     if (walletStatus === 'connected' && wagmiAddress && user) {
       const savedAddress = user.walletAddress?.toLowerCase();
       const liveAddress = wagmiAddress.toLowerCase();
-      if (!savedAddress || savedAddress !== liveAddress) {
+      if (savedAddress && savedAddress !== liveAddress) {
         disconnectWallet();
-
       }
     }
   }, [user?.id, walletStatus]);

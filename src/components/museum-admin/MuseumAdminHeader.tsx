@@ -81,7 +81,7 @@ export default function MuseumAdminHeader() {
     if (walletStatus === 'connected' && wagmiAddress && user) {
       const savedAddress = user.walletAddress?.toLowerCase();
       const liveAddress = wagmiAddress.toLowerCase();
-      if (!savedAddress || savedAddress !== liveAddress) {
+      if (savedAddress && savedAddress !== liveAddress) {
         disconnectWallet();
       }
     }
