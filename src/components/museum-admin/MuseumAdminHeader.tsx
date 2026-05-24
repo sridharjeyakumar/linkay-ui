@@ -103,6 +103,7 @@ export default function MuseumAdminHeader() {
   const handleKycClick = async () => {
     try {
       await dispatch(initKycThunk()).unwrap();
+      dispatch(getMeThunk());
       setKycModalOpen(true);
     } catch {
       setToastMsg('Failed to start KYC. Please try again.');
