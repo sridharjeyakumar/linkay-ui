@@ -33,7 +33,7 @@ function kycButtonConfig(status: string | null | undefined): KycBtnConfig {
     case 'RESUBMIT_REQUIRED':
       return { label: 'Resubmit KYC', bgColor: '#f59e0b', clickable: true };
     case 'PENDING':
-      return { label: 'KYC Pending', bgColor: '#f59e0b', clickable: false };
+      return { label: 'KYC Pending', bgColor: '#f59e0b', clickable: true };
     case 'REJECTED':
       return { label: 'KYC Rejected', bgColor: '#ef4444', clickable: false };
     case 'APPROVED':
