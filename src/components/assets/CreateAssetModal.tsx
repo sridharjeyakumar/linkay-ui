@@ -10,6 +10,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import IosShareIcon from '@mui/icons-material/IosShare';
+import LoopIcon from '@mui/icons-material/Loop';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { createAssetThunk, updateAssetThunk, fetchAssetsThunk, changeStatusThunk } from '@/features/assets/assetThunks';
 import { clearError } from '@/features/assets/assetSlice';
@@ -166,6 +171,14 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
+  // 3D Generation Modal
+  const threeDFileInputRef = useRef<HTMLInputElement>(null);
+  const [show3DModal, setShow3DModal] = useState(false);
+  const [threeDModalStep, setThreeDModalStep] = useState<1 | 2 | 3>(1);
+  const [threeDUploadedFiles, setThreeDUploadedFiles] = useState<File[]>([]);
+  const [threeDDragOver, setThreeDDragOver] = useState(false);
+  const [generated3DFiles, setGenerated3DFiles] = useState<File[]>([]);
+
   // Auto-calculated price per fraction
   const pricePerFraction = (() => {
     const v = parseFloat(valuation);
@@ -215,6 +228,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setValuation(''); setJurisdiction(''); setTokenizePercent(5); setTotalFractions('');
     setRoyalty(''); setRoyaltyWallet('');
     setMediaFiles([]); setExistingImages([]); setThreeDFiles(''); setLiveStream('');
+    setGenerated3DFiles([]);
   }
 
   function handleClose() {
@@ -238,6 +252,47 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       (f) => f.size <= MAX_FILE_MB * 1024 * 1024,
     );
     setMediaFiles((prev) => [...prev, ...picked].slice(0, MAX_FILES));
+  }
+
+  // ── 3D modal file handling ──────────────────────────────────────────────────
+
+  function handleThreeDDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setThreeDDragOver(false);
+    const dropped = Array.from(e.dataTransfer.files).filter((f) =>
+      /\.(jpg|jpeg|png|svg|zip)$/i.test(f.name),
+    );
+    setThreeDUploadedFiles((prev) => [...prev, ...dropped]);
+  }
+
+  function handleThreeDFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
+    setThreeDUploadedFiles((prev) => [...prev, ...picked]);
+    e.target.value = '';
+  }
+
+  function removeThreeDFile(index: number) {
+    setThreeDUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function close3DModal() {
+    setShow3DModal(false);
+    setThreeDModalStep(1);
+    setThreeDUploadedFiles([]);
+  }
+
+  function handleUploadAs3DModal() {
+    setThreeDFiles('generated-3d-model');
+    setGenerated3DFiles([...threeDUploadedFiles]);
+    close3DModal();
+  }
+
+  function removeGenerated3DFile(index: number) {
+    setGenerated3DFiles((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length === 0) setThreeDFiles('');
+      return updated;
+    });
   }
 
   // ── save/submit ─────────────────────────────────────────────────────────────
@@ -702,20 +757,53 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <Box>
                   <Label>Asset 3D Files</Label>
-                  <TextField
-                    fullWidth size="small" value={threeDFiles}
-                    onChange={(e) => setThreeDFiles(e.target.value)}
-                    sx={inputSx}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LinkIcon sx={{ color: '#9ca3af', fontSize: 18 }} />
-                          </InputAdornment>
-                        ),
-                      },
+                  <Button
+                    fullWidth
+                    onClick={() => { setShow3DModal(true); setThreeDModalStep(1); }}
+                    startIcon={<AutoFixHighIcon sx={{ fontSize: '18px !important' }} />}
+                    sx={{
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                      color: '#fff',
+                      borderRadius: '8px',
+                      py: 1.1,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      textTransform: 'none',
+                      justifyContent: 'center',
+                      '&:hover': { background: 'linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%)' },
                     }}
-                  />
+                  >
+                    Generate 3D Model with AI
+                  </Button>
+                  {generated3DFiles.length > 0 && (
+                    <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                      {generated3DFiles.map((f, i) => (
+                        <Box key={i} sx={{
+                          display: 'flex', alignItems: 'center', gap: 1.5,
+                          p: 1, border: '1px solid #e5e7eb', borderRadius: 2, bgcolor: '#fafafa',
+                        }}>
+                          <Box sx={{ width: 40, height: 40, borderRadius: 1, overflow: 'hidden', flexShrink: 0, bgcolor: '#f3f4f6' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={URL.createObjectURL(f)} alt={f.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {f.name}
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: '#9ca3af' }}>
+                              {(f.size / 1024).toFixed(0)}kb
+                            </Typography>
+                          </Box>
+                          <IconButton size="small" onClick={() => removeGenerated3DFile(i)} sx={{ color: '#9ca3af', flexShrink: 0 }}>
+                            <CloseIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
                 </Box>
                 <Box>
                   <Label>Asset Live Stream</Label>
@@ -807,6 +895,284 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             >
               {actionLoading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Submit for Review'}
             </Button>
+          )}
+        </Box>
+      </Dialog>
+
+      {/* 3D Generation Modal */}
+      <Dialog
+        open={show3DModal}
+        onClose={close3DModal}
+        maxWidth={false}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              bgcolor: '#fff',
+              width: { xs: '95%', sm: 520 },
+              maxWidth: 520,
+              m: 'auto',
+            },
+          },
+        }}
+      >
+        {/* Header */}
+        <Box sx={{ px: 3, pt: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1, pr: 2 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#111', mb: 1 }}>
+              {threeDModalStep === 1 && '3D Modal Generation'}
+              {threeDModalStep === 2 && '3D Modal Generation - Background Removal'}
+              {threeDModalStep === 3 && '3D Modal Generation - Preview'}
+            </Typography>
+            {threeDModalStep === 1 && (
+              <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+                {[
+                  'Upload at least 4 clear images from different angles for optimal 3D quality',
+                  'Use good lighting with a clean, uncluttered background',
+                  'Keep the object fully visible and centered in every photo',
+                ].map((tip, i) => (
+                  <Typography component="li" key={i} sx={{ fontSize: 13, color: '#4b5563', mb: 0.5 }}>
+                    {tip}
+                  </Typography>
+                ))}
+              </Box>
+            )}
+          </Box>
+          <IconButton size="small" onClick={close3DModal} sx={{ color: '#6b7280', mt: -0.5, flexShrink: 0 }}>
+            <CloseIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Box>
+
+        {/* Content */}
+        <Box sx={{ px: 3, pb: 2 }}>
+          {/* ── Step 1: Upload ── */}
+          {threeDModalStep === 1 && (
+            <>
+              <Box
+                onDragOver={(e) => { e.preventDefault(); setThreeDDragOver(true); }}
+                onDragLeave={() => setThreeDDragOver(false)}
+                onDrop={handleThreeDDrop}
+                sx={{
+                  border: '2px dashed',
+                  borderColor: threeDDragOver ? '#2d5fe8' : '#3b6ef8',
+                  borderRadius: 2,
+                  py: 4,
+                  px: 2,
+                  textAlign: 'center',
+                  bgcolor: threeDDragOver ? '#eff6ff' : '#f8f9ff',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Box sx={{
+                  width: 64, height: 64, bgcolor: '#3b6ef8', borderRadius: 2,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2,
+                }}>
+                  <UploadFileIcon sx={{ color: '#fff', fontSize: 36 }} />
+                </Box>
+                <Typography sx={{ fontSize: 14, color: '#374151', fontWeight: 500, mb: 1 }}>
+                  Drag your file(s) to start uploading
+                </Typography>
+                <Typography sx={{ fontSize: 13, color: '#9ca3af', mb: 1.5 }}>OR</Typography>
+                <Button
+                  onClick={() => threeDFileInputRef.current?.click()}
+                  variant="outlined"
+                  sx={{
+                    borderColor: '#3b6ef8', color: '#3b6ef8',
+                    borderRadius: 20, px: 3,
+                    textTransform: 'none', fontSize: 13, fontWeight: 600,
+                    '&:hover': { bgcolor: '#eff6ff', borderColor: '#2d5fe8' },
+                  }}
+                >
+                  Browse files
+                </Button>
+              </Box>
+              <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 1, mb: threeDUploadedFiles.length ? 1.5 : 0 }}>
+                Only support .jpg, .png and .svg and zip files
+              </Typography>
+
+              {threeDUploadedFiles.length > 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {threeDUploadedFiles.map((f, i) => (
+                    <Box key={i} sx={{
+                      display: 'flex', alignItems: 'center', gap: 1.5,
+                      p: 1, border: '1px solid #e5e7eb', borderRadius: 2,
+                    }}>
+                      <Box sx={{ width: 40, height: 40, borderRadius: 1, overflow: 'hidden', flexShrink: 0, bgcolor: '#f3f4f6' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={URL.createObjectURL(f)} alt={f.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {f.name}
+                        </Typography>
+                        <Typography sx={{ fontSize: 12, color: '#9ca3af' }}>
+                          {(f.size / 1024).toFixed(0)}kb
+                        </Typography>
+                      </Box>
+                      <IconButton size="small" onClick={() => removeThreeDFile(i)} sx={{ color: '#9ca3af', flexShrink: 0 }}>
+                        <CloseIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              <input
+                ref={threeDFileInputRef} type="file" multiple hidden
+                accept=".jpg,.jpeg,.png,.svg,.zip" onChange={handleThreeDFileChange}
+              />
+            </>
+          )}
+
+          {/* ── Step 2: Background Removal ── */}
+          {threeDModalStep === 2 && threeDUploadedFiles.length > 0 && (
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              {/* Input image panel */}
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1 }}>
+                    <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
+                    <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Input Image</Typography>
+                  </Box>
+                  <IconButton size="small" sx={{ color: '#9ca3af' }}>
+                    <CloseIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+                <Box sx={{
+                  border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
+                  aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  bgcolor: '#fafafa',
+                }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={URL.createObjectURL(threeDUploadedFiles[0])}
+                    alt="input"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                </Box>
+              </Box>
+
+              {/* Background removal preview panel */}
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1 }}>
+                    <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
+                    <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Preview Background Removal</Typography>
+                  </Box>
+                  <IconButton size="small" sx={{ color: '#9ca3af' }}>
+                    <IosShareIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Box>
+                <Box sx={{
+                  border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
+                  aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  backgroundImage: [
+                    'linear-gradient(45deg, #d0d0d0 25%, transparent 25%)',
+                    'linear-gradient(-45deg, #d0d0d0 25%, transparent 25%)',
+                    'linear-gradient(45deg, transparent 75%, #d0d0d0 75%)',
+                    'linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)',
+                  ].join(', '),
+                  backgroundSize: '16px 16px',
+                  backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0',
+                }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={URL.createObjectURL(threeDUploadedFiles[0])}
+                    alt="bg-removed"
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }}
+                  />
+                </Box>
+              </Box>
+            </Box>
+          )}
+
+          {/* ── Step 3: 3D Preview ── */}
+          {threeDModalStep === 3 && (
+            <Box sx={{
+              border: '2px dashed #3b6ef8', borderRadius: 2,
+              position: 'relative', minHeight: 300,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: '#f8f9ff',
+            }}>
+              <Box sx={{
+                position: 'absolute', top: 10, left: 10,
+                px: 1.5, py: 0.4, bgcolor: '#fff',
+                border: '1px solid #e5e7eb', borderRadius: 1,
+              }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>3D Model</Typography>
+              </Box>
+              {threeDUploadedFiles.length > 0 && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={URL.createObjectURL(threeDUploadedFiles[0])}
+                  alt="3d-preview"
+                  style={{ maxWidth: '80%', maxHeight: 270, objectFit: 'contain' }}
+                />
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Footer */}
+        <Box sx={{ px: 3, pb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {threeDModalStep === 3 ? (
+            <>
+              <Button
+                onClick={() => setThreeDModalStep(2)}
+                variant="contained"
+                startIcon={<LoopIcon />}
+                sx={{
+                  bgcolor: '#374151', color: '#fff', borderRadius: 20,
+                  px: 2.5, textTransform: 'none', fontWeight: 600, fontSize: 13,
+                  '&:hover': { bgcolor: '#1f2937' },
+                }}
+              >
+                Regenerate
+              </Button>
+              <Button
+                onClick={handleUploadAs3DModal}
+                variant="contained"
+                startIcon={<AutoFixHighIcon />}
+                sx={{
+                  bgcolor: '#3b6ef8', color: '#fff', borderRadius: 20,
+                  px: 3, textTransform: 'none', fontWeight: 700, fontSize: 13,
+                  '&:hover': { bgcolor: '#2d5fe8' },
+                }}
+              >
+                Upload as 3D Modal
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={close3DModal}
+                variant="outlined"
+                sx={{
+                  borderColor: '#d1d5db', color: '#374151', borderRadius: 20,
+                  px: 3, textTransform: 'none', fontWeight: 600, fontSize: 13,
+                  '&:hover': { bgcolor: '#f9fafb', borderColor: '#9ca3af' },
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => setThreeDModalStep((s) => (s + 1) as 2 | 3)}
+                disabled={threeDModalStep === 1 && threeDUploadedFiles.length === 0}
+                variant="contained"
+                startIcon={<AutoFixHighIcon />}
+                sx={{
+                  bgcolor: '#3b6ef8', color: '#fff', borderRadius: 20,
+                  px: 3, textTransform: 'none', fontWeight: 700, fontSize: 13,
+                  '&:hover': { bgcolor: '#2d5fe8' },
+                  '&.Mui-disabled': { bgcolor: '#d1d5db', color: '#9ca3af' },
+                }}
+              >
+                Generate
+              </Button>
+            </>
           )}
         </Box>
       </Dialog>
