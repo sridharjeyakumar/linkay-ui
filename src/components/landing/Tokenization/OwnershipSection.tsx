@@ -8,10 +8,11 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import Image from 'next/image';
-import Link from 'next/link';
 import { Archivo, Inter } from 'next/font/google';
+import ArrowButton from '@/components/ui/ArrowButton';
+import OutlineButton from '@/components/ui/OutlineButton';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import type { FaqContent } from '@/lib/content';
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -26,42 +27,8 @@ const inter = Inter({
   display: 'swap',
 });
 
-const faqData = [
-  {
-    question: 'What types of assets qualify?',
-    answer:
-      'LinkBlock Assets supports premium real-world assets including museum artifacts, real estate, and emerging asset categories.',
-  },
-  {
-    question: 'How long does the review process take?',
-    answer:
-      'Review timelines vary based on asset category, documentation, and verification requirements.',
-  },
-  {
-    question: 'How is ownership structured?',
-    answer:
-      'Approved assets are digitally structured into fractional ownership units for marketplace participation.',
-  },
-  {
-    question: 'Can ownership be traded after launch?',
-    answer:
-      'Yes,Ownership units can be securely traded within the LinkBlock Assets marketplace.',
-  },
-  {
-    question: 'What documentation is required?',
-    answer:
-      'Documentation requirements depend on the asset category and ownership structure.',
-  },
-  {
-    question: 'Is tokenization available globally?',
-    answer:
-      'Availability may vary depending on jurisdiction and regulatory considerations.',
-  },
-];
- 
-export default function OwnershipSection() {
+export default function OwnershipSection({ content }: { content: FaqContent }) {
   const [expanded, setExpanded] = useState<string | false>('panel0');
-  const [btnHovered, setBtnHovered] = useState(false);
 
   const handleChange =
     (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
@@ -77,18 +44,9 @@ export default function OwnershipSection() {
         pb: { xs: '80px', md: '120px' },
       }}
     >
-      <Box
-        sx={{
-          maxWidth: '1440px',
-          mx: 'auto',
-          px: { xs: '20px', md: '0' },
-        }}
-      >
-        {/* ═══════════════════════════════════════════════
-            FAQ ACCORDION
-            Figma: width 994, centered (left 223 in 1440)
-            gap: 14px between items
-        ═══════════════════════════════════════════════ */}
+      <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: '20px', md: '0' } }}>
+
+        {/* FAQ Accordion */}
         <Box
           sx={{
             width: '100%',
@@ -100,7 +58,7 @@ export default function OwnershipSection() {
             gap: '14px',
           }}
         >
-          {faqData.map((faq, index) => (
+          {content.items.map((faq, index) => (
             <Accordion
               key={index}
               expanded={expanded === `panel${index}`}
@@ -117,32 +75,19 @@ export default function OwnershipSection() {
                     : '#FAFAFA',
                 overflow: 'hidden',
                 '&::before': { display: 'none' },
-                '&.Mui-expanded': {
-                  margin: 0,
-                },
+                '&.Mui-expanded': { margin: 0 },
               }}
             >
               <AccordionSummary
-                expandIcon={
-                  <ExpandMoreIcon
-                    sx={{
-                      color: '#737373',
-                      fontSize: '28px',
-                    }}
-                  />
-                }
+                expandIcon={<ExpandMoreIcon sx={{ color: '#737373', fontSize: '28px' }} />}
                 sx={{
                   px: { xs: '20px', md: '43px' },
                   pt: '26px',
                   pb: expanded === `panel${index}` ? '0px' : '25px',
                   pr: '26px',
                   minHeight: 'unset',
-                  '& .MuiAccordionSummary-content': {
-                    margin: 0,
-                  },
-                  '& .MuiAccordionSummary-expandIconWrapper': {
-                    alignSelf: 'center',
-                  },
+                  '& .MuiAccordionSummary-content': { margin: 0 },
+                  '& .MuiAccordionSummary-expandIconWrapper': { alignSelf: 'center' },
                 }}
               >
                 <Typography
@@ -160,12 +105,7 @@ export default function OwnershipSection() {
               </AccordionSummary>
 
               <AccordionDetails
-                sx={{
-                  px: { xs: '20px', md: '43px' },
-                  pt: '21px',
-                  pb: '30px',
-                  pr: '26px',
-                }}
+                sx={{ px: { xs: '20px', md: '43px' }, pt: '21px', pb: '30px', pr: '26px' }}
               >
                 <Typography
                   className={inter.className}
@@ -185,12 +125,7 @@ export default function OwnershipSection() {
           ))}
         </Box>
 
-        {/* ═══════════════════════════════════════════════
-            CTA BANNER
-            Figma: width 1196, height 239, centered
-            border-radius: 28px, border: 2px solid #ABE2FB
-            background gradient: #0EA5E9 → #C2FFFB → #0EA5E9
-        ═══════════════════════════════════════════════ */}
+        {/* CTA Banner */}
         <Box
           sx={{
             width: '100%',
@@ -201,8 +136,7 @@ export default function OwnershipSection() {
             mb: { xs: '100px', md: '10px' },
             borderRadius: '28px',
             border: '2px solid #ABE2FB',
-            background:
-              'linear-gradient(90deg, #0EA5E9 0%, #C2FFFB 50%, #0EA5E9 100%)',
+            background: 'linear-gradient(90deg, #0EA5E9 -10%, #C2FFFB 50%, #0EA5E9 115%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -211,9 +145,9 @@ export default function OwnershipSection() {
             py: { xs: '40px', md: '0' },
             gap: { xs: '24px', md: '30px' },
             boxSizing: 'border-box',
+            boxShadow: 'inset 0 0 40px rgba(83, 181, 246, 0.25)',
           }}
         >
-          {/* ── Heading ── */}
           <Typography
             component="h2"
             className={archivo.className}
@@ -227,10 +161,9 @@ export default function OwnershipSection() {
               textAlign: 'center',
             }}
           >
-            The Future of Asset Ownership
+            {content.cta_title}
           </Typography>
 
-          {/* ── Buttons Container ── */}
           <Box
             sx={{
               display: 'flex',
@@ -240,141 +173,8 @@ export default function OwnershipSection() {
               flexShrink: 0,
             }}
           >
-            {/* Get Started — dark button with arrow */}
-            <Box
-              component={Link}
-              href="/tokenize"
-              onMouseEnter={() => setBtnHovered(true)}
-              onMouseLeave={() => setBtnHovered(false)}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                bgcolor: '#0A0A0A',
-                borderRadius: '30px',
-                pl: '13px',
-            pr: '16px',
-            py: '6px',
-                textDecoration: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.25s ease',
-                height: '40px',
-                boxSizing: 'border-box',
-                '&:hover': {
-                  bgcolor: '#1a1a1a',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-                },
-              }}
-            >
-              
-
-              {/* Arrow circle */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: '#FAFAFA',
-                  borderRadius: '14px',
-                  width: 28,
-                  height: 28,
-                  padding: '2px',
-                  flexShrink: 0,
-                  position: 'relative',
-                  transform: 'rotate(-48.72deg)',
-                }}
-              >
-                {/* Default arrow */}
-                <Image
-                  src="/landing/arrow-default.svg"
-                  alt="arrow"
-                  width={24}
-                  height={24}
-                  unoptimized
-                  style={{
-                    position: 'absolute',
-                    opacity: btnHovered ? 0 : 1,
-                    transform: `rotate(41.28deg) ${btnHovered ? 'scale(0.6)' : 'scale(1)'}`,
-                    transition: 'opacity 0.2s ease, transform 0.2s ease',
-                  }}
-                />
-                {/* Hover arrow */}
-                <Image
-                  src="/landing/arrow-hover.svg"
-                  alt="arrow"
-                  width={24}
-                  height={24}
-                  unoptimized
-                  style={{
-                    position: 'absolute',
-                    opacity: btnHovered ? 1 : 0,
-                    transform: `rotate(41.28deg) ${btnHovered ? 'scale(1)' : 'scale(0.6)'}`,
-                    transition: 'opacity 0.2s ease, transform 0.2s ease',
-                  }}
-                />
-              </Box>
-              <Typography
-                component="span"
-                className={inter.className}
-                sx={{
-                  fontWeight: 500,
-                  fontSize: '16px',
-                  lineHeight: '100%',
-                  letterSpacing: '0%',
-                  color: '#FFFFFF',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Get Started
-              </Typography>
-            </Box>
-
-            {/* List Your Asset — outline button */}
-            <Box
-  component={Link}
-  href="/list-asset"
-  sx={{
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50px',
-    border: '1.5px solid #0A0A0A',
-    bgcolor: 'transparent',
-    px: '31px',
-    py: '8px',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.25s ease',
-    height: '35px',
-    boxSizing: 'border-box',
-    color: '#070707',
-
-    '&:hover': {
-      bgcolor: '#0A0A0A',
-      color: '#FAFAFA',
-    },
-
-    '&:hover .list-asset-text': {
-      color: '#FAFAFA',
-    },
-  }}
->
-  <Typography
-    component="span"
-    className={`list-asset-text ${inter.className}`}
-    sx={{
-      fontWeight: 500,
-      fontSize: '16px',
-      lineHeight: '100%',
-      letterSpacing: '0%',
-      color: '#070707',
-      whiteSpace: 'nowrap',
-      transition: 'color 0.25s ease',
-    }}
-  >
-    List Your Asset
-  </Typography>
-</Box>
+            <ArrowButton label={content.cta_button_primary} href="/tokenize" />
+            <OutlineButton label={content.cta_button_secondary} href="/list-asset" />
           </Box>
         </Box>
       </Box>

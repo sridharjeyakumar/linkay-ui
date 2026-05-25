@@ -21,12 +21,13 @@ export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3,
-            bgcolor: '#fffbeb',
-            width: { xs: '90%', sm: 380 },
-            maxWidth: 380,
+            borderRadius: '12px',
+            bgcolor: '#FFFFFF',
+            width: { xs: '90%', sm: 400 },
+            maxWidth: 400,
             m: 'auto',
             overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
           },
         },
       }}
@@ -95,17 +96,16 @@ export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error
           disabled={loading}
           startIcon={<CalendarMonthIcon sx={{ fontSize: 16 }} />}
           sx={{
-            bgcolor: '#d97706',
+            bgcolor: '#1D4ED8',
             color: '#fff',
-            borderRadius: 10,
+            borderRadius: '8px',
+            height: 40,
             px: 3,
-            py: 1,
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: 13,
             textTransform: 'none',
-            letterSpacing: 0.3,
-            '&:hover': { bgcolor: '#b45309' },
-            '&.Mui-disabled': { bgcolor: '#fcd34d', color: '#fff' },
+            '&:hover': { bgcolor: '#1E3A8A' },
+            '&.Mui-disabled': { bgcolor: '#93c5fd', color: '#fff' },
           }}
         >
           Schedule Auction

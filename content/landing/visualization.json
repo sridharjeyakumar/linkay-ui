@@ -1,0 +1,12 @@
+{
+  "title": "Intelligent Asset Visualization",
+  "description": "Every asset on LinkBlock Assets is enhanced through AI powered visualization and intelligent presentation technology designed to improve clarity, engagement and investor confidence.",
+  "assets": [
+    { "src": "/landing/visualization/asset-1.svg", "alt": "Mineral rock" },
+    { "src": "/landing/visualization/asset-2.svg", "alt": "Sculpture" },
+    { "src": "/landing/visualization/asset-3.svg", "alt": "Real estate" },
+    { "src": "/landing/visualization/asset-4.svg", "alt": "Blue crystal" },
+    { "src": "/landing/visualization/asset-5.svg", "alt": "Marble bust" },
+    { "src": "/landing/visualization/asset-6.svg", "alt": "Asset" }
+  ]
+}

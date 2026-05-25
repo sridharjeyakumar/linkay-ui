@@ -1,0 +1,214 @@
+backend:
+  name: proxy
+  proxy_url: http://localhost:8081/api/v1
+
+media_folder: public/uploads
+public_folder: /uploads
+
+collections:
+  - name: landing
+    label: Landing Page
+    files:
+
+      - name: hero
+        label: Hero Section
+        file: content/landing/hero.json
+        format: json
+        fields:
+          - { label: Top Label, name: label, widget: string }
+          - { label: Headline Line 1, name: headline_line1, widget: string }
+          - { label: Headline Line 2 (Blue), name: headline_line2, widget: string }
+          - { label: Subheading, name: subheading, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+          - label: Carousel Images
+            name: carousel
+            widget: list
+            fields:
+              - { label: Image, name: src, widget: image }
+              - { label: Alt Text, name: alt, widget: string }
+
+      - name: features
+        label: Features Section
+        file: content/landing/features.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - label: Feature Cards
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: transform_banner
+        label: Transform Banner
+        file: content/landing/transform-banner.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Paragraph 1, name: paragraph1, widget: text }
+          - { label: Paragraph 2, name: paragraph2, widget: text }
+
+      - name: visualization
+        label: Visualization Section
+        file: content/landing/visualization.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Description, name: description, widget: text }
+          - label: Asset Images
+            name: assets
+            widget: list
+            fields:
+              - { label: Image, name: src, widget: image }
+              - { label: Alt Text, name: alt, widget: string }
+
+      - name: ownership
+        label: Ownership Section
+        file: content/landing/ownership.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - label: Steps
+            name: steps
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+              - label: 3D Shape
+                name: shape
+                widget: select
+                options: [cube, icosahedron, disc, knot]
+              - label: Image Position
+                name: imagePosition
+                widget: select
+                options: [left, right]
+
+      - name: discover
+        label: Discover Section
+        file: content/landing/discover.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Asset Classes
+            name: assetClasses
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: cta
+        label: CTA Section
+        file: content/landing/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Primary Button Text, name: button_primary, widget: string }
+          - { label: Secondary Button Text, name: button_secondary, widget: string }
+
+      - name: footer
+        label: Footer
+        file: content/landing/footer.json
+        format: json
+        fields:
+          - { label: Logo Description, name: logo_description, widget: text }
+          - label: Link Columns
+            name: columns
+            widget: list
+            fields:
+              - { label: Column Title, name: title, widget: string }
+              - label: Links
+                name: links
+                widget: list
+                fields:
+                  - { label: Label, name: label, widget: string }
+                  - { label: URL, name: href, widget: string }
+          - label: Social Links
+            name: socials
+            widget: list
+            fields:
+              - { label: Platform (Instagram / LinkedIn / X), name: platform, widget: string }
+              - { label: URL, name: href, widget: string }
+          - { label: Copyright Text, name: copyright, widget: string }
+
+      - name: mineral_modal
+        label: Mineral Modal
+        file: content/landing/mineral-modal.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Description, name: description, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+
+      - name: navbar
+        label: Navigation
+        file: content/landing/navbar.json
+        format: json
+        fields:
+          - label: Navigation Links
+            name: links
+            widget: list
+            fields:
+              - { label: Label, name: label, widget: string }
+              - { label: URL, name: href, widget: string, required: false }
+              - label: Dropdown Items
+                name: dropdown
+                widget: list
+                required: false
+                fields:
+                  - { label: Label, name: label, widget: string }
+                  - { label: Icon Name, name: icon, widget: string }
+                  - { label: Description, name: description, widget: string, required: false }
+                  - { label: Coming Soon, name: comingSoon, widget: boolean, required: false, default: false }
+
+  - name: tokenization
+    label: Tokenization Page
+    files:
+
+      - name: header
+        label: Header Section
+        file: content/tokenization/header.json
+        format: json
+        fields:
+          - { label: Heading, name: heading, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+          - { label: Why Tag (italic label), name: why_tag, widget: string }
+          - { label: Why Title, name: why_title, widget: string }
+          - label: Features
+            name: features
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: modern_asset
+        label: Modern Asset Section
+        file: content/tokenization/modern-asset.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Cards
+            name: cards
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+              - { label: Image, name: image, widget: image }
+
+      - name: faq
+        label: FAQ Section
+        file: content/tokenization/faq.json
+        format: json
+        fields:
+          - label: FAQ Items
+            name: items
+            widget: list
+            fields:
+              - { label: Question, name: question, widget: string }
+              - { label: Answer, name: answer, widget: text }
+          - { label: CTA Title, name: cta_title, widget: string }
+          - { label: Primary Button, name: cta_button_primary, widget: string }
+          - { label: Secondary Button, name: cta_button_secondary, widget: string }

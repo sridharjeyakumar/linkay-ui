@@ -51,16 +51,17 @@ export function AuctionSuccessModal({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3,
-            bgcolor: '#fff',
-            width: { xs: '100%', sm: 480 },
-            maxWidth: { xs: '100%', sm: 480 },
+            borderRadius: '12px',
+            bgcolor: '#FFFFFF',
+            width: { xs: '100%', sm: 560 },
+            maxWidth: { xs: '100%', sm: 560 },
             maxHeight: { xs: '95vh', sm: '92vh' },
             m: { xs: 0, sm: 2, md: 'auto' },
             alignSelf: { xs: 'flex-end', sm: 'center' },
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
           },
         },
       }}
@@ -86,11 +87,15 @@ export function AuctionSuccessModal({
         <Button
           onClick={onClose}
           sx={{
+            bgcolor: '#1D4ED8',
+            color: '#fff',
+            borderRadius: '8px',
+            height: 40,
+            px: 3,
             fontWeight: 600,
             fontSize: 13,
-            color: '#374151',
             textTransform: 'none',
-            '&:hover': { bgcolor: '#f9fafb' },
+            '&:hover': { bgcolor: '#1E3A8A' },
           }}
         >
           Close

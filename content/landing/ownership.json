@@ -1,0 +1,10 @@
+{
+  "title": "Digital Ownership with Confidence",
+  "subtitle": "Participate in a marketplace designed for liquidity, transparency and seamless ownership transfers across tokenized real world assets.",
+  "steps": [
+    { "title": "Asset Submission", "description": "Asset owners submit assets for review and tokenization.", "shape": "cube", "imagePosition": "right" },
+    { "title": "Asset Tokenization", "description": "Assets are digitally tokenized into fractional ownership units.", "shape": "icosahedron", "imagePosition": "left" },
+    { "title": "Investor Access", "description": "Verified assets become available to global investors.", "shape": "disc", "imagePosition": "right" },
+    { "title": "Secure Ownership Exchange", "description": "Investors seamlessly acquire and trade tokenized assets.", "shape": "knot", "imagePosition": "left" }
+  ]
+}

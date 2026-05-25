@@ -2,21 +2,9 @@
 
 import { Box, Typography, Container, Grid } from '@mui/material';
 import Image from 'next/image';
+import type { DiscoverContent } from '@/lib/content';
 
-const ASSET_CLASSES = [
-  {
-    title: 'Museum Artifacts',
-    description:
-      'Rare and historically significant assets presented through immersive digital ownership experiences',
-  },
-  {
-    title: 'Real Estate',
-    description:
-      'Access fractional ownership opportunities across premium real estate developments and properties',
-  },
-];
-
-export default function DiscoverSection() {
+export default function DiscoverSection({ content }: { content: DiscoverContent }) {
   return (
     <Box sx={{ bgcolor: '#ffffff', py: { xs: 6, md: 8 } }} id="discover">
       <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 } }}>
@@ -34,7 +22,6 @@ export default function DiscoverSection() {
             py: { xs: 6, sm: 7, md: 9, lg: 10 },
           }}
         >
-          {/* Title */}
           <Typography
             component="h2"
             sx={{
@@ -48,12 +35,11 @@ export default function DiscoverSection() {
               mb: { xs: 4, sm: 5, md: 7 },
             }}
           >
-            Discover Real World Assets
+            {content.title}
           </Typography>
 
-          {/* Cards */}
           <Grid container spacing={{ xs: 2, sm: 3, md: 3 }} sx={{ justifyContent: 'center' }}>
-            {ASSET_CLASSES.map((asset) => (
+            {content.assetClasses.map((asset) => (
               <Grid key={asset.title} size={{ xs: 12, sm: 5 }}>
                 <Box
                   onClick={() => window.dispatchEvent(new Event('linkay:open-register'))}
@@ -77,7 +63,6 @@ export default function DiscoverSection() {
                     },
                   }}
                 >
-                  {/* Text */}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography
                       component="h3"
@@ -107,7 +92,6 @@ export default function DiscoverSection() {
                     </Typography>
                   </Box>
 
-                  {/* Orange arrow */}
                   <Box
                     sx={{
                       flexShrink: 0,

@@ -3,19 +3,8 @@
 import { Box, Typography, Container } from '@mui/material';
 import Image from 'next/image';
 import { keyframes } from '@emotion/react';
+import type { VisualizationContent } from '@/lib/content';
 
-
-// Asset images data
-const ASSETS = [
-  { src: '/landing/visualization/asset-1.svg', alt: 'Mineral rock' },
-  { src: '/landing/visualization/asset-2.svg', alt: 'Sculpture' },
-  { src: '/landing/visualization/asset-3.svg', alt: 'Real estate' },
-  { src: '/landing/visualization/asset-4.svg', alt: 'Blue crystal' },
-  { src: '/landing/visualization/asset-5.svg', alt: 'Marble bust' },
-  { src: '/landing/visualization/asset-6.svg', alt: 'Asset' },
-];
-
-// Rotation animations
 const spinCW = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -32,17 +21,13 @@ const pulseGlow = keyframes`
   100% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.95); }
 `;
 
-// Orbit duration
 const ORBIT_DURATION = 24;
-// Distance from center (percentage)
 const ORBIT_RADIUS_PCT = 30;
 
-// Calculate 6 positions evenly spaced on the circle (starting from 12 o'clock)
-const calculatePositions = () => {
+const calculatePositions = (count: number) => {
   const positions = [];
-  for (let i = 0; i < ASSETS.length; i++) {
-    // Start from top (12 o'clock) and go clockwise
-    const angle = (i * 2 * Math.PI) / ASSETS.length - Math.PI / 2;
+  for (let i = 0; i < count; i++) {
+    const angle = (i * 2 * Math.PI) / count - Math.PI / 2;
     positions.push({
       x: 50 + ORBIT_RADIUS_PCT * Math.cos(angle),
       y: 50 + ORBIT_RADIUS_PCT * Math.sin(angle),
@@ -51,23 +36,12 @@ const calculatePositions = () => {
   return positions;
 };
 
-const positions = calculatePositions();
+export default function VisualizationSection({ content }: { content: VisualizationContent }) {
+  const positions = calculatePositions(content.assets.length);
 
-export default function VisualizationSection() {
   return (
-    <Box
-      sx={{
-        bgcolor: '#ffffff',
-        py: { xs: 4, md: 6, lg: 8 },
-      }}
-    >
-      <Container
-        maxWidth={false}
-        sx={{
-          maxWidth: '1400px',
-          px: { xs: 2, sm: 4, md: 6 },
-        }}
-      >
+    <Box sx={{ bgcolor: '#ffffff', py: { xs: 4, md: 6, lg: 8 } }}>
+      <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 } }}>
         <Box
           sx={{
             borderRadius: { xs: '20px', md: '28px', lg: '32px' },
@@ -79,72 +53,46 @@ export default function VisualizationSection() {
             position: 'relative',
           }}
         >
-          {/* Title */}
           <Typography
             component="h2"
             sx={{
               textAlign: 'center',
               fontFamily: 'var(--font-archivo), sans-serif',
               fontWeight: 600,
-              fontSize: {
-                xs: '2rem',
-                sm: '2.5rem',
-                md: '3.2rem',
-              },
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3.2rem' },
               lineHeight: 1.05,
               letterSpacing: '-0.02em',
-
               background: 'linear-gradient(90deg, #009FD9 0%, #1E40AF 100%)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-
               mb: 2,
               position: 'relative',
               zIndex: 10,
             }}
           >
-            Intelligent Asset Visualization
+            {content.title}
           </Typography>
 
-          {/* Description */}
           <Typography
             sx={{
               textAlign: 'center',
               color: '#000000',
-
               maxWidth: '680px',
               mx: 'auto',
-
-              fontSize: {
-                xs: '15px',
-                sm: '16px',
-                md: '18px',
-              },
-
+              fontSize: { xs: '15px', sm: '16px', md: '18px' },
               lineHeight: 1.45,
               fontWeight: 400,
-
               px: { xs: 2, sm: 0 },
-
-              mb: {
-                xs: 5,
-                md: 7,
-              },
-
-              fontFamily:
-                "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-
+              mb: { xs: 5, md: 7 },
+              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
               position: 'relative',
               zIndex: 10,
             }}
           >
-            Every asset on LinkBlock Assets is enhanced through AI powered
-            visualization and intelligent presentation technology designed to
-            improve clarity, engagement and investor confidence.
+            {content.description}
           </Typography>
 
-          {/* Semi-circle visual container - positioned below the text */}
           <Box
             sx={{
               position: 'relative',
@@ -154,10 +102,6 @@ export default function VisualizationSection() {
               mt: { xs: -3, sm: -4, md: -5 },
             }}
           >
-            {/* 
-              Circle positioned so its CENTER is at the TOP edge of this container
-              This creates a semi-circle effect where only the BOTTOM half is visible
-            */}
             <Box
               sx={{
                 position: 'absolute',
@@ -195,7 +139,7 @@ export default function VisualizationSection() {
                   }}
                 />
 
-                {/* Glow effect behind center logo */}
+                {/* Glow effect */}
                 <Box
                   sx={{
                     position: 'absolute',
@@ -232,11 +176,7 @@ export default function VisualizationSection() {
                     alt="LinkBlock Assets Logo"
                     width={140}
                     height={140}
-                    style={{
-                      width: '50%',
-                      height: '50%',
-                      objectFit: 'contain',
-                    }}
+                    style={{ width: '50%', height: '50%', objectFit: 'contain' }}
                     priority
                     unoptimized
                   />
@@ -250,25 +190,12 @@ export default function VisualizationSection() {
                     top: '50%',
                     width: { xs: '420px', sm: '540px', md: '700px', lg: '860px', xl: '1000px' },
                     height: { xs: '420px', sm: '540px', md: '700px', lg: '860px', xl: '1000px' },
-                    marginLeft: {
-                      xs: '-210px',
-                      sm: '-270px',
-                      md: '-350px',
-                      lg: '-430px',
-                      xl: '-500px',
-                    },
-                    marginTop: {
-                      xs: '-210px',
-                      sm: '-270px',
-                      md: '-350px',
-                      lg: '-430px',
-                      xl: '-500px',
-                    },
+                    marginLeft: { xs: '-210px', sm: '-270px', md: '-350px', lg: '-430px', xl: '-500px' },
+                    marginTop: { xs: '-210px', sm: '-270px', md: '-350px', lg: '-430px', xl: '-500px' },
                     animation: `${spinCW} ${ORBIT_DURATION}s linear infinite`,
                     zIndex: 5,
                   }}
                 >
-                  {/* Asset images on the orbit */}
                   {positions.map((pos, i) => (
                     <Box
                       key={i}
@@ -296,8 +223,8 @@ export default function VisualizationSection() {
                         }}
                       >
                         <Image
-                          src={ASSETS[i].src}
-                          alt={ASSETS[i].alt}
+                          src={content.assets[i].src}
+                          alt={content.assets[i].alt}
                           fill
                           sizes="(max-width: 640px) 90px, (max-width: 768px) 115px, (max-width: 1024px) 140px, (max-width: 1280px) 165px, 190px"
                           style={{ objectFit: 'contain' }}
@@ -310,20 +237,6 @@ export default function VisualizationSection() {
                 </Box>
               </Box>
             </Box>
-
-            {/* Top fade gradient - smooth transition from text to semi-circle */}
-            {/* <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: { xs: '40px', sm: '50px', md: '60px', lg: '70px' },
-                background: 'linear-gradient(to bottom, rgba(220, 232, 245, 0.98) 0%, rgba(220, 232, 245, 0.6) 40%, transparent 100%)',
-                pointerEvents: 'none',
-                zIndex: 15,
-              }}
-            /> */}
           </Box>
         </Box>
       </Container>
