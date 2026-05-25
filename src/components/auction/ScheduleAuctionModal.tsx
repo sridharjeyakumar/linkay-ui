@@ -171,8 +171,8 @@ export function ScheduleAuctionModal({ open, values, onChange, onCancel, onSched
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3,
-            bgcolor: '#fff',
+            borderRadius: '12px',
+            bgcolor: '#FFFFFF',
             width: { xs: '100%', sm: 560 },
             maxWidth: { xs: '100%', sm: 560 },
             maxHeight: { xs: '95vh', sm: '92vh' },
@@ -181,6 +181,7 @@ export function ScheduleAuctionModal({ open, values, onChange, onCancel, onSched
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
           },
         },
       }}
@@ -351,7 +352,18 @@ export function ScheduleAuctionModal({ open, values, onChange, onCancel, onSched
           onClick={onSchedule}
           disabled={!canSchedule}
           startIcon={<CalendarMonthIcon sx={{ fontSize: 16 }} />}
-          sx={btnPrimary}
+          sx={{
+            bgcolor: '#1D4ED8',
+            color: '#fff',
+            borderRadius: '8px',
+            height: 40,
+            px: 3,
+            fontWeight: 600,
+            fontSize: 13,
+            textTransform: 'none',
+            '&:hover': { bgcolor: '#1E3A8A' },
+            '&.Mui-disabled': { bgcolor: '#93c5fd', color: '#fff' },
+          }}
         >
           Schedule Auction
         </Button>
