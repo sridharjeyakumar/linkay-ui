@@ -1,0 +1,24 @@
+{
+  "links": [
+    { "label": "Marketplace", "href": "#marketplace" },
+    { "label": "Tokenization", "href": "/tokenization" },
+    { "label": "How It Works", "href": "#ownership" },
+    {
+      "label": "Asset Classes",
+      "href": "#asset-classes",
+      "dropdown": [
+        { "label": "Museum Artifacts", "icon": "bank" },
+        { "label": "Real Estate", "icon": "buildings" },
+        { "label": "Minerals", "icon": "cube", "comingSoon": true }
+      ]
+    },
+    {
+      "label": "For You",
+      "href": "#for-you",
+      "dropdown": [
+        { "label": "For Asset Owners", "icon": "warehouse", "description": "Tokenize and launch real world assets" },
+        { "label": "For Investors", "icon": "coins", "description": "Access tokenized asset opportunities" }
+      ]
+    }
+  ]
+}

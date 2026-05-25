@@ -3,42 +3,11 @@
 import dynamic from 'next/dynamic';
 import { Box, Typography, Container, Grid } from '@mui/material';
 import type { ShapeType } from './Ownership3DShape';
+import type { OwnershipContent } from '@/lib/content';
 
 const Ownership3DShape = dynamic(() => import('./Ownership3DShape'), { ssr: false });
 
-const FEATURES: {
-  title: string;
-  description: string;
-  shape: ShapeType;
-  imagePosition: 'left' | 'right';
-}[] = [
-  {
-    title: 'Asset Submission',
-    description: 'Asset owners submit assets for review and tokenization.',
-    shape: 'cube',
-    imagePosition: 'right',
-  },
-  {
-    title: 'Asset Tokenization',
-    description: 'Assets are digitally tokenized into fractional ownership units.',
-    shape: 'icosahedron',
-    imagePosition: 'left',
-  },
-  {
-    title: 'Investor Access',
-    description: 'Verified assets become available to global investors.',
-    shape: 'disc',
-    imagePosition: 'right',
-  },
-  {
-    title: 'Secure Ownership Exchange',
-    description: 'Investors seamlessly acquire and trade tokenized assets.',
-    shape: 'knot',
-    imagePosition: 'left',
-  },
-];
-
-export default function OwnershipSection() {
+export default function OwnershipSection({ content }: { content: OwnershipContent }) {
   return (
     <Box
       id="ownership"
@@ -69,7 +38,7 @@ export default function OwnershipSection() {
               display: 'inline-block',
             }}
           >
-            Digital Ownership with Confidence
+            {content.title}
           </Typography>
 
           <Typography
@@ -87,24 +56,23 @@ export default function OwnershipSection() {
               fontWeight: 400,
             }}
           >
-            Participate in a marketplace designed for liquidity, transparency and seamless
-            ownership transfers across tokenized real world assets.
+            {content.subtitle}
           </Typography>
         </Box>
 
         {/* Feature Rows */}
         <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
-          {FEATURES.map((feature, index) => (
+          {content.steps.map((step, index) => (
             <Grid
-              key={feature.title}
+              key={step.title}
               container
               spacing={{ xs: 4, md: 6, lg: 8 }}
               sx={{
-                mb: index === FEATURES.length - 1 ? 0 : { xs: 6, md: 8, lg: 10 },
+                mb: index === content.steps.length - 1 ? 0 : { xs: 6, md: 8, lg: 10 },
                 alignItems: 'center',
                 flexDirection: {
                   xs: 'column',
-                  md: feature.imagePosition === 'left' ? 'row' : 'row-reverse',
+                  md: step.imagePosition === 'left' ? 'row' : 'row-reverse',
                 },
               }}
             >
@@ -124,7 +92,7 @@ export default function OwnershipSection() {
                       height: { xs: 200, sm: 240, md: 280, lg: 320 },
                     }}
                   >
-                    <Ownership3DShape type={feature.shape} />
+                    <Ownership3DShape type={step.shape as ShapeType} />
                   </Box>
                 </Box>
               </Grid>
@@ -148,7 +116,7 @@ export default function OwnershipSection() {
                       letterSpacing: '-0.01em',
                     }}
                   >
-                    {feature.title}
+                    {step.title}
                   </Typography>
 
                   <Typography
@@ -160,7 +128,7 @@ export default function OwnershipSection() {
                       maxWidth: { xs: '100%', md: '90%' },
                     }}
                   >
-                    {feature.description}
+                    {step.description}
                   </Typography>
                 </Box>
               </Grid>

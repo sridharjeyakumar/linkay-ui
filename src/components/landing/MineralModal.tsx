@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
+import type { MineralModalContent } from '@/lib/content';
 
 const backdropFade = keyframes`
   from { opacity: 0; }
@@ -28,9 +29,10 @@ interface MineralModalProps {
   open: boolean;
   onClose: () => void;
   onOpenRegister: () => void;
+  content: MineralModalContent;
 }
 
-export default function MineralModal({ open, onClose, onOpenRegister }: MineralModalProps) {
+export default function MineralModal({ open, onClose, onOpenRegister, content }: MineralModalProps) {
   const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
@@ -114,7 +116,6 @@ export default function MineralModal({ open, onClose, onOpenRegister }: MineralM
           ✕
         </IconButton>
 
-        {/* Title */}
         <Typography
           component="h2"
           sx={{
@@ -130,10 +131,9 @@ export default function MineralModal({ open, onClose, onOpenRegister }: MineralM
             mb: { xs: 3, md: 4.5 },
           }}
         >
-          Mineral Asset Opportunities
+          {content.title}
         </Typography>
 
-        {/* Description */}
         <Typography
           sx={{
             position: 'relative',
@@ -149,13 +149,9 @@ export default function MineralModal({ open, onClose, onOpenRegister }: MineralM
             mb: { xs: 4, md: 5 },
           }}
         >
-          LinkBlock Assets is expanding access to digitally structured mineral and natural resource
-          ownership opportunities. Join today to explore active opportunities across museum artifacts
-          and premium real estate while receiving early access updates for future mineral asset
-          offerings.
+          {content.description}
         </Typography>
 
-        {/* Button */}
         <Box sx={{ position: 'relative', zIndex: 1 }}>
           <Button
             onClick={() => { onClose(); onOpenRegister(); }}
@@ -213,14 +209,11 @@ export default function MineralModal({ open, onClose, onOpenRegister }: MineralM
               fontSize: { xs: '0.88rem', md: '0.95rem' },
               textTransform: 'none',
               boxShadow: 'none',
-              '&:hover': {
-                bgcolor: '#1a1a1a',
-                boxShadow: '0 6px 20px rgba(0,0,0,0.22)',
-              },
+              '&:hover': { bgcolor: '#1a1a1a', boxShadow: '0 6px 20px rgba(0,0,0,0.22)' },
               transition: 'all 0.2s ease',
             }}
           >
-            Explore Current Opportunities
+            {content.button_text}
           </Button>
         </Box>
       </Box>

@@ -3,33 +3,17 @@
 import { Box, Typography, Container, Grid, Link as MuiLink } from '@mui/material';
 import { InstagramLogo, LinkedinLogo, XLogo } from '@phosphor-icons/react';
 import Image from 'next/image';
+import type { FooterContent, FooterSocial } from '@/lib/content';
 
-const FOOTER_COLS = [
-  {
-    title: 'Company',
-    links: ['About Us', 'Blog', 'Contact'],
-  },
-  {
-    title: 'Platform',
-    links: ['How It Works', 'Tokenization', 'Security'],
-  },
-  {
-    title: 'Marketplace',
-    links: ['Explore Assets', 'Live Auctions', 'Featured Assets'],
-  },
-  {
-    title: 'Support',
-    links: ['FAQs', 'Help Center', 'Privacy Policy'],
-  },
-];
+type SocialIconComponent = React.ComponentType<{ size: number; weight: string }>;
 
-const SOCIALS = [
-  { Icon: InstagramLogo, label: 'Instagram', href: '#' },
-  { Icon: LinkedinLogo,  label: 'LinkedIn',  href: '#' },
-  { Icon: XLogo,         label: 'X',         href: '#' },
-];
+const SOCIAL_ICON_MAP: Record<string, SocialIconComponent> = {
+  Instagram: InstagramLogo as SocialIconComponent,
+  LinkedIn: LinkedinLogo as SocialIconComponent,
+  X: XLogo as SocialIconComponent,
+};
 
-export default function Footer() {
+export default function Footer({ content }: { content: FooterContent }) {
   return (
     <Box
       component="footer"
@@ -45,7 +29,7 @@ export default function Footer() {
         {/* Top row — logo + columns */}
         <Grid container spacing={{ xs: 4, md: 5 }}>
 
-          {/* Logo (SVG includes icon + name) + description */}
+          {/* Logo + description */}
           <Grid size={{ xs: 12, sm: 12, md: 4 }}>
             <Box sx={{ mb: 2.5 }}>
               <Image
@@ -66,13 +50,12 @@ export default function Footer() {
                 maxWidth: 300,
               }}
             >
-              LinkblockAssets is a next generation platform for investing in tokenized real world
-              assets. Secure, Transparent and Accessible for everyone.
+              {content.logo_description}
             </Typography>
           </Grid>
 
           {/* Link columns */}
-          {FOOTER_COLS.map((col) => (
+          {content.columns.map((col) => (
             <Grid key={col.title} size={{ xs: 6, sm: 3, md: 2 }}>
               <Typography
                 sx={{
@@ -89,9 +72,9 @@ export default function Footer() {
                 sx={{ listStyle: 'none', p: 0, m: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}
               >
                 {col.links.map((link) => (
-                  <Box component="li" key={link}>
+                  <Box component="li" key={link.label}>
                     <MuiLink
-                      href="#"
+                      href={link.href}
                       underline="none"
                       sx={{
                         color: '#ffffff',
@@ -100,7 +83,7 @@ export default function Footer() {
                         '&:hover': { color: 'rgba(255,255,255,0.45)' },
                       }}
                     >
-                      {link}
+                      {link.label}
                     </MuiLink>
                   </Box>
                 ))}
@@ -123,26 +106,30 @@ export default function Footer() {
             {/* Left — socials + copyright */}
             <Box>
               <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
-                {SOCIALS.map(({ Icon, label, href }) => (
-                  <Box
-                    key={label}
-                    component="a"
-                    href={href}
-                    aria-label={label}
-                    sx={{
-                      color: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: 'color 0.2s ease',
-                      '&:hover': { color: 'rgba(255,255,255,0.45)' },
-                    }}
-                  >
-                    <Icon size={22} weight="regular" />
-                  </Box>
-                ))}
+                {content.socials.map((social: FooterSocial) => {
+                  const Icon = SOCIAL_ICON_MAP[social.platform];
+                  if (!Icon) return null;
+                  return (
+                    <Box
+                      key={social.platform}
+                      component="a"
+                      href={social.href}
+                      aria-label={social.platform}
+                      sx={{
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'color 0.2s ease',
+                        '&:hover': { color: 'rgba(255,255,255,0.45)' },
+                      }}
+                    >
+                      <Icon size={22} weight="regular" />
+                    </Box>
+                  );
+                })}
               </Box>
               <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
-                Copyright © 2026 LinkBlockAssets
+                {content.copyright}
               </Typography>
             </Box>
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Box, Typography, Container, Button } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
+import type { CtaContent } from '@/lib/content';
 
 const floatBlob = keyframes`
   0%   { transform: translate(0%,   0%)   scale(1);    }
@@ -17,7 +18,7 @@ const floatBlob = keyframes`
 const openRegister = () =>
   window.dispatchEvent(new CustomEvent('linkay:open-register'));
 
-export default function CtaSection() {
+export default function CtaSection({ content }: { content: CtaContent }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -57,7 +58,6 @@ export default function CtaSection() {
             }}
           />
 
-          {/* Title */}
           <Typography
             component="h2"
             sx={{
@@ -74,10 +74,9 @@ export default function CtaSection() {
               mb: { xs: 3.5, md: 4.5 },
             }}
           >
-            The Future of Asset Ownership
+            {content.title}
           </Typography>
 
-          {/* Buttons */}
           <Box
             sx={{
               position: 'relative',
@@ -88,7 +87,7 @@ export default function CtaSection() {
               justifyContent: 'center',
             }}
           >
-            {/* Get Started */}
+            {/* Primary button */}
             <Button
               onClick={openRegister}
               onMouseEnter={() => setHovered(true)}
@@ -150,10 +149,10 @@ export default function CtaSection() {
                 transition: 'all 0.2s ease',
               }}
             >
-              Get Started
+              {content.button_primary}
             </Button>
 
-            {/* List Your Asset */}
+            {/* Secondary button */}
             <Button
               onClick={openRegister}
               variant="outlined"
@@ -172,7 +171,7 @@ export default function CtaSection() {
                 transition: 'all 0.2s ease',
               }}
             >
-              List Your Asset
+              {content.button_secondary}
             </Button>
           </Box>
         </Box>

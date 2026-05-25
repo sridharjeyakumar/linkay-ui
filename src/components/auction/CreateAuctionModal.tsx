@@ -164,8 +164,8 @@ export function CreateAuctionModal({
         slotProps={{
           paper: {
             sx: {
-              borderRadius: { xs: 3, sm: 3 },
-              bgcolor: '#fff',
+              borderRadius: '12px',
+              bgcolor: '#FFFFFF',
               width: { xs: '100%', sm: 'calc(100% - 32px)', md: 560 },
               maxWidth: { xs: '100%', sm: 560 },
               maxHeight: { xs: '95vh', sm: '92vh' },
@@ -174,6 +174,7 @@ export function CreateAuctionModal({
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.12)',
             },
           },
         }}
@@ -268,7 +269,20 @@ export function CreateAuctionModal({
           }}
         >
           {/* Save Draft */}
-          <Button onClick={handleSaveDraft} sx={btnSecondary}>
+          <Button
+            onClick={handleSaveDraft}
+            sx={{
+              bgcolor: '#6B7280',
+              color: '#fff',
+              borderRadius: '8px',
+              height: 40,
+              px: 3,
+              fontWeight: 600,
+              fontSize: 13,
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#4B5563' },
+            }}
+          >
             Save Draft
           </Button>
 
@@ -276,7 +290,18 @@ export function CreateAuctionModal({
             <Button
               onClick={() => setView('step2')}
               disabled={!canNext}
-              sx={btnPrimary}
+              sx={{
+                bgcolor: '#1D4ED8',
+                color: '#fff',
+                borderRadius: '8px',
+                height: 40,
+                px: 3,
+                fontWeight: 600,
+                fontSize: 13,
+                textTransform: 'none',
+                '&:hover': { bgcolor: '#1E3A8A' },
+                '&.Mui-disabled': { bgcolor: '#93c5fd', color: '#fff' },
+              }}
             >
               Next
             </Button>
@@ -284,16 +309,15 @@ export function CreateAuctionModal({
 
           {view === 'step2' && (
             <Box sx={{ display: 'flex', gap: 1 }}>
-              {/* Preview */}
               <Button
                 onClick={() => setView('preview')}
                 disabled={!pricingComplete}
                 variant="outlined"
                 sx={{
-                  borderRadius: 10,
+                  borderRadius: '8px',
+                  height: 40,
                   px: 2.5,
-                  py: 1,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   textTransform: 'none',
                   color: pricingComplete ? '#374151' : '#9ca3af',
@@ -304,10 +328,19 @@ export function CreateAuctionModal({
               >
                 Preview
               </Button>
-              {/* Proceed to schedule */}
               <Button
                 onClick={() => setView('schedule')}
-                sx={btnPrimary}
+                sx={{
+                  bgcolor: '#1D4ED8',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  height: 40,
+                  px: 3,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  textTransform: 'none',
+                  '&:hover': { bgcolor: '#1E3A8A' },
+                }}
               >
                 {submitting ? (
                   <CircularProgress size={16} sx={{ color: '#fff' }} />
@@ -329,7 +362,7 @@ export function CreateAuctionModal({
         pricing={pricing}
         onEdit={() => setView('step2')}
         onProceed={() => setView('schedule')}
-        onClose={() => setView('step2')}
+        onClose={handleClose}
       />
 
       {/* ── Schedule modal ─────────────────────────────────────────── */}
@@ -337,7 +370,7 @@ export function CreateAuctionModal({
         open={open && view === 'schedule'}
         values={schedule}
         onChange={handleScheduleChange}
-        onCancel={() => setView('preview')}
+        onCancel={handleClose}
         onSchedule={() => setView('confirm')}
       />
 
@@ -346,7 +379,7 @@ export function CreateAuctionModal({
         open={open && view === 'confirm'}
         loading={submitting}
         error={scheduleError}
-        onCancel={() => setView('schedule')}
+        onCancel={handleClose}
         onConfirm={handleConfirmSchedule}
       />
 

@@ -15,45 +15,19 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useScrollTrigger } from '@mui/material';
+import { usePathname } from 'next/navigation';
 import MineralModal from './MineralModal';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
+import type { NavbarContent, MineralModalContent } from '@/lib/content';
 
-type DropdownItem = {
-  label: string;
-  icon: Icon;
-  description?: string;
-  comingSoon?: boolean;
+const ICON_MAP: Record<string, Icon> = {
+  bank: Bank,
+  buildings: Buildings,
+  cube: Cube,
+  warehouse: Warehouse,
+  coins: Coins,
 };
-
-type NavLink = {
-  label: string;
-  href: string;
-  dropdown?: DropdownItem[];
-};
-
-const NAV_LINKS: NavLink[] = [
-  { label: 'Marketplace', href: '#marketplace' },
-  { label: 'Tokenization', href: '/tokenization' },
-  { label: 'How It Works', href: '#ownership' },
-  {
-    label: 'Asset Classes',
-    href: '#asset-classes',
-    dropdown: [
-      { label: 'Museum Artifacts', icon: Bank },
-      { label: 'Real Estate', icon: Buildings },
-      { label: 'Minerals', icon: Cube, comingSoon: true },
-    ],
-  },
-  {
-    label: 'For You',
-    href: '#for-you',
-    dropdown: [
-      { label: 'For Asset Owners', icon: Warehouse, description: 'Tokenize and launch real world assets' },
-      { label: 'For Investors', icon: Coins, description: 'Access tokenized asset opportunities' },
-    ],
-  },
-];
 
 function smoothScrollTo(id: string, duration = 1500) {
   const target = document.getElementById(id);
@@ -70,7 +44,13 @@ function smoothScrollTo(id: string, duration = 1500) {
   requestAnimationFrame(step);
 }
 
-export default function Navbar() {
+interface NavbarProps {
+  content: NavbarContent;
+  mineralModal: MineralModalContent;
+}
+
+export default function Navbar({ content, mineralModal }: NavbarProps) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<Record<string, HTMLElement | null>>({});
@@ -80,6 +60,12 @@ export default function Navbar() {
   const [registerOpen, setRegisterOpen] = useState(false);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
+
+  // Check if a link is active (only for non-hash links)
+  const isLinkActive = (href: string | undefined) => {
+    if (!href || href.startsWith('#')) return false;
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   useEffect(() => {
     const handler = () => setRegisterOpen(true);
@@ -108,7 +94,7 @@ export default function Navbar() {
           transition: 'background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
         }}
       >
-        <Container maxWidth={false} sx={{ maxWidth: '16S00px', px: { xs: 2, sm: 4, md: 6 } }}>
+        <Container maxWidth={false} sx={{ maxWidth: '1600px', px: { xs: 2, sm: 4, md: 6 } }}>
           <Toolbar disableGutters sx={{ py: { xs: 0.5, md: 1 }, minHeight: { xs: 56, md: 64 } }}>
 
             {/* Logo */}
@@ -130,7 +116,7 @@ export default function Navbar() {
 
             {/* Desktop nav links */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: { md: 0, lg: 1 }, flexGrow: 1 }}>
-              {NAV_LINKS.map((link) =>
+              {content.links.map((link) =>
                 link.dropdown ? (
                   <Box key={link.label}>
                     <Button
@@ -164,39 +150,44 @@ export default function Navbar() {
                       sx={{ mt: 1 }}
                       slotProps={{ paper: { sx: { borderRadius: 2, minWidth: link.label === 'For You' ? 300 : 240, py: 0.5, bgcolor: '#EFF6FF' } } }}
                     >
-                      {link.dropdown.map((item, idx, arr) => (
-                        <Box key={item.label}>
-                          <MenuItem
-                            onClick={() => {
-                              closeDropdown(link.label);
-                              if (item.label === 'Minerals') setMineralOpen(true);
-                            }}
-                            sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, width: '100%' }}>
-                              <Box sx={{ mt: item.description ? 0.2 : 0, color: '#374151', flexShrink: 0 }}>
-                                <item.icon size={20} />
-                              </Box>
-                              <Box sx={{ flex: 1 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: '16px', lineHeight: 1.5, letterSpacing: 0, color: '#0A0A0A' }}>
-                                    {item.label}
-                                  </Typography>
-                                  {item.comingSoon && (
-                                    <Chip label="Coming Soon" size="small" sx={{ height: 22, fontSize: '0.875rem', bgcolor: 'rgba(37, 91, 227, 0.2)', color: '#255BE3', fontWeight: 400, borderRadius: '16px', '& .MuiChip-label': { px: '8px', py: '2px' } }} />
+                      {link.dropdown.map((item, idx, arr) => {
+                        const ItemIcon = ICON_MAP[item.icon];
+                        return (
+                          <Box key={item.label}>
+                            <MenuItem
+                              onClick={() => {
+                                closeDropdown(link.label);
+                                if (item.label === 'Minerals') setMineralOpen(true);
+                              }}
+                              sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, width: '100%' }}>
+                                {ItemIcon && (
+                                  <Box sx={{ mt: item.description ? 0.2 : 0, color: '#374151', flexShrink: 0 }}>
+                                    <ItemIcon size={20} />
+                                  </Box>
+                                )}
+                                <Box sx={{ flex: 1 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: '16px', lineHeight: 1.5, letterSpacing: 0, color: '#0A0A0A' }}>
+                                      {item.label}
+                                    </Typography>
+                                    {item.comingSoon && (
+                                      <Chip label="Coming Soon" size="small" sx={{ height: 22, fontSize: '0.875rem', bgcolor: 'rgba(37, 91, 227, 0.2)', color: '#255BE3', fontWeight: 400, borderRadius: '16px', '& .MuiChip-label': { px: '8px', py: '2px' } }} />
+                                    )}
+                                  </Box>
+                                  {item.description && (
+                                    <Typography sx={{ fontSize: '0.78rem', color: '#6b7280', mt: 0.3, lineHeight: 1.4 }}>
+                                      {item.description}
+                                    </Typography>
                                   )}
                                 </Box>
-                                {item.description && (
-                                  <Typography sx={{ fontSize: '0.78rem', color: '#6b7280', mt: 0.3, lineHeight: 1.4 }}>
-                                    {item.description}
-                                  </Typography>
-                                )}
                               </Box>
-                            </Box>
-                          </MenuItem>
-                          {idx < arr.length - 1 && <Divider />}
-                        </Box>
-                      ))}
+                            </MenuItem>
+                            {idx < arr.length - 1 && <Divider />}
+                          </Box>
+                        );
+                      })}
                     </Menu>
                   </Box>
                 ) : (
@@ -204,7 +195,7 @@ export default function Navbar() {
                     key={link.label}
                     href={link.href}
                     onClick={(e) => {
-                      if (link.href.startsWith('#')) {
+                      if (link.href?.startsWith('#')) {
                         e.preventDefault();
                         if (window.location.pathname !== '/') {
                           window.location.href = '/' + link.href;
@@ -214,12 +205,12 @@ export default function Navbar() {
                       }
                     }}
                     sx={{
-                      color: '#374151',
-                      fontWeight: 400,
+                      color: isLinkActive(link.href) ? '#010303' : '#374151',
+                      fontWeight: isLinkActive(link.href) ? 600 : 400,
                       fontSize: { md: '0.82rem', lg: '0.92rem' },
                       textTransform: 'none',
                       px: { md: 1.2, lg: 1.8 },
-                       whiteSpace: 'nowrap',
+                      whiteSpace: 'nowrap',
                       '&:hover': { color: '#1565c0', bgcolor: 'transparent' },
                     }}
                   >
@@ -321,7 +312,7 @@ export default function Navbar() {
         </Container>
       </AppBar>
 
-      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} onOpenRegister={() => setRegisterOpen(true)} />
+      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} onOpenRegister={() => setRegisterOpen(true)} content={mineralModal} />
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <RegisterModal
         open={registerOpen}
@@ -345,7 +336,7 @@ export default function Navbar() {
         <Divider />
 
         <List disablePadding>
-          {NAV_LINKS.map((link) =>
+          {content.links.map((link) =>
             link.dropdown ? (
               <Box key={link.label}>
                 <ListItemButton onClick={() => toggleMobileExpand(link.label)}>
@@ -364,27 +355,30 @@ export default function Navbar() {
                 </ListItemButton>
                 <Collapse in={mobileExpanded === link.label}>
                   <List disablePadding>
-                    {link.dropdown.map((item) => (
-                      <ListItemButton
-                        key={item.label}
-                        sx={{ pl: 4 }}
-                        onClick={() => {
-                          setMobileOpen(false);
-                          if (item.label === 'Minerals') setMineralOpen(true);
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
-                          <item.icon size={18} color="#6b7280" />
-                          <ListItemText
-                            primary={item.label}
-                            slotProps={{ primary: { sx: { fontSize: '0.9rem', color: '#6b7280' } } }}
-                          />
-                          {item.comingSoon && (
-                            <Chip label="Soon" size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: '#e8eaf6', color: '#5c6bc0' }} />
-                          )}
-                        </Box>
-                      </ListItemButton>
-                    ))}
+                    {link.dropdown.map((item) => {
+                      const ItemIcon = ICON_MAP[item.icon];
+                      return (
+                        <ListItemButton
+                          key={item.label}
+                          sx={{ pl: 4 }}
+                          onClick={() => {
+                            setMobileOpen(false);
+                            if (item.label === 'Minerals') setMineralOpen(true);
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+                            {ItemIcon && <ItemIcon size={18} color="#6b7280" />}
+                            <ListItemText
+                              primary={item.label}
+                              slotProps={{ primary: { sx: { fontSize: '0.9rem', color: '#6b7280' } } }}
+                            />
+                            {item.comingSoon && (
+                              <Chip label="Soon" size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: '#e8eaf6', color: '#5c6bc0' }} />
+                            )}
+                          </Box>
+                        </ListItemButton>
+                      );
+                    })}
                   </List>
                 </Collapse>
                 <Divider />
@@ -395,7 +389,7 @@ export default function Navbar() {
                   component="a"
                   href={link.href}
                   onClick={(e: React.MouseEvent) => {
-                    if (link.href.startsWith('#')) {
+                    if (link.href?.startsWith('#')) {
                       e.preventDefault();
                       if (window.location.pathname !== '/') {
                         window.location.href = '/' + link.href;
@@ -405,10 +399,13 @@ export default function Navbar() {
                     }
                     setMobileOpen(false);
                   }}
+                  sx={{
+                    bgcolor: isLinkActive(link.href) ? 'rgba(21, 101, 192, 0.1)' : 'transparent',
+                  }}
                 >
                   <ListItemText
                     primary={link.label}
-                    slotProps={{ primary: { sx: { fontWeight: 500, color: '#111827' } } }}
+                    slotProps={{ primary: { sx: { fontWeight: isLinkActive(link.href) ? 600 : 500, color: isLinkActive(link.href) ? '#1565c0' : '#111827' } } }}
                   />
                 </ListItemButton>
                 <Divider />

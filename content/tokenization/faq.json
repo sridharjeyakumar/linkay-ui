@@ -1,0 +1,13 @@
+{
+  "items": [
+    { "question": "What types of assets qualify?", "answer": "LinkBlock Assets supports premium real-world assets including museum artifacts, real estate, and emerging asset categories." },
+    { "question": "How long does the review process take?", "answer": "Review timelines vary based on asset category, documentation, and verification requirements." },
+    { "question": "How is ownership structured?", "answer": "Approved assets are digitally structured into fractional ownership units for marketplace participation." },
+    { "question": "Can ownership be traded after launch?", "answer": "Yes, ownership units can be securely traded within the LinkBlock Assets marketplace." },
+    { "question": "What documentation is required?", "answer": "Documentation requirements depend on the asset category and ownership structure." },
+    { "question": "Is tokenization available globally?", "answer": "Availability may vary depending on jurisdiction and regulatory considerations." }
+  ],
+  "cta_title": "The Future of Asset Ownership",
+  "cta_button_primary": "Get Started",
+  "cta_button_secondary": "List Your Asset"
+}

@@ -3,15 +3,30 @@ import Footer from '@/components/landing/Footer';
 import HeaderSection from '@/components/landing/Tokenization/HeaderSection';
 import ModernAsset from '@/components/landing/Tokenization/ModernAsset';
 import OwnershipSection from '@/components/landing/Tokenization/OwnershipSection';
+import {
+  getFooterContent,
+  getNavbarContent,
+  getMineralModalContent,
+  getTokenizationHeaderContent,
+  getModernAssetContent,
+  getFaqContent,
+} from '@/lib/content';
 
 export default function TokenizationPage() {
+  const footer = getFooterContent();
+  const navbar = getNavbarContent();
+  const mineralModal = getMineralModalContent();
+  const header = getTokenizationHeaderContent();
+  const modernAsset = getModernAssetContent();
+  const faq = getFaqContent();
+
   return (
     <>
-      <Navbar />
-      <HeaderSection />
-      <ModernAsset />
-      <OwnershipSection/>
-      <Footer />
+      <Navbar content={navbar} mineralModal={mineralModal} />
+      <HeaderSection content={header} />
+      <ModernAsset content={modernAsset} />
+      <OwnershipSection content={faq} />
+      <Footer content={footer} />
     </>
   );
 }

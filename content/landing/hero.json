@@ -1,0 +1,25 @@
+{
+  "label": "Future's of Asset Ownership",
+  "headline_line1": "Invest in Tokenized ",
+  "headline_line2": "Real World Assets",
+  "subheading": "Access verified opportunities in museum artifacts, premium real estate and emerging asset classes through secure digital ownership and marketplace trading",
+  "button_text": "Get Started",
+  "carousel": [
+    {
+      "src": "/landing/carousel/slide-1.svg",
+      "alt": "Museum artifacts"
+    },
+    {
+      "src": "/landing/carousel/slide-2.svg",
+      "alt": "Real estate property"
+    },
+    {
+      "src": "/landing/carousel/slide-3.svg",
+      "alt": "Minerals collection"
+    },
+    {
+      "src": "/landing/carousel/slide-4.svg",
+      "alt": "Premium assets"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "logo_description": "LinkblockAssets is a next generation platform for investing in tokenized real world assets. Secure, Transparent and Accessible for everyone.",
+  "columns": [
+    {
+      "title": "Company",
+      "links": [
+        { "label": "About Us", "href": "#" },
+        { "label": "Blog", "href": "#" },
+        { "label": "Contact", "href": "#" }
+      ]
+    },
+    {
+      "title": "Platform",
+      "links": [
+        { "label": "How It Works", "href": "#" },
+        { "label": "Tokenization", "href": "#" },
+        { "label": "Security", "href": "#" }
+      ]
+    },
+    {
+      "title": "Marketplace",
+      "links": [
+        { "label": "Explore Assets", "href": "#" },
+        { "label": "Live Auctions", "href": "#" },
+        { "label": "Featured Assets", "href": "#" }
+      ]
+    },
+    {
+      "title": "Support",
+      "links": [
+        { "label": "FAQs", "href": "#" },
+        { "label": "Help Center", "href": "#" },
+        { "label": "Privacy Policy", "href": "#" }
+      ]
+    }
+  ],
+  "socials": [
+    { "platform": "Instagram", "href": "#" },
+    { "platform": "LinkedIn", "href": "#" },
+    { "platform": "X", "href": "#" }
+  ],
+  "copyright": "Copyright © 2026 LinkBlockAssets"
+}
