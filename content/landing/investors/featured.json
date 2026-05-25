@@ -1,0 +1,26 @@
+{
+  "title": "Featured Opportunities",
+  "opportunities": [
+    {
+      "title": "Renaissance Masterpiece",
+      "category": "Art Equity",
+      "price": "$1,821",
+      "minInvestment": "$100",
+      "image": "/landing/for investors/investor 1.svg"
+    },
+    {
+      "title": "Dubai Waterfront Villa",
+      "category": "Real Estate",
+      "price": "$1,240",
+      "minInvestment": "$250",
+      "image": "/landing/for investors/investor 2.svg"
+    },
+    {
+      "title": "Rare Mineral Reserve",
+      "category": "Minerals",
+      "price": "$985",
+      "minInvestment": "$150",
+      "image": "/landing/for investors/investor 3.svg"
+    }
+  ]
+}

@@ -211,7 +211,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
           borderRadius: '24px',
           border: '1px solid #E8E8E8',
           bgcolor: '#FFFFFF',
-          p: '32px',
+          p: { xs: '20px', sm: '32px' },
           display: 'flex',
           flexDirection: 'column',
           my: 'auto',
@@ -251,7 +251,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
         ) : (
           <Box component="form" onSubmit={handleSubmit} noValidate autoComplete="off">
 
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
               <TextField
                 placeholder="First Name"
                 name="firstName"
@@ -317,9 +317,12 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                     slotProps: {
                       paper: {
                         sx: {
-                          mt: 1, borderRadius: '12px',
+                          mt: 1, 
+                          borderRadius: '12px',
                           boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
                           border: '1px solid #ECECEC',
+                          maxHeight: '300px', // Fix for scroll
+                          overflowY: 'auto',   // Fix for scroll
                           '& .MuiMenuItem-root': { fontSize: '14px', padding: '10px 14px', borderRadius: '8px', mx: 0.5, my: 0.3 },
                           '& .MuiMenuItem-root:hover': { backgroundColor: '#F5F7FB' },
                           '& .Mui-selected': { backgroundColor: '#EEF3FF !important', color: '#0B2745', fontWeight: 600 },
@@ -375,14 +378,14 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
               sx={fieldSx}
             />
 
-            {/* Role */}
+            {/* Role - Fixed responsive layout */}
             <Box sx={{ mt: 0.5, mb: 2 }}>
               {fieldErrors.role && (
                 <Typography sx={{ fontSize: '12px', color: '#d32f2f', mb: 0.75, ml: 0.5 }}>
                   {fieldErrors.role}
                 </Typography>
               )}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 {ROLE_OPTIONS.map((r) => {
                   const selected = form.role === r.value;
                   return (
@@ -391,10 +394,14 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                       onClick={() => handleRoleSelect(r.value)}
                       sx={{
                         flex: 1,
-                        height: '59px',
+                        minHeight: '59px',
+                        height: 'auto',
                         border: selected ? '1px solid #1E40AF' : '1px solid #E8E8E8',
                         borderRadius: '8px',
-                        pt: '12px', pr: '8px', pb: '8px', pl: '8px',
+                        pt: '12px', 
+                        pr: '8px', 
+                        pb: '8px', 
+                        pl: '8px',
                         cursor: 'pointer',
                         bgcolor: selected ? 'rgba(30,64,175,0.05)' : '#F6F6F6',
                         display: 'flex',
@@ -410,13 +417,13 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                         size="small"
                         readOnly
                         tabIndex={-1}
-                        sx={{ p: 0, mt: '1px', color: selected ? '#1E40AF' : '#BDBDBD', '&.Mui-checked': { color: '#1E40AF' } }}
+                        sx={{ p: 0, mt: '1px', flexShrink: 0, color: selected ? '#1E40AF' : '#BDBDBD', '&.Mui-checked': { color: '#1E40AF' } }}
                       />
-                      <Box>
+                      <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: '13px', fontWeight: 600, color: selected ? '#1E40AF' : '#262626', lineHeight: 1.2 }}>
                           {r.label}
                         </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '10px', lineHeight: '24px', letterSpacing: '-0.04em', color: '#666666', whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '10px', lineHeight: '16px', letterSpacing: '-0.04em', color: '#666666', whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>
                           {r.desc}
                         </Typography>
                       </Box>

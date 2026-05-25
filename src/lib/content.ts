@@ -79,6 +79,7 @@ export type MineralModalContent = {
 export type NavDropdownItem = {
   label: string;
   icon: string;
+  href?: string;
   description?: string;
   comingSoon?: boolean;
 };
@@ -110,6 +111,44 @@ export type FaqContent = {
   cta_button_secondary: string;
 };
 
+export type InvestorHeroContent = {
+  label: string;
+  headline_line1: string;
+  headline_line2: string;
+  subheading: string;
+  button_text: string;
+};
+
+export type InvestorFeatureItem = { title: string; description: string };
+export type ModernInvestingContent = {
+  title: string;
+  items: InvestorFeatureItem[];
+};
+
+export type InvestorFeature = { title: string; description: string };
+export type DesignedForContent = {
+  title: string;
+  image: string;
+  features: InvestorFeature[];
+};
+
+export type FeaturedOpportunity = {
+  title: string;
+  category: string;
+  price: string;
+  minInvestment: string;
+  image: string;
+};
+export type FeaturedOpportunitiesContent = {
+  title: string;
+  opportunities: FeaturedOpportunity[];
+};
+
+export type InvestorCtaContent = {
+  title: string;
+  button_text: string;
+};
+
 export const getHeroContent = () => read<HeroContent>('landing/hero.json');
 export const getFeaturesContent = () => read<FeaturesContent>('landing/features.json');
 export const getTransformBannerContent = () => read<TransformBannerContent>('landing/transform-banner.json');
@@ -123,3 +162,50 @@ export const getNavbarContent = () => read<NavbarContent>('landing/navbar.json')
 export const getTokenizationHeaderContent = () => read<TokenizationHeaderContent>('tokenization/header.json');
 export const getModernAssetContent = () => read<ModernAssetContent>('tokenization/modern-asset.json');
 export const getFaqContent = () => read<FaqContent>('tokenization/faq.json');
+export type MuseumHeroContent = {
+  title: string;
+  subheading: string;
+  button_primary: string;
+  button_secondary: string;
+  image: string;
+};
+
+export const getMuseumHeroContent = () => read<MuseumHeroContent>('landing/museum-artifacts/hero.json');
+
+export type MuseumCategory = { title: string; description: string };
+export type MuseumAssetClassesContent = {
+  title: string;
+  subheading: string;
+  categories: MuseumCategory[];
+  images: string[];
+};
+export const getMuseumAssetClassesContent = () => read<MuseumAssetClassesContent>('landing/museum-artifacts/asset-classes.json');
+
+export type MuseumFeatureItem = { icon: string; title: string; description: string };
+export type MuseumFeaturesContent = { items: MuseumFeatureItem[] };
+export const getMuseumFeaturesContent = () => read<MuseumFeaturesContent>('landing/museum-artifacts/features.json');
+
+export type MuseumVisualizationItem = { title: string; bullets: string[]; image: string };
+export type MuseumVisualizationContent = { title: string; subtitle: string; items: MuseumVisualizationItem[] };
+export const getMuseumVisualizationContent = () => read<MuseumVisualizationContent>('landing/museum-artifacts/visualization.json');
+
+export type MuseumProperty = { name: string; image: string; button_label: string; current_bid: string; ends_in: string };
+export type MuseumFeaturedContent = { title: string; properties: MuseumProperty[] };
+export const getMuseumFeaturedContent = () => read<MuseumFeaturedContent>('landing/museum-artifacts/featured.json');
+
+export type MuseumTransparencyItem = { title: string; description: string };
+export type MuseumTransparencyContent = { title: string; items: MuseumTransparencyItem[] };
+export const getMuseumTransparencyContent = () => read<MuseumTransparencyContent>('landing/museum-artifacts/transparency.json');
+
+export type MuseumFaqItem = { question: string; answer: string };
+export type MuseumFaqContent = { title: string; items: MuseumFaqItem[] };
+export const getMuseumFaqContent = () => read<MuseumFaqContent>('landing/museum-artifacts/faq.json');
+
+export type MuseumCtaContent = { title: string; button_primary: string; button_secondary: string };
+export const getMuseumCtaContent = () => read<MuseumCtaContent>('landing/museum-artifacts/cta.json');
+
+export const getInvestorHeroContent = () => read<InvestorHeroContent>('landing/investors/hero.json');
+export const getModernInvestingContent = () => read<ModernInvestingContent>('landing/investors/modern-investing.json');
+export const getDesignedForContent = () => read<DesignedForContent>('landing/investors/designed-for.json');
+export const getFeaturedOpportunitiesContent = () => read<FeaturedOpportunitiesContent>('landing/investors/featured.json');
+export const getInvestorCtaContent = () => read<InvestorCtaContent>('landing/investors/cta.json');

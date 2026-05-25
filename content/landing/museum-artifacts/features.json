@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "icon": "/landing/museum-artifacts/Vector 1.svg",
+      "title": "Fractional Ownership Access",
+      "description": "Enable broader participation in traditionally exclusive asset classes."
+    },
+    {
+      "icon": "/landing/museum-artifacts/Vector 2.svg",
+      "title": "Structured Digital Ownership",
+      "description": "Transparent ownership participation designed around secure accessibility."
+    },
+    {
+      "icon": "/landing/museum-artifacts/Vector 3.svg",
+      "title": "Long Term Preservation",
+      "description": "Support sustainable preservation through modern digital infrastructure."
+    }
+  ]
+}

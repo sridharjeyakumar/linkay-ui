@@ -1,0 +1,21 @@
+{
+  "title": "Intelligent Artifact Visualization",
+  "subtitle": "AI-powered presentation technology creates immersive digital experiences for historically significant assets",
+  "items": [
+    {
+      "title": "Interactive 3D Presentation",
+      "bullets": ["Immersive artifact visualization", "Interactive digital exploration", "Enhanced presentation experiences"],
+      "image": "/landing/museum-artifacts/museum 2.svg"
+    },
+    {
+      "title": "Enhanced Asset Clarity",
+      "bullets": ["Improved collection visibility", "Intelligent digital presentation", "Refined audience engagement"],
+      "image": "/landing/museum-artifacts/museum v2.svg"
+    },
+    {
+      "title": "Digitally Curated Experiences",
+      "bullets": ["Curated visual storytelling", "Elevated digital experiences", "Modern collection presentation"],
+      "image": "/landing/museum-artifacts/museum v3.svg"
+    }
+  ]
+}

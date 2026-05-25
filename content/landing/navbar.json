@@ -7,9 +7,9 @@
       "label": "Asset Classes",
       "href": "#asset-classes",
       "dropdown": [
-        { "label": "Museum Artifacts", "icon": "bank" },
+        { "label": "Museum Artifacts", "icon": "bank", "href": "/asset-class/museum-artifacts" },
         { "label": "Real Estate", "icon": "buildings" },
-        { "label": "Minerals", "icon": "cube", "comingSoon": true }
+        { "label": "Minerals", "icon": "cube", "href": "/asset-class/minerals", "comingSoon": true }
       ]
     },
     {
@@ -17,7 +17,7 @@
       "href": "#for-you",
       "dropdown": [
         { "label": "For Asset Owners", "icon": "warehouse", "description": "Tokenize and launch real world assets" },
-        { "label": "For Investors", "icon": "coins", "description": "Access tokenized asset opportunities" }
+        { "label": "For Investors", "icon": "coins", "href": "/for-you/investors", "description": "Access tokenized asset opportunities" }
       ]
     }
   ]
