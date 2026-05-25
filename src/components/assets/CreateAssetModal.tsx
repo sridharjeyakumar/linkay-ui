@@ -40,6 +40,10 @@ function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
+// ── TRELLIS API ───────────────────────────────────────────────────────────────
+
+const TRELLIS_API = 'https://unseemly-showgirl-unmixable.ngrok-free.dev';
+
 // ── constants ─────────────────────────────────────────────────────────────────
 
 const ASSET_TYPES = ['Real Estate', 'Fine Art', 'Luxury Asset', 'Luxury Watch', 'Collectible', 'Other'];
@@ -179,6 +183,13 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   const [threeDDragOver, setThreeDDragOver] = useState(false);
   const [generated3DFiles, setGenerated3DFiles] = useState<File[]>([]);
 
+  // TRELLIS API state
+  const [bgRemovedPreviews, setBgRemovedPreviews] = useState<string[]>([]);
+  const [loadingBgRemoval, setLoadingBgRemoval] = useState(false);
+  const [loadingGenerate3D, setLoadingGenerate3D] = useState(false);
+  const [generatedModel, setGeneratedModel] = useState<{ preview_video: string; glb_model: string } | null>(null);
+  const [trellisError, setTrellisError] = useState<string | null>(null);
+
   // Auto-calculated price per fraction
   const pricePerFraction = (() => {
     const v = parseFloat(valuation);
@@ -275,10 +286,81 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setThreeDUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
+  // ── TRELLIS API calls ───────────────────────────────────────────────────────
+
+  async function callPreviewRemoveBG(selectedFiles: File[]): Promise<boolean> {
+    setLoadingBgRemoval(true);
+    setTrellisError(null);
+    const formData = new FormData();
+    selectedFiles.forEach((f) => formData.append('files', f));
+    try {
+      const res = await fetch(`${TRELLIS_API}/preview-removebg`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBgRemovedPreviews(data.previews ?? []);
+        setLoadingBgRemoval(false);
+        return true;
+      }
+      throw new Error(data.message ?? 'Background removal failed');
+    } catch (e) {
+      setTrellisError(e instanceof Error ? e.message : 'Background removal failed');
+      setLoadingBgRemoval(false);
+      return false;
+    }
+  }
+
+  async function callGenerate3D(selectedFiles: File[]): Promise<boolean> {
+    setLoadingGenerate3D(true);
+    setTrellisError(null);
+    const formData = new FormData();
+    selectedFiles.forEach((f) => formData.append('files', f));
+    formData.append('seed', '0');
+    formData.append('ss_guidance_strength', '7.5');
+    formData.append('ss_sampling_steps', '12');
+    formData.append('slat_guidance_strength', '3');
+    formData.append('slat_sampling_steps', '12');
+    formData.append('multiimage_algo', 'stochastic');
+    formData.append('mesh_simplify', '0.95');
+    formData.append('texture_size', '1024');
+    try {
+      const res = await fetch(`${TRELLIS_API}/generate`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      setGeneratedModel(data);
+      setLoadingGenerate3D(false);
+      return true;
+    } catch (e) {
+      setTrellisError(e instanceof Error ? e.message : '3D generation failed');
+      setLoadingGenerate3D(false);
+      return false;
+    }
+  }
+
+  // ── 3D modal navigation with API ────────────────────────────────────────────
+
+  async function handleThreeDGenerate() {
+    if (threeDModalStep === 1) {
+      if (threeDUploadedFiles.length === 0) return;
+      const ok = await callPreviewRemoveBG(threeDUploadedFiles);
+      if (ok) setThreeDModalStep(2);
+    } else if (threeDModalStep === 2) {
+      const ok = await callGenerate3D(threeDUploadedFiles);
+      if (ok) setThreeDModalStep(3);
+    }
+  }
+
   function close3DModal() {
     setShow3DModal(false);
     setThreeDModalStep(1);
     setThreeDUploadedFiles([]);
+    setBgRemovedPreviews([]);
+    setGeneratedModel(null);
+    setTrellisError(null);
   }
 
   function handleUploadAs3DModal() {
@@ -762,7 +844,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     onClick={() => { setShow3DModal(true); setThreeDModalStep(1); }}
                     startIcon={<AutoFixHighIcon sx={{ fontSize: '18px !important' }} />}
                     sx={{
-                      background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                      background: 'linear-gradient(135deg, #243AFB 0%, #EF44E9 100%)',
                       color: '#fff',
                       borderRadius: '8px',
                       py: 1.1,
@@ -770,7 +852,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                       fontSize: 13,
                       textTransform: 'none',
                       justifyContent: 'center',
-                      '&:hover': { background: 'linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%)' },
+                      '&:hover': { background: 'linear-gradient(135deg, #1a2fd4 0%, #d93dd2 100%)' },
                     }}
                   >
                     Generate 3D Model with AI
@@ -1027,92 +1109,135 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             </>
           )}
 
-          {/* ── Step 2: Background Removal ── */}
-          {threeDModalStep === 2 && threeDUploadedFiles.length > 0 && (
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              {/* Input image panel */}
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1 }}>
+          {/* ── Step 2: Background Removal (real API previews) ── */}
+          {threeDModalStep === 2 && (
+            <>
+              {trellisError && (
+                <Alert severity="error" sx={{ mb: 1.5, fontSize: 13 }}>{trellisError}</Alert>
+              )}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                {/* Original images (left column — first image shown) */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1, mb: 1, width: 'fit-content' }}>
                     <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
                     <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Input Image</Typography>
                   </Box>
-                  <IconButton size="small" sx={{ color: '#9ca3af' }}>
-                    <CloseIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
+                  <Box sx={{
+                    border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
+                    aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: '#fafafa',
+                  }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(threeDUploadedFiles[0])}
+                      alt="input"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  </Box>
                 </Box>
-                <Box sx={{
-                  border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
-                  aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  bgcolor: '#fafafa',
-                }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={URL.createObjectURL(threeDUploadedFiles[0])}
-                    alt="input"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                  />
+
+                {/* BG-removed preview (right column — first preview from API) */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1, mb: 1, width: 'fit-content' }}>
+                    <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
+                    <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Background Removed</Typography>
+                  </Box>
+                  <Box sx={{
+                    border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
+                    aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundImage: [
+                      'linear-gradient(45deg, #d0d0d0 25%, transparent 25%)',
+                      'linear-gradient(-45deg, #d0d0d0 25%, transparent 25%)',
+                      'linear-gradient(45deg, transparent 75%, #d0d0d0 75%)',
+                      'linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)',
+                    ].join(', '),
+                    backgroundSize: '16px 16px',
+                    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0',
+                  }}>
+                    {bgRemovedPreviews[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={bgRemovedPreviews[0]} alt="bg-removed"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <CircularProgress size={28} sx={{ color: '#3b6ef8' }} />
+                    )}
+                  </Box>
                 </Box>
               </Box>
 
-              {/* Background removal preview panel */}
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1 }}>
-                    <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
-                    <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Preview Background Removal</Typography>
+              {/* All previews grid (if more than 1) */}
+              {bgRemovedPreviews.length > 1 && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 1 }}>
+                    All {bgRemovedPreviews.length} previews
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {bgRemovedPreviews.map((src, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={src} alt={`preview-${i}`}
+                        style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f3f4f6' }}
+                      />
+                    ))}
                   </Box>
-                  <IconButton size="small" sx={{ color: '#9ca3af' }}>
-                    <IosShareIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
                 </Box>
-                <Box sx={{
-                  border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
-                  aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  backgroundImage: [
-                    'linear-gradient(45deg, #d0d0d0 25%, transparent 25%)',
-                    'linear-gradient(-45deg, #d0d0d0 25%, transparent 25%)',
-                    'linear-gradient(45deg, transparent 75%, #d0d0d0 75%)',
-                    'linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)',
-                  ].join(', '),
-                  backgroundSize: '16px 16px',
-                  backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0',
-                }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={URL.createObjectURL(threeDUploadedFiles[0])}
-                    alt="bg-removed"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }}
-                  />
-                </Box>
-              </Box>
-            </Box>
+              )}
+            </>
           )}
 
-          {/* ── Step 3: 3D Preview ── */}
+          {/* ── Step 3: 3D Preview (real video + GLB download) ── */}
           {threeDModalStep === 3 && (
-            <Box sx={{
-              border: '2px dashed #3b6ef8', borderRadius: 2,
-              position: 'relative', minHeight: 300,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              bgcolor: '#f8f9ff',
-            }}>
-              <Box sx={{
-                position: 'absolute', top: 10, left: 10,
-                px: 1.5, py: 0.4, bgcolor: '#fff',
-                border: '1px solid #e5e7eb', borderRadius: 1,
-              }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>3D Model</Typography>
-              </Box>
-              {threeDUploadedFiles.length > 0 && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={URL.createObjectURL(threeDUploadedFiles[0])}
-                  alt="3d-preview"
-                  style={{ maxWidth: '80%', maxHeight: 270, objectFit: 'contain' }}
-                />
+            <>
+              {trellisError && (
+                <Alert severity="error" sx={{ mb: 1.5, fontSize: 13 }}>{trellisError}</Alert>
               )}
-            </Box>
+              <Box sx={{
+                border: '2px dashed #3b6ef8', borderRadius: 2,
+                position: 'relative', minHeight: 300,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                bgcolor: '#f8f9ff', p: 2, gap: 2,
+              }}>
+                <Box sx={{
+                  position: 'absolute', top: 10, left: 10,
+                  px: 1.5, py: 0.4, bgcolor: '#fff',
+                  border: '1px solid #e5e7eb', borderRadius: 1,
+                }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>3D Model</Typography>
+                </Box>
+
+                {generatedModel?.preview_video ? (
+                  <video
+                    controls
+                    src={generatedModel.preview_video}
+                    style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8 }}
+                  />
+                ) : (
+                  /* Fallback: show uploaded image if video not yet available */
+                  threeDUploadedFiles.length > 0 && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={bgRemovedPreviews[0] ?? URL.createObjectURL(threeDUploadedFiles[0])}
+                      alt="3d-preview"
+                      style={{ maxWidth: '80%', maxHeight: 260, objectFit: 'contain' }}
+                    />
+                  )
+                )}
+
+                {generatedModel?.glb_model && (
+                  <Box
+                    component="a"
+                    href={generatedModel.glb_model}
+                    target="_blank"
+                    rel="noreferrer"
+                    sx={{
+                      mt: 1, fontSize: 13, fontWeight: 600, color: '#3b6ef8',
+                      textDecoration: 'underline', cursor: 'pointer',
+                    }}
+                  >
+                    ⬇ Download GLB Model
+                  </Box>
+                )}
+              </Box>
+            </>
           )}
         </Box>
 
@@ -1120,8 +1245,14 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         <Box sx={{ px: 3, pb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {threeDModalStep === 3 ? (
             <>
+              {/* Regenerate → back to step 1 */}
               <Button
-                onClick={() => setThreeDModalStep(2)}
+                onClick={() => {
+                  setThreeDModalStep(1);
+                  setBgRemovedPreviews([]);
+                  setGeneratedModel(null);
+                  setTrellisError(null);
+                }}
                 variant="contained"
                 startIcon={<LoopIcon />}
                 sx={{
@@ -1150,6 +1281,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               <Button
                 onClick={close3DModal}
                 variant="outlined"
+                disabled={loadingBgRemoval || loadingGenerate3D}
                 sx={{
                   borderColor: '#d1d5db', color: '#374151', borderRadius: 20,
                   px: 3, textTransform: 'none', fontWeight: 600, fontSize: 13,
@@ -1159,10 +1291,18 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 Cancel
               </Button>
               <Button
-                onClick={() => setThreeDModalStep((s) => (s + 1) as 2 | 3)}
-                disabled={threeDModalStep === 1 && threeDUploadedFiles.length === 0}
+                onClick={handleThreeDGenerate}
+                disabled={
+                  (threeDModalStep === 1 && threeDUploadedFiles.length === 0) ||
+                  loadingBgRemoval ||
+                  loadingGenerate3D
+                }
                 variant="contained"
-                startIcon={<AutoFixHighIcon />}
+                startIcon={
+                  loadingBgRemoval || loadingGenerate3D
+                    ? <CircularProgress size={16} sx={{ color: '#fff' }} />
+                    : <AutoFixHighIcon />
+                }
                 sx={{
                   bgcolor: '#3b6ef8', color: '#fff', borderRadius: 20,
                   px: 3, textTransform: 'none', fontWeight: 700, fontSize: 13,
@@ -1170,7 +1310,11 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   '&.Mui-disabled': { bgcolor: '#d1d5db', color: '#9ca3af' },
                 }}
               >
-                Generate
+                {loadingBgRemoval
+                  ? 'Removing background…'
+                  : loadingGenerate3D
+                    ? 'Generating 3D…'
+                    : 'Generate'}
               </Button>
             </>
           )}
