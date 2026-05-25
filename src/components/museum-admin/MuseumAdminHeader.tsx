@@ -33,7 +33,7 @@ function kycButtonConfig(status: string | null | undefined): KycBtnConfig {
     case 'RESUBMIT_REQUIRED':
       return { label: 'Resubmit KYC', bgColor: '#f59e0b', clickable: true };
     case 'PENDING':
-      return { label: 'KYC Pending', bgColor: '#f59e0b', clickable: false };
+      return { label: 'KYC Pending', bgColor: '#f59e0b', clickable: true };
     case 'REJECTED':
       return { label: 'KYC Rejected', bgColor: '#ef4444', clickable: false };
     case 'APPROVED':
@@ -81,7 +81,7 @@ export default function MuseumAdminHeader() {
     if (walletStatus === 'connected' && wagmiAddress && user) {
       const savedAddress = user.walletAddress?.toLowerCase();
       const liveAddress = wagmiAddress.toLowerCase();
-      if (!savedAddress || savedAddress !== liveAddress) {
+      if (savedAddress && savedAddress !== liveAddress) {
         disconnectWallet();
       }
     }
@@ -103,6 +103,7 @@ export default function MuseumAdminHeader() {
   const handleKycClick = async () => {
     try {
       await dispatch(initKycThunk()).unwrap();
+      dispatch(getMeThunk());
       setKycModalOpen(true);
     } catch {
       setToastMsg('Failed to start KYC. Please try again.');
