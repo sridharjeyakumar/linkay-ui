@@ -1,0 +1,24 @@
+{
+  "title": "Intelligent Property Visualization",
+  "subtitle": "AI-powered digital presentation technology creates immersive real estate ownership experiences.",
+  "items": [
+    {
+      "title": "Interactive Property Experiences",
+      "description": "Explore premium real estate through immersive digital presentation systems designed to deliver engaging visual interactions. Experience properties with enhanced clarity, modern storytelling and intuitive digital navigation environments.",
+      "image": "/landing/real estate/Rectangle 3.svg",
+      "image_left": false
+    },
+    {
+      "title": "Enhanced Asset Presentation",
+      "description": "Improve property visibility and investor engagement through intelligently designed digital presentation experiences. Deliver refined showcasing systems that support clearer communication, accessibility, and elevated audience interaction.",
+      "image": "/landing/real estate/Rectangle 1.svg",
+      "image_left": true
+    },
+    {
+      "title": "Modern Ownership Accessibility",
+      "description": "Bring premium real estate opportunities into digitally accessible environments designed for broader participation. Enable structured ownership experiences supported by transparent presentation systems and modern digital infrastructure.",
+      "image": "/landing/real estate/Rectangle 2.svg",
+      "image_left": false
+    }
+  ]
+}

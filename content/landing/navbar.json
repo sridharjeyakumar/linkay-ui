@@ -7,8 +7,8 @@
       "label": "Asset Classes",
       "href": "#asset-classes",
       "dropdown": [
-        { "label": "Museum Artifacts", "icon": "bank", "href": "/asset-class/museum-artifacts" },
-        { "label": "Real Estate", "icon": "buildings" },
+        { "label": "Museum Artifacts", "icon": "bank" },
+        { "label": "Real Estate", "icon": "buildings","href": "/asset-class/realestate" },
         { "label": "Minerals", "icon": "cube", "href": "/asset-class/minerals", "comingSoon": true }
       ]
     },

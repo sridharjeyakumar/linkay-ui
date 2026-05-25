@@ -1,0 +1,23 @@
+{
+  "title": "Featured Real Estate Opportunities",
+  "properties": [
+    {
+      "name": "Bloom Estate",
+      "image": "/landing/real estate/image 11.svg",
+      "button_icon": "/landing/real estate/Bid.svg",
+      "button_label": "Bid Now"
+    },
+    {
+      "name": "Axis Hall",
+      "image": "/landing/real estate/image 19.svg",
+      "button_icon": "/landing/real estate/Bid.svg",
+      "button_label": "Bid Now"
+    },
+    {
+      "name": "Riviera Bay",
+      "image": "/landing/real estate/image 20.svg",
+      "button_icon": "/landing/real estate/Bid.svg",
+      "button_label": "Bid Now"
+    }
+  ]
+}
