@@ -79,6 +79,7 @@ export type MineralModalContent = {
 export type NavDropdownItem = {
   label: string;
   icon: string;
+  href?: string;
   description?: string;
   comingSoon?: boolean;
 };
@@ -123,3 +124,56 @@ export const getNavbarContent = () => read<NavbarContent>('landing/navbar.json')
 export const getTokenizationHeaderContent = () => read<TokenizationHeaderContent>('tokenization/header.json');
 export const getModernAssetContent = () => read<ModernAssetContent>('tokenization/modern-asset.json');
 export const getFaqContent = () => read<FaqContent>('tokenization/faq.json');
+/// ── Real Estate ──────────────────────────────────────────────────────────────
+
+export type REHeroContent = {
+  title: string;
+  subtitle: string;
+  button_explore: string;
+  button_tokenize: string;
+  hero_image: string;
+};
+
+export type REPropertyType = { num: string; title: string; description: string };
+export type REInfrastructureContent = {
+  title: string;
+  subtitle: string;
+  building_image: string;
+  property_types: REPropertyType[];
+};
+
+export type REBenefitItem = { title: string; description: string };
+export type REBenefitsContent = { items: REBenefitItem[] };
+
+export type REProperty = { name: string; image: string; button_icon: string; stats: string; button_label: string };
+export type REFeaturedContent = { title: string; properties: REProperty[] };
+
+export type REVizItem = { title: string; description: string; image: string; image_left: boolean };
+export type REVisualizationContent = {
+  title: string;
+  subtitle: string;
+ 
+  items: REVizItem[];
+  cta_title: string;
+  cta_button_primary: string;
+  cta_button_secondary: string;
+};
+
+export type REFaqItem = { question: string; answer: string };
+export type REFaqContent = {
+  faq_title: string;
+  items: REFaqItem[];
+};
+export type RECtaContent = {
+  cta_title: string;
+  cta_button_primary: string;
+  cta_button_secondary: string;
+};
+
+export const getREHeroContent = () => read<REHeroContent>('real-estate/hero.json');
+export const getREInfrastructureContent = () => read<REInfrastructureContent>('real-estate/infrastructure.json');
+export const getREBenefitsContent = () => read<REBenefitsContent>('real-estate/benefits.json');
+export const getREFeaturedContent = () => read<REFeaturedContent>('real-estate/featured.json');
+export const getREVisualizationContent = () => read<REVisualizationContent>('real-estate/visualization.json');
+export const getREFaqContent = () => read<REFaqContent>('real-estate/faq.json');
+export const getRECtaContent = () => read<RECtaContent>('real-estate/cta.json');

@@ -156,7 +156,7 @@ export default function Navbar({ content }: NavbarProps) {
                             <MenuItem
                               onClick={() => {
                                 closeDropdown(link.label);
-                                if (item.label === 'Minerals') router.push('/asset-class/minerals');
+                                if (item.href) router.push(item.href);
                               }}
                               sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
                             >
@@ -361,7 +361,7 @@ export default function Navbar({ content }: NavbarProps) {
                           sx={{ pl: 4 }}
                           onClick={() => {
                             setMobileOpen(false);
-                            if (item.label === 'Minerals') router.push('/asset-class/minerals');
+                            if (item.href) router.push(item.href);
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>

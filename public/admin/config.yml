@@ -212,3 +212,99 @@ collections:
           - { label: CTA Title, name: cta_title, widget: string }
           - { label: Primary Button, name: cta_button_primary, widget: string }
           - { label: Secondary Button, name: cta_button_secondary, widget: string }
+
+  - name: real_estate
+    label: Real Estate Page
+    files:
+
+      - name: re_hero
+        label: Hero Section
+        file: content/real-estate/hero.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Explore Button Text, name: button_explore, widget: string }
+          - { label: Tokenize Button Text, name: button_tokenize, widget: string }
+          - { label: Hero Background Image, name: hero_image, widget: image }
+
+      - name: re_infrastructure
+        label: Infrastructure Section
+        file: content/real-estate/infrastructure.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - { label: Building Image, name: building_image, widget: image }
+          - label: Property Types
+            name: property_types
+            widget: list
+            fields:
+              - { label: Number Label, name: num, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: re_benefits
+        label: Benefits Section
+        file: content/real-estate/benefits.json
+        format: json
+        fields:
+          - label: Benefits
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: re_featured
+        label: Featured Properties Section
+        file: content/real-estate/featured.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Properties
+            name: properties
+            widget: list
+            fields:
+              - { label: Property Name, name: name, widget: string }
+              - { label: Property Image, name: image, widget: image }
+              - { label: Stats Text, name: stats, widget: string }
+              - { label: Button Label, name: button_label, widget: string }
+
+      - name: re_visualization
+        label: Visualization Section
+        file: content/real-estate/visualization.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - label: Visualization Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+              - { label: Image, name: image, widget: image }
+              - { label: Image on Left Side, name: image_left, widget: boolean, default: false }
+
+      - name: re_faq
+        label: FAQ Section
+        file: content/real-estate/faq.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: FAQ Items
+            name: items
+            widget: list
+            fields:
+              - { label: Question, name: question, widget: string }
+              - { label: Answer, name: answer, widget: text }
+
+      - name: re_cta
+        label: CTA Section
+        file: content/real-estate/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Primary Button Text, name: button_primary, widget: string }
+          - { label: Secondary Button Text, name: button_secondary, widget: string }
