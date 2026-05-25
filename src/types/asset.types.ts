@@ -41,7 +41,8 @@ export interface Asset {
   royaltyPercent?: number;
   royaltyWallet?: string;
   tokenization?: {
-    tokenizationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+    tokenizationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'TREASURY_PENDING' | 'TREASURY_APPROVED' | 'TREASURY_REJECTED';
+    errorMessage?: string | null;
   } | null;
 }
 

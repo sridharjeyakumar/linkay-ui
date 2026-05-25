@@ -279,7 +279,10 @@ export default function MuseumDashboardPage() {
   }
 
   const isAssetTokenized = (a: typeof assets[0]) =>
-    a.tokenization?.tokenizationStatus === 'COMPLETED';
+    a.tokenization?.tokenizationStatus === 'COMPLETED' ||
+    a.tokenization?.tokenizationStatus === 'TREASURY_PENDING' ||
+    a.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
+    a.tokenization?.tokenizationStatus === 'TREASURY_REJECTED';
 
   /* derived counts */
   const drafts    = assets.filter((a) => a.status === 'DRAFT');
@@ -595,7 +598,37 @@ export default function MuseumDashboardPage() {
                                   {isTokenizing ? 'Minting…' : 'Tokenize'}
                                 </Box>
                               )}
+                              {/* Treasury Pending — waiting for platform approval */}
+                              {isTokenized && !isTokenizing && asset.tokenization?.tokenizationStatus === 'TREASURY_PENDING' && (
+                                <Box component="button" disabled sx={{
+                                  ...btnBase,
+                                  bgcolor: '#fef3c7',
+                                  color: '#92400e',
+                                  cursor: 'not-allowed',
+                                }}>
+                                  Pending Approval
+                                </Box>
+                              )}
+
+                              {/* Treasury Rejected */}
+                              {isTokenized && !isTokenizing && asset.tokenization?.tokenizationStatus === 'TREASURY_REJECTED' && (
+                                <Tooltip title={asset.tokenization.errorMessage || 'Rejected by platform'}>
+                                  <Box component="button" disabled sx={{
+                                    ...btnBase,
+                                    bgcolor: '#fee2e2',
+                                    color: '#991b1b',
+                                    cursor: 'not-allowed',
+                                  }}>
+                                    Rejected
+                                  </Box>
+                                </Tooltip>
+                              )}
+
+                              {/* Treasury Approved or legacy COMPLETED — show Auction button */}
                               {isTokenized && !isTokenizing && (
+                                asset.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
+                                asset.tokenization?.tokenizationStatus === 'COMPLETED'
+                              ) && (
                                 <Box component="button"
                                   onClick={() => !scheduledAssets.has(asset.id) && setAuctionAsset(asset)}
                                   disabled={scheduledAssets.has(asset.id)}
