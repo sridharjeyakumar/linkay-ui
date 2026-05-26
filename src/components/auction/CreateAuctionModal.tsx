@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { Box, Button, CircularProgress, Dialog, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import type { Asset } from '@/types/asset.types';
@@ -88,6 +89,7 @@ export function CreateAuctionModal({
   onSaveDraft,
   onSchedule,
 }: CreateAuctionModalProps) {
+  useScrollLock(open);
   const [view, setView] = useState<View>('step1');
   const [submitting, setSubmitting] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import {
   Box, Button, Dialog, IconButton, MenuItem,
   Select, Switch, Typography,
@@ -153,6 +154,7 @@ function TimeInput({
 // ── main component ────────────────────────────────────────────────────────────
 
 export function ScheduleAuctionModal({ open, values, onChange, onCancel, onSchedule }: Props) {
+  useScrollLock(open);
   const duration = calcDuration(values.startDate, values.startTime, values.endDate, values.endTime);
 
   const canSchedule =

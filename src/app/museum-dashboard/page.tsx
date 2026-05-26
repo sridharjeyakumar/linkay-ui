@@ -184,7 +184,7 @@ export default function MuseumDashboardPage() {
     };
   }, [jobs]);
 
-  /* show tokenization error as snackbar */
+  
   useEffect(() => {
     if (tkError) {
       setSnack({ msg: tkError, severity: 'error' });
