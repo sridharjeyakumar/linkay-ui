@@ -449,57 +449,46 @@ function ViewModal({ row, open, onClose, onApprove, onReject }: { row: QueueRow 
             borderRadius: fullScreen ? 0 : '12px',
             overflow: 'hidden',
             m: fullScreen ? 0 : '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100vh' : 'calc(100vh - 32px)',
           },
         },
       }}
     >
-      {/* Close button */}
-      <IconButton
-        onClick={onClose}
-        size="small"
-        sx={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          zIndex: 10,
-          bgcolor: 'rgba(255,255,255,0.9)',
-          width: '28px',
-          height: '28px',
-          '&:hover': { bgcolor: '#F3F4F6' },
-        }}
-      >
-        <CloseIcon sx={{ fontSize: '16px', color: '#374151' }} />
-      </IconButton>
 
-      <DialogContent sx={{ p: 0, overflowX: 'hidden', overflowY: 'auto' }}>
+      {/* ══ Sticky header ════════════════════════════════════ */}
+      <Box sx={{ flexShrink: 0, position: 'relative', bgcolor: '#FFFFFF' }}>
 
-        {/* ── Image with gradient placeholder ── */}
-        <Box
+        {/* Close button — nudged inward */}
+        <IconButton
+          onClick={onClose}
+          size="small"
           sx={{
-            width: '100%',
-            height: { xs: '160px', sm: '190px' },
-            background: row.imageBg,
-            flexShrink: 0,
+            position: 'absolute',
+            top: '14px',
+            right: '14px',
+            zIndex: 10,
+            bgcolor: 'rgba(255,255,255,0.9)',
+            width: '28px',
+            height: '28px',
+            '&:hover': { bgcolor: '#F3F4F6' },
           }}
-        />
+        >
+          <CloseIcon sx={{ fontSize: '16px', color: '#374151' }} />
+        </IconButton>
 
-        {/* ── Pagination dots ── */}
+        {/* Image */}
+        <Box sx={{ width: '100%', height: { xs: '160px', sm: '190px' }, background: row.imageBg }} />
+
+        {/* Pagination dots */}
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: '6px', mt: '10px' }}>
           {[0, 1, 2].map((i) => (
-            <Box
-              key={i}
-              sx={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                bgcolor: i === 1 ? '#2563EB' : '#D1D5DB',
-                transition: 'background-color 0.2s',
-              }}
-            />
+            <Box key={i} sx={{ width: '8px', height: '8px', borderRadius: '50%', bgcolor: i === 1 ? '#2563EB' : '#D1D5DB', transition: 'background-color 0.2s' }} />
           ))}
         </Box>
 
-        {/* ── Title section ── */}
+        {/* Title */}
         <Box sx={{ px: '18px', pt: '12px', pb: '14px' }}>
           <Typography sx={{ fontSize: '17px', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif', mb: '4px', textAlign: 'center' }}>
             {row.asset}
@@ -512,10 +501,23 @@ function ViewModal({ row, open, onClose, onApprove, onReject }: { row: QueueRow 
           </Typography>
         </Box>
 
-        {/* ── Divider ── */}
-        <Box sx={{ height: '1px', bgcolor: '#F3F4F6', mx: '18px' }} />
+        <Box sx={{ height: '1px', bgcolor: '#F3F4F6' }} />
+      </Box>
 
-        {/* ── Asset Description ── */}
+      {/* ══ Scrollable body ══════════════════════════════════ */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          '&::-webkit-scrollbar': { width: '4px' },
+          '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { bgcolor: '#D1D5DB', borderRadius: '4px' },
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#D1D5DB transparent',
+        }}
+      >
+        {/* Asset Description */}
         <Box sx={{ px: '18px', pt: '14px', pb: '12px' }}>
           <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif', mb: '6px' }}>
             Asset Description
@@ -525,7 +527,7 @@ function ViewModal({ row, open, onClose, onApprove, onReject }: { row: QueueRow 
           </Typography>
         </Box>
 
-        {/* ── Historical Context ── */}
+        {/* Historical Context */}
         <Box sx={{ px: '18px', pb: '14px' }}>
           <Typography sx={{ fontSize: '13px', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif', mb: '6px' }}>
             Historical Context
@@ -535,10 +537,9 @@ function ViewModal({ row, open, onClose, onApprove, onReject }: { row: QueueRow 
           </Typography>
         </Box>
 
-        {/* ── Divider ── */}
         <Box sx={{ height: '1px', bgcolor: '#F3F4F6', mx: '18px' }} />
 
-        {/* ── Condition Report + Certification Ref ── */}
+        {/* Condition Report + Certification Ref */}
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', px: '18px', py: '14px' }}>
           <Box>
             <Typography sx={{ fontSize: '11px', color: '#999999', fontFamily: 'Inter, sans-serif', mb: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
@@ -557,26 +558,52 @@ function ViewModal({ row, open, onClose, onApprove, onReject }: { row: QueueRow 
             </Typography>
           </Box>
         </Box>
+      </Box>
 
-        {/* ── Action buttons ── */}
-        <Box
+      {/* ══ Fixed footer ═════════════════════════════════════ */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          borderTop: '1px solid #F3F4F6',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          px: '18px',
+          py: '14px',
+          gap: '8px',
+          bgcolor: '#FFFFFF',
+          flexWrap: { xs: 'wrap', sm: 'nowrap' },
+        }}
+      >
+        <Button
+          onClick={onClose}
+          variant="contained"
+          size="small"
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            px: '18px',
-            pb: '18px',
-            pt: '4px',
-            gap: '8px',
-            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+            bgcolor: '#374151',
+            color: '#FFFFFF',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 600,
+            fontSize: '13px',
+            textTransform: 'none',
+            borderRadius: '8px',
+            px: '20px',
+            py: '8px',
+            boxShadow: 'none',
+            flex: { xs: '1 1 100%', sm: '0 0 auto' },
+            '&:hover': { bgcolor: '#1F2937', boxShadow: 'none' },
           }}
         >
+          Close
+        </Button>
+
+        <Box sx={{ display: 'flex', gap: '8px', flex: { xs: '1 1 100%', sm: '0 0 auto' }, justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
           <Button
-            onClick={onClose}
             variant="contained"
             size="small"
+            onClick={onReject}
             sx={{
-              bgcolor: '#374151',
+              bgcolor: '#EF4444',
               color: '#FFFFFF',
               fontFamily: 'Inter, sans-serif',
               fontWeight: 600,
@@ -586,60 +613,36 @@ function ViewModal({ row, open, onClose, onApprove, onReject }: { row: QueueRow 
               px: '20px',
               py: '8px',
               boxShadow: 'none',
-              flex: { xs: '1 1 100%', sm: '0 0 auto' },
-              '&:hover': { bgcolor: '#1F2937', boxShadow: 'none' },
+              flex: { xs: 1, sm: '0 0 auto' },
+              '&:hover': { bgcolor: '#DC2626', boxShadow: 'none' },
             }}
           >
-            Close
+            Reject
           </Button>
-
-          <Box sx={{ display: 'flex', gap: '8px', flex: { xs: '1 1 100%', sm: '0 0 auto' }, justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onReject}
-              sx={{
-                bgcolor: '#EF4444',
-                color: '#FFFFFF',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 600,
-                fontSize: '13px',
-                textTransform: 'none',
-                borderRadius: '8px',
-                px: '20px',
-                py: '8px',
-                boxShadow: 'none',
-                flex: { xs: 1, sm: '0 0 auto' },
-                '&:hover': { bgcolor: '#DC2626', boxShadow: 'none' },
-              }}
-            >
-              Reject
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={onApprove}
-              sx={{
-                bgcolor: '#2563EB',
-                color: '#FFFFFF',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 600,
-                fontSize: '13px',
-                textTransform: 'none',
-                borderRadius: '8px',
-                px: '20px',
-                py: '8px',
-                boxShadow: 'none',
-                flex: { xs: 1, sm: '0 0 auto' },
-                '&:hover': { bgcolor: '#1D4ED8', boxShadow: 'none' },
-              }}
-            >
-              Approve
-            </Button>
-          </Box>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={onApprove}
+            sx={{
+              bgcolor: '#2563EB',
+              color: '#FFFFFF',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: 600,
+              fontSize: '13px',
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: '20px',
+              py: '8px',
+              boxShadow: 'none',
+              flex: { xs: 1, sm: '0 0 auto' },
+              '&:hover': { bgcolor: '#1D4ED8', boxShadow: 'none' },
+            }}
+          >
+            Approve
+          </Button>
         </Box>
+      </Box>
 
-      </DialogContent>
     </Dialog>
   );
 }
