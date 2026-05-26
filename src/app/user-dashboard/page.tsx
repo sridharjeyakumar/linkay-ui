@@ -14,7 +14,7 @@ import LiveAuctions from '@/components/user-dashboard/home/LiveAuctions';
 export default function UserDashboardPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { user, loading } = useAppSelector((s) => s.auth);
+  const { user } = useAppSelector((s) => s.auth);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -36,7 +36,7 @@ export default function UserDashboardPage() {
     }
   }, []);
 
-  if (loading || !user) {
+  if (!user) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <CircularProgress />
