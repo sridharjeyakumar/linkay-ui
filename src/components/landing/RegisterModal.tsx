@@ -113,6 +113,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     role: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -121,6 +122,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     setForm({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', countryOfResidence: '', role: '' });
     setFieldErrors({});
     setShowPassword(false);
+    setShowConfirmPassword(false);
   }, [open, dispatch]);
 
   useEffect(() => {
@@ -129,6 +131,23 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
+
+  // Lock body scroll (position:fixed approach works on iOS Safari)
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
 
   const isAllFilled =
     form.firstName.trim() !== '' &&
@@ -144,6 +163,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     if (!form.firstName.trim()) errors.firstName = 'First name is required.';
     if (!form.lastName.trim()) errors.lastName = 'Last name is required.';
     if (!form.email) errors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Not a valid email.';
     if (!form.countryOfResidence) errors.countryOfResidence = 'Please select a country.';
     if (!form.role) errors.role = 'Please select a role.';
     if (form.password.length < 8 || !PASSWORD_REGEX.test(form.password))
@@ -196,9 +216,9 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
         bgcolor: 'rgba(0, 0, 0, 0.5)',
         backdropFilter: 'blur(6px)',
         WebkitBackdropFilter: 'blur(6px)',
-        px: 2,
-        py: 4,
-        overflowY: 'auto',
+        p: 2,
+        overflow: 'hidden',
+        touchAction: 'none',
         animation: `${backdropFade} 0.25s ease forwards`,
       }}
     >
@@ -208,13 +228,16 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
           position: 'relative',
           width: '100%',
           maxWidth: '410px',
+          maxHeight: '90vh',
           borderRadius: '24px',
           border: '1px solid #E8E8E8',
           bgcolor: '#FFFFFF',
-          p: '32px',
+          p: { xs: '20px', sm: '32px' },
           display: 'flex',
           flexDirection: 'column',
-          my: 'auto',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
           animation: `${modalEnter} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
         }}
       >
@@ -251,7 +274,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
         ) : (
           <Box component="form" onSubmit={handleSubmit} noValidate autoComplete="off">
 
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
               <TextField
                 placeholder="First Name"
                 name="firstName"
@@ -314,12 +337,16 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                     );
                   },
                   MenuProps: {
+                    disableScrollLock: true,
                     slotProps: {
                       paper: {
                         sx: {
-                          mt: 1, borderRadius: '12px',
+                          mt: 1, 
+                          borderRadius: '12px',
                           boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
                           border: '1px solid #ECECEC',
+                          maxHeight: '300px', // Fix for scroll
+                          overflowY: 'auto',   // Fix for scroll
                           '& .MuiMenuItem-root': { fontSize: '14px', padding: '10px 14px', borderRadius: '8px', mx: 0.5, my: 0.3 },
                           '& .MuiMenuItem-root:hover': { backgroundColor: '#F5F7FB' },
                           '& .Mui-selected': { backgroundColor: '#EEF3FF !important', color: '#0B2745', fontWeight: 600 },
@@ -355,7 +382,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
-                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        {showPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -366,23 +393,34 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
             <TextField
               placeholder="Confirm Password"
               name="confirmPassword"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={form.confirmPassword}
               onChange={handleChange}
               error={!!fieldErrors.confirmPassword}
               helperText={fieldErrors.confirmPassword}
               fullWidth required autoComplete="new-password"
               sx={fieldSx}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowConfirmPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
+                        {showConfirmPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
 
-            {/* Role */}
+            {/* Role - Fixed responsive layout */}
             <Box sx={{ mt: 0.5, mb: 2 }}>
               {fieldErrors.role && (
                 <Typography sx={{ fontSize: '12px', color: '#d32f2f', mb: 0.75, ml: 0.5 }}>
                   {fieldErrors.role}
                 </Typography>
               )}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 {ROLE_OPTIONS.map((r) => {
                   const selected = form.role === r.value;
                   return (
@@ -391,10 +429,14 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                       onClick={() => handleRoleSelect(r.value)}
                       sx={{
                         flex: 1,
-                        height: '59px',
+                        minHeight: '59px',
+                        height: 'auto',
                         border: selected ? '1px solid #1E40AF' : '1px solid #E8E8E8',
                         borderRadius: '8px',
-                        pt: '12px', pr: '8px', pb: '8px', pl: '8px',
+                        pt: '12px', 
+                        pr: '8px', 
+                        pb: '8px', 
+                        pl: '8px',
                         cursor: 'pointer',
                         bgcolor: selected ? 'rgba(30,64,175,0.05)' : '#F6F6F6',
                         display: 'flex',
@@ -410,13 +452,13 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                         size="small"
                         readOnly
                         tabIndex={-1}
-                        sx={{ p: 0, mt: '1px', color: selected ? '#1E40AF' : '#BDBDBD', '&.Mui-checked': { color: '#1E40AF' } }}
+                        sx={{ p: 0, mt: '1px', flexShrink: 0, color: selected ? '#1E40AF' : '#BDBDBD', '&.Mui-checked': { color: '#1E40AF' } }}
                       />
-                      <Box>
+                      <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: '13px', fontWeight: 600, color: selected ? '#1E40AF' : '#262626', lineHeight: 1.2 }}>
                           {r.label}
                         </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '10px', lineHeight: '24px', letterSpacing: '-0.04em', color: '#666666', whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '10px', lineHeight: '16px', letterSpacing: '-0.04em', color: '#666666', whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>
                           {r.desc}
                         </Typography>
                       </Box>

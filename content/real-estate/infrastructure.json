@@ -1,0 +1,22 @@
+{
+  "title": "Modern Infrastructure for Real Estate Ownership",
+  "subtitle": "LinkBlock Assets supports secure digital participation across premium real estate opportunities through structured ownership infrastructure.",
+  "building_image": "/landing/real estate/Component 3.svg",
+  "property_types": [
+    {
+      "num": "01",
+      "title": "Residential Properties",
+      "description": "Premium residential ownership opportunities through digital participation."
+    },
+    {
+      "num": "02",
+      "title": "Commercial Real Estate",
+      "description": "Office, retail and mixed-use real estate opportunities."
+    },
+    {
+      "num": "03",
+      "title": "Investment Developments",
+      "description": "Curated properties designed for accessibility and ownership participation."
+    }
+  ]
+}

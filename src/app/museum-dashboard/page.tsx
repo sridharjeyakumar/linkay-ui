@@ -7,10 +7,10 @@ import {
   TableCell, TableContainer, TableHead, TableRow, TableSortLabel,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
-import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
-import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
-import TokenOutlinedIcon from '@mui/icons-material/TokenOutlined';
+import createAssetImg from '@/assets/Create Asset.png';
+import draftsImg from '@/assets/Drafts.png';
+import publishedImg from '@/assets/Published.png';
+import tokenizedImg from '@/assets/Tokenized.png';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { getMeThunk } from '@/features/auth/authThunks';
@@ -21,6 +21,7 @@ import { initiateTokenizationThunk, pollJobStatusThunk } from '@/features/tokeni
 import CreateAssetModal from '@/components/assets/CreateAssetModal';
 import DraftsModal from '@/components/assets/DraftsModal';
 import { CreateAuctionModal, type AuctionDraftData, type AuctionScheduleData } from '@/components/auction/CreateAuctionModal';
+import { auctionApi } from '@/api/auctionApi';
 import type { Asset } from '@/types/asset.types';
 import type { TokenizationJob } from '@/types/tokenization.types';
 
@@ -122,6 +123,7 @@ export default function MuseumDashboardPage() {
   const [draftsOpen,    setDraftsOpen]    = useState(false);
   const [editAsset,     setEditAsset]     = useState<Asset | null>(null);
   const [auctionAsset,  setAuctionAsset]  = useState<Asset | null>(null);
+  const [scheduledAssets, setScheduledAssets] = useState<Set<string>>(new Set());
   const [confirmAsset,  setConfirmAsset]  = useState<Asset | null>(null);
   const [statusFilter,  setStatusFilter]  = useState<string | null>(null);
   const [snack,         setSnack]         = useState<{ msg: string; severity: 'success'|'error'|'info' } | null>(null);
@@ -143,6 +145,10 @@ export default function MuseumDashboardPage() {
     } else {
       dispatch(fetchAssetsThunk());
       dispatch(loadStoredJobs());
+      auctionApi.list({ status: 'SCHEDULED' }).then((res) => {
+        const ids = new Set<string>(res.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []);
+        setScheduledAssets(ids);
+      }).catch(() => {});
     }
   }, [user?.id]);
 
@@ -265,6 +271,7 @@ export default function MuseumDashboardPage() {
   async function handleAuctionSchedule(data: AuctionScheduleData) {
     const result = await dispatch(createAuctionThunk(buildAuctionPayload(data.assetId, data) as Parameters<typeof createAuctionThunk>[0]));
     if (createAuctionThunk.fulfilled.match(result)) {
+      setScheduledAssets(prev => new Set(prev).add(data.assetId));
       setSnack({ msg: 'Auction scheduled successfully!', severity: 'success' });
     } else {
       throw new Error(String(result.payload ?? 'Failed to schedule auction'));
@@ -272,7 +279,10 @@ export default function MuseumDashboardPage() {
   }
 
   const isAssetTokenized = (a: typeof assets[0]) =>
-    a.tokenization?.tokenizationStatus === 'COMPLETED';
+    a.tokenization?.tokenizationStatus === 'COMPLETED' ||
+    a.tokenization?.tokenizationStatus === 'TREASURY_PENDING' ||
+    a.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
+    a.tokenization?.tokenizationStatus === 'TREASURY_REJECTED';
 
   /* derived counts */
   const drafts    = assets.filter((a) => a.status === 'DRAFT');
@@ -296,38 +306,52 @@ export default function MuseumDashboardPage() {
     ? `${user.firstName} ${user.lastName ?? ''}`.trim()
     : user.email ?? 'there';
 
+  const pad = (n: number) => String(n).padStart(2, '0');
+
   const statCards = [
     {
       key: 'create',
-      icon: <AddBoxOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#3b82f6', flexShrink: 0 }} />,
+      imgSrc: createAssetImg.src,
       label: 'CREATE ASSET',
+      labelColor: '#3b82f6',
       sub: 'Create a new real world asset',
+      count: null as string | null,
+      cardBorder: '2px solid #3b82f6',
       onClick: () => { setStatusFilter(null); setCreateOpen(true); },
-      filter: null,
+      filter: null as string | null,
     },
     {
       key: 'drafts',
-      icon: <DraftsOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#f59e0b', flexShrink: 0 }} />,
+      imgSrc: draftsImg.src,
       label: 'DRAFTS',
-      sub: drafts.length ? `${drafts.length} asset${drafts.length > 1 ? 's' : ''} in drafts` : 'No assets in drafts',
+      labelColor: '#d97706',
+      sub: '',
+      count: pad(drafts.length),
+      cardBorder: '1px solid #e5e7eb',
       onClick: () => setStatusFilter(statusFilter === 'DRAFT' ? null : 'DRAFT'),
-      filter: 'DRAFT',
+      filter: 'DRAFT' as string | null,
     },
     {
       key: 'published',
-      icon: <FolderOpenOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#d97706', flexShrink: 0 }} />,
+      imgSrc: publishedImg.src,
       label: 'PUBLISHED',
-      sub: published.length ? `${published.length} published asset${published.length > 1 ? 's' : ''}` : 'No published assets',
+      labelColor: '#b45309',
+      sub: '',
+      count: pad(published.length),
+      cardBorder: '1px solid #e5e7eb',
       onClick: () => setStatusFilter(statusFilter === 'PUBLISHED' ? null : 'PUBLISHED'),
-      filter: 'PUBLISHED',
+      filter: 'PUBLISHED' as string | null,
     },
     {
       key: 'tokenized',
-      icon: <TokenOutlinedIcon sx={{ fontSize: isMobile ? 24 : 30, color: '#10b981', flexShrink: 0 }} />,
+      imgSrc: tokenizedImg.src,
       label: 'TOKENIZED',
-      sub: tokenized.length ? `${tokenized.length} tokenized asset${tokenized.length > 1 ? 's' : ''}` : 'No tokenized assets',
+      labelColor: '#059669',
+      sub: '',
+      count: pad(tokenized.length),
+      cardBorder: '1px solid #e5e7eb',
       onClick: () => setStatusFilter(statusFilter === 'TOKENIZED' ? null : 'TOKENIZED'),
-      filter: 'TOKENIZED',
+      filter: 'TOKENIZED' as string | null,
     },
   ];
 
@@ -381,7 +405,7 @@ export default function MuseumDashboardPage() {
           {/* Sidebar stats: mobile + tablet */}
           <Box sx={{ display: { xs: 'grid', lg: 'none' }, gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 } }}>
             {sideStats.map(({ label, value }) => (
-              <Paper key={label} elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: { xs: 2, sm: 3 }, border: '1px solid #e5e7eb', bgcolor: '#fff', minWidth: 0 }}>
+              <Paper key={label} elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: '16px', border: '1px solid #e5e7eb', bgcolor: '#fff', minWidth: 0 }}>
                 <Typography sx={{ fontSize: { xs: 9, sm: 10, md: 11 }, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.6, mb: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {label}
                 </Typography>
@@ -398,22 +422,74 @@ export default function MuseumDashboardPage() {
               const isActive = card.filter ? statusFilter === card.filter : false;
               return (
                 <Paper key={card.key} elevation={0} onClick={card.onClick} sx={{
-                  p: { xs: '10px 12px', sm: 2 }, borderRadius: { xs: 2, sm: 3 },
-                  border: isActive ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                  p: { xs: '10px 12px', sm: '14px 16px' },
+                  borderRadius: '16px',
+                  border: isActive ? '2px solid #3b82f6' : card.cardBorder,
                   cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 },
-                  bgcolor: isActive ? '#eff6ff' : '#fff',
-                  minWidth: 0, overflow: 'hidden', transition: 'all 0.15s',
-                  '&:hover': { boxShadow: '0 2px 12px rgba(0,0,0,0.08)' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 1.5, sm: 2 },
+                  bgcolor: isActive && card.key !== 'create' ? '#eff6ff' : '#fff',
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  transition: 'box-shadow 0.15s, border-color 0.15s',
+                  '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.09)' },
                 }}>
-                  <Box sx={{ flexShrink: 0, display: 'flex' }}>{card.icon}</Box>
+
+                  {/* Icon — full image, no background */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={card.imgSrc}
+                    alt={card.label}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      objectFit: 'contain',
+                      display: 'block',
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  {/* Text */}
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography sx={{ fontSize: { xs: 9, sm: 11, md: 12 }, fontWeight: 700, color: isActive ? '#3b82f6' : '#374151', letterSpacing: 0.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <Typography sx={{
+                      fontSize: { xs: 9, sm: 11, md: 12 },
+                      fontWeight: 700,
+                      color: card.labelColor,
+                      letterSpacing: 0.4,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
                       {card.label}
                     </Typography>
-                    <Typography sx={{ fontSize: { xs: 9, sm: 11, md: 12 }, color: '#6b7280', mt: 0.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                      {card.sub}
-                    </Typography>
+
+                    {card.count !== null ? (
+                      /* count — DRAFTS / PUBLISHED / TOKENIZED */
+                      <Typography sx={{
+                        fontSize: { xs: 18, sm: 22, md: 24 },
+                        fontWeight: 700,
+                        color: '#111',
+                        lineHeight: 1.2,
+                        mt: 0.25,
+                      }}>
+                        {card.count}
+                      </Typography>
+                    ) : (
+                      /* description — CREATE ASSET */
+                      <Typography sx={{
+                        fontSize: { xs: 9, sm: 11 },
+                        color: '#6b7280',
+                        mt: 0.25,
+                        lineHeight: 1.4,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}>
+                        {card.sub}
+                      </Typography>
+                    )}
                   </Box>
                 </Paper>
               );
@@ -522,10 +598,48 @@ export default function MuseumDashboardPage() {
                                   {isTokenizing ? 'Minting…' : 'Tokenize'}
                                 </Box>
                               )}
+                              {/* Treasury Pending — waiting for platform approval */}
+                              {isTokenized && !isTokenizing && asset.tokenization?.tokenizationStatus === 'TREASURY_PENDING' && (
+                                <Box component="button" disabled sx={{
+                                  ...btnBase,
+                                  bgcolor: '#fef3c7',
+                                  color: '#92400e',
+                                  cursor: 'not-allowed',
+                                }}>
+                                  Pending Approval
+                                </Box>
+                              )}
+
+                              {/* Treasury Rejected */}
+                              {isTokenized && !isTokenizing && asset.tokenization?.tokenizationStatus === 'TREASURY_REJECTED' && (
+                                <Tooltip title={asset.tokenization.errorMessage || 'Rejected by platform'}>
+                                  <Box component="button" disabled sx={{
+                                    ...btnBase,
+                                    bgcolor: '#fee2e2',
+                                    color: '#991b1b',
+                                    cursor: 'not-allowed',
+                                  }}>
+                                    Rejected
+                                  </Box>
+                                </Tooltip>
+                              )}
+
+                              {/* Treasury Approved or legacy COMPLETED — show Auction button */}
                               {isTokenized && !isTokenizing && (
-                                <Box component="button" onClick={() => setAuctionAsset(asset)}
-                                  sx={{ ...btnBase, bgcolor: '#ede9fe', color: '#5b21b6', '&:hover': { bgcolor: '#ddd6fe' } }}>
-                                  Auction
+                                asset.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
+                                asset.tokenization?.tokenizationStatus === 'COMPLETED'
+                              ) && (
+                                <Box component="button"
+                                  onClick={() => !scheduledAssets.has(asset.id) && setAuctionAsset(asset)}
+                                  disabled={scheduledAssets.has(asset.id)}
+                                  sx={{
+                                    ...btnBase,
+                                    bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ede9fe',
+                                    color: scheduledAssets.has(asset.id) ? '#9ca3af' : '#5b21b6',
+                                    cursor: scheduledAssets.has(asset.id) ? 'not-allowed' : 'pointer',
+                                    '&:hover': { bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ddd6fe' },
+                                  }}>
+                                  {scheduledAssets.has(asset.id) ? 'Scheduled' : 'Auction'}
                                 </Box>
                               )}
                             </Box>
@@ -620,9 +734,9 @@ export default function MuseumDashboardPage() {
         </Box>
 
         {/* ── Right sidebar – desktop only ── */}
-        <Box sx={{ width: { lg: 210, xl: 230 }, flexShrink: 0, display: { xs: 'none', lg: 'flex' }, flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ width: { lg: 210, xl: 230 }, flexShrink: 0, display: { xs: 'none', lg: 'flex' }, flexDirection: 'column', gap: 2, mt: { lg: '52px' } }}>
           {sideStats.map(({ label, value }) => (
-            <Paper key={label} elevation={0} sx={{ p: 2.5, borderRadius: 3, border: '1px solid #e5e7eb', bgcolor: '#fff' }}>
+            <Paper key={label} elevation={0} sx={{ p: 2.5, borderRadius: '16px', border: '1px solid #e5e7eb', bgcolor: '#fff' }}>
               <Typography sx={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.8, mb: 0.75 }}>
                 {label}
               </Typography>

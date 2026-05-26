@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const p = require\\('@phosphor-icons/react'\\); const keys = Object.keys\\(p\\); console.log\\('total:', keys.length\\); console.log\\(keys.slice\\(0,20\\).join\\('\\\\n'\\)\\);\")",
+      "Bash(node --input-type=module -e \"import * as p from '@phosphor-icons/react'; const keys = Object.keys\\(p\\); console.log\\('total:', keys.length\\); console.log\\(keys.filter\\(k => /Percent|Wave|Certif|Chart|Shield|Coin|Stack/i.test\\(k\\)\\).join\\('\\\\n'\\)\\);\")",
+      "Bash(node --input-type=module -e \"import * as p from '@phosphor-icons/react'; console.log\\(Object.keys\\(p\\).filter\\(k => /Percent|Wave|Shield|Stack|Drop|Swap|Hand|Split|Flow|Divide/i.test\\(k\\) && !k.endsWith\\('Icon'\\)\\).join\\('\\\\n'\\)\\);\")"
+    ]
+  }
+}

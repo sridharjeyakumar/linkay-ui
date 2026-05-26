@@ -3,6 +3,7 @@ import authReducer from '../features/auth/authSlice';
 import ekycReducer from '../features/ekyc/ekycSlice';
 import assetReducer from '../features/assets/assetSlice';
 import tokenizationReducer from '../features/tokenization/tokenizationSlice';
+import adminReducer from '../features/admin/adminSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     ekyc:         ekycReducer,
     assets:       assetReducer,
     tokenization: tokenizationReducer,
+    admin:        adminReducer,
   },
 });
 

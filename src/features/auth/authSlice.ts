@@ -94,6 +94,11 @@ builder.addCase(saveWalletThunk.fulfilled, (state, action) => {
     state.user.walletAddress =
       action.payload.walletAddress ?? action.payload.wallet_address ?? null;
   }
+  const newToken = action.payload.accessToken ?? action.payload.access_token;
+  if (newToken) {
+    state.accessToken = newToken;
+    localStorage.setItem('accessToken', newToken);
+  }
 });
   },
 });

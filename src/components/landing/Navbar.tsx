@@ -93,7 +93,7 @@ export default function Navbar({ content }: NavbarProps) {
           transition: 'background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
         }}
       >
-        <Container maxWidth={false} sx={{ maxWidth: '1600px', px: { xs: 2, sm: 4, md: 6 } }}>
+        <Container maxWidth={false} sx={{ maxWidth: '16S00px', px: { xs: 2, sm: 4, md: 6 } }}>
           <Toolbar disableGutters sx={{ py: { xs: 0.5, md: 1 }, minHeight: { xs: 56, md: 64 } }}>
 
             {/* Logo */}
@@ -156,8 +156,7 @@ export default function Navbar({ content }: NavbarProps) {
                             <MenuItem
                               onClick={() => {
                                 closeDropdown(link.label);
-                                if (item.label === 'Minerals') router.push('/asset-class/minerals');
-                                if (item.label === 'For Asset Owners') router.push('/asset-owners');
+                                if (item.href) router.push(item.href);
                               }}
                               sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
                             >
@@ -362,8 +361,7 @@ export default function Navbar({ content }: NavbarProps) {
                           sx={{ pl: 4 }}
                           onClick={() => {
                             setMobileOpen(false);
-                            if (item.label === 'Minerals') router.push('/asset-class/minerals');
-                            if (item.label === 'For Asset Owners') router.push('/asset-owners');
+                            if (item.href) router.push(item.href);
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
@@ -442,7 +440,7 @@ export default function Navbar({ content }: NavbarProps) {
                 <Image
                   src="/landing/arrow-hover.svg"
                   alt="arrow"
-                  width={20}
+                  width={20}  
                   height={20}
                   unoptimized
                   style={{ position: 'absolute', opacity: registerHovered ? 1 : 0, transform: registerHovered ? 'scale(1)' : 'scale(0.6)', transition: 'opacity 0.15s ease, transform 0.15s ease' }}

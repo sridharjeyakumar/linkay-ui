@@ -47,8 +47,8 @@ export default function VisualizationSection({ content }: { content: Visualizati
             borderRadius: { xs: '20px', md: '28px', lg: '32px' },
             background: 'linear-gradient(135deg, #E8F0FE 0%, #DCE8F5 50%, #E4EDF9 100%)',
             pt: { xs: 4, sm: 5, md: 6, lg: 6 },
-            pb: { xs: 3, sm: 4, md: 5, lg: 0 },
-            px: { xs: 3, sm: 5, md: 7, lg: 8 },
+            pb: { xs: 0, sm: 0, md: 0, lg: 0 },
+            px: { xs: 0, sm: 5, md: 7, lg: 8 },
             overflow: 'hidden',
             position: 'relative',
           }}

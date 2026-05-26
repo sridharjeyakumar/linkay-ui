@@ -1,0 +1,24 @@
+{
+  "title": "Preserving Cultural Assets Through Modern Ownership Infrastructure",
+  "subheading": "LinkBlock Assets enables historically significant artifacts and collections to participate in secure digital ownership ecosystems designed for accessibility, transparency and long-term preservation.",
+  "categories": [
+    {
+      "title": "Ancient Collections",
+      "description": "Historically preserved artifacts and curated heritage assets."
+    },
+    {
+      "title": "Cultural Archives",
+      "description": "Digitally accessible ownership opportunities across institutional collections."
+    },
+    {
+      "title": "Private Historical Assets",
+      "description": "Rare and collectible assets introduced through structured digital participation."
+    }
+  ],
+  "images": [
+    "/landing/museum-artifacts/museum 1.svg",
+    "/landing/museum-artifacts/museum 2.svg",
+    "/landing/museum-artifacts/musuem 4.svg",
+    "/landing/museum-artifacts/museum 3.svg"
+  ]
+}
