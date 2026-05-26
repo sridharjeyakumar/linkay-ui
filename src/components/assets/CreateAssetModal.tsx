@@ -16,6 +16,7 @@ import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import LoopIcon from '@mui/icons-material/Loop';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { createAssetThunk, updateAssetThunk, fetchAssetsThunk, changeStatusThunk } from '@/features/assets/assetThunks';
 import { clearError } from '@/features/assets/assetSlice';
 import type { Asset } from '@/types/asset.types';
@@ -141,6 +142,7 @@ interface Props {
 // ── component ─────────────────────────────────────────────────────────────────
 
 export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }: Props) {
+  useScrollLock(open);
   const dispatch = useAppDispatch();
   const { actionLoading, error } = useAppSelector((s) => s.assets);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +176,10 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
 
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  // Validation errors
+  const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
+  const [step2Errors, setStep2Errors] = useState<Record<string, string>>({});
 
   // 3D Generation Modal
   const threeDFileInputRef = useRef<HTMLInputElement>(null);
@@ -240,6 +246,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setRoyalty(''); setRoyaltyWallet('');
     setMediaFiles([]); setExistingImages([]); setThreeDFiles(''); setLiveStream('');
     setGenerated3DFiles([]);
+    setStep1Errors({});
+    setStep2Errors({});
   }
 
   function handleClose() {
@@ -380,6 +388,24 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   // ── save/submit ─────────────────────────────────────────────────────────────
 
   async function handleSave(asDraft: boolean) {
+    // Client-side validation before any API call — prevents generic "Validation failed"
+    const errs: Record<string, string> = {};
+    const titleTrimmed = title.trim();
+    if (!titleTrimmed) {
+      errs.title = 'Asset Title is required.';
+    } else if (titleTrimmed.length < 3) {
+      errs.title = 'Asset Title must be at least 3 characters.';
+    }
+    if (!assetType) {
+      errs.assetType = 'Asset Type is required.';
+    }
+    if (Object.keys(errs).length > 0) {
+      setStep1Errors((p) => ({ ...p, ...errs }));
+      dispatch(clearError());
+      if (step !== 1) setStep(1);
+      return;
+    }
+
     const payload = {
       title,
       assetType: ASSET_TYPE_MAP[assetType] ?? assetType,
@@ -422,6 +448,39 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   }
 
   // ── step navigation ─────────────────────────────────────────────────────────
+
+  function validateStep1(): boolean {
+    const errs: Record<string, string> = {};
+    if (!title.trim())             errs.title             = 'Asset Title is required.';
+    if (!assetType)                errs.assetType         = 'Asset Type is required.';
+    if (!custodian.trim())         errs.custodian         = 'Custodian is required.';
+    if (!ownershipEntity.trim())   errs.ownershipEntity   = 'Ownership Entity is required.';
+    if (!description.trim())       errs.description       = 'Asset Description is required.';
+    else if (countWords(description) > MAX_WORDS)
+                                   errs.description       = `Description exceeds ${MAX_WORDS} words.`;
+    if (!historicalContext.trim()) errs.historicalContext = 'Historical Context is required.';
+    else if (countWords(historicalContext) > MAX_WORDS)
+                                   errs.historicalContext = `Historical Context exceeds ${MAX_WORDS} words.`;
+    if (!certificationRef.trim())  errs.certificationRef  = 'Certification Ref is required.';
+    setStep1Errors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  function validateStep2(): boolean {
+    const errs: Record<string, string> = {};
+    if (!valuation || parseFloat(valuation) <= 0) errs.valuation     = 'Asset Valuation is required.';
+    if (!jurisdiction)                             errs.jurisdiction  = 'Jurisdiction is required.';
+    if (!totalFractions || parseInt(totalFractions, 10) <= 0)
+                                                   errs.totalFractions = 'Total Fractions is required.';
+    setStep2Errors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  function handleNext() {
+    if (step === 1 && !validateStep1()) return;
+    if (step === 2 && !validateStep2()) return;
+    setStep((s) => s + 1);
+  }
 
   const STEP_TITLES = ['ASSET INFO', 'VALUATION & TOKENIZATION SETTINGS', 'MEDIA UPLOAD'];
 
@@ -527,15 +586,17 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Box>
                   <Label required>Asset Title</Label>
                   <TextField fullWidth size="small" value={title}
-                    onChange={(e) => setTitle(e.target.value)} sx={inputSx} />
+                    onChange={(e) => { setTitle(e.target.value); if (step1Errors.title) setStep1Errors(p => ({ ...p, title: '' })); }}
+                    error={!!step1Errors.title} helperText={step1Errors.title} sx={inputSx} />
                 </Box>
                 <Box>
                   <Label required>Asset Type</Label>
                   <Select fullWidth size="small" value={assetType} displayEmpty
-                    onChange={(e) => setAssetType(e.target.value)} sx={selectSx}>
+                    onChange={(e) => { setAssetType(e.target.value); if (step1Errors.assetType) setStep1Errors(p => ({ ...p, assetType: '' })); }} sx={selectSx}>
                     <MenuItem value="" disabled><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>Select</em></MenuItem>
                     {ASSET_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
                   </Select>
+                  {step1Errors.assetType && <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.assetType}</Typography>}
                 </Box>
               </Box>
 
@@ -544,12 +605,14 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Box>
                   <Label required>Custodian</Label>
                   <TextField fullWidth size="small" value={custodian}
-                    onChange={(e) => setCustodian(e.target.value)} sx={inputSx} />
+                    onChange={(e) => { setCustodian(e.target.value); if (step1Errors.custodian) setStep1Errors(p => ({ ...p, custodian: '' })); }}
+                    error={!!step1Errors.custodian} helperText={step1Errors.custodian} sx={inputSx} />
                 </Box>
                 <Box>
                   <Label required>Ownership entity</Label>
                   <TextField fullWidth size="small" value={ownershipEntity}
-                    onChange={(e) => setOwnershipEntity(e.target.value)} sx={inputSx} />
+                    onChange={(e) => { setOwnershipEntity(e.target.value); if (step1Errors.ownershipEntity) setStep1Errors(p => ({ ...p, ownershipEntity: '' })); }}
+                    error={!!step1Errors.ownershipEntity} helperText={step1Errors.ownershipEntity} sx={inputSx} />
                 </Box>
               </Box>
 
@@ -558,15 +621,16 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Label required>Asset Description</Label>
                 <TextField
                   fullWidth multiline rows={4} size="small" value={description}
-                  onChange={(e) => setDescription(e.target.value)} sx={inputSx}
+                  onChange={(e) => { setDescription(e.target.value); if (step1Errors.description) setStep1Errors(p => ({ ...p, description: '' })); }}
+                  error={!!step1Errors.description} sx={inputSx}
                 />
-                <Typography
-                  sx={{ fontSize: 12, mt: 0.5, color: countWords(description) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}
-                >
-                  {countWords(description) > MAX_WORDS
-                    ? `${countWords(description)}/${MAX_WORDS} words — over limit`
-                    : 'Max 200 words'}
-                </Typography>
+                {step1Errors.description ? (
+                  <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.description}</Typography>
+                ) : (
+                  <Typography sx={{ fontSize: 12, mt: 0.5, color: countWords(description) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}>
+                    {countWords(description) > MAX_WORDS ? `${countWords(description)}/${MAX_WORDS} words — over limit` : 'Max 200 words'}
+                  </Typography>
+                )}
               </Box>
 
               {/* Historical Context */}
@@ -574,15 +638,16 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Label required>Historical Context</Label>
                 <TextField
                   fullWidth multiline rows={4} size="small" value={historicalContext}
-                  onChange={(e) => setHistoricalContext(e.target.value)} sx={inputSx}
+                  onChange={(e) => { setHistoricalContext(e.target.value); if (step1Errors.historicalContext) setStep1Errors(p => ({ ...p, historicalContext: '' })); }}
+                  error={!!step1Errors.historicalContext} sx={inputSx}
                 />
-                <Typography
-                  sx={{ fontSize: 12, mt: 0.5, color: countWords(historicalContext) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}
-                >
-                  {countWords(historicalContext) > MAX_WORDS
-                    ? `${countWords(historicalContext)}/${MAX_WORDS} words — over limit`
-                    : 'Max 200 words'}
-                </Typography>
+                {step1Errors.historicalContext ? (
+                  <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.historicalContext}</Typography>
+                ) : (
+                  <Typography sx={{ fontSize: 12, mt: 0.5, color: countWords(historicalContext) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}>
+                    {countWords(historicalContext) > MAX_WORDS ? `${countWords(historicalContext)}/${MAX_WORDS} words — over limit` : 'Max 200 words'}
+                  </Typography>
+                )}
               </Box>
 
               {/* Row 3: Condition Report + Certification Ref */}
@@ -593,9 +658,10 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     onChange={(e) => setConditionReport(e.target.value)} sx={inputSx} />
                 </Box>
                 <Box>
-                  <Label>Certification Ref</Label>
+                  <Label required>Certification Ref</Label>
                   <TextField fullWidth size="small" value={certificationRef}
-                    onChange={(e) => setCertificationRef(e.target.value)} sx={inputSx} />
+                    onChange={(e) => { setCertificationRef(e.target.value); if (step1Errors.certificationRef) setStep1Errors(p => ({ ...p, certificationRef: '' })); }}
+                    error={!!step1Errors.certificationRef} helperText={step1Errors.certificationRef} sx={inputSx} />
                 </Box>
               </Box>
             </Box>
@@ -611,7 +677,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <Label required>Asset Valuation</Label>
                   <TextField
                     fullWidth size="small" type="number" value={valuation}
-                    onChange={(e) => setValuation(e.target.value)}
+                    onChange={(e) => { setValuation(e.target.value); if (step2Errors.valuation) setStep2Errors(p => ({ ...p, valuation: '' })); }}
+                    error={!!step2Errors.valuation} helperText={step2Errors.valuation}
                     sx={inputSx}
                     slotProps={{
                       input: {
@@ -627,10 +694,11 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Box>
                   <Label required>Jurisdiction</Label>
                   <Select fullWidth size="small" value={jurisdiction} displayEmpty
-                    onChange={(e) => setJurisdiction(e.target.value)} sx={selectSx}>
+                    onChange={(e) => { setJurisdiction(e.target.value); if (step2Errors.jurisdiction) setStep2Errors(p => ({ ...p, jurisdiction: '' })); }} sx={selectSx}>
                     <MenuItem value="" disabled><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>Select</em></MenuItem>
                     {JURISDICTIONS.map((j) => <MenuItem key={j} value={j}>{j}</MenuItem>)}
                   </Select>
+                  {step2Errors.jurisdiction && <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step2Errors.jurisdiction}</Typography>}
                 </Box>
               </Box>
 
@@ -681,7 +749,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <Label required>Total Fractions</Label>
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
-                    onChange={(e) => setTotalFractions(e.target.value)}
+                    onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
+                    error={!!step2Errors.totalFractions} helperText={step2Errors.totalFractions}
                     sx={inputSx}
                     slotProps={{ htmlInput: { min: 1 } }}
                   />
@@ -939,7 +1008,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
           {/* Next / Submit */}
           {step < 3 ? (
             <Button
-              onClick={() => setStep((s) => s + 1)}
+              onClick={handleNext}
               disabled={actionLoading}
               sx={{
                 bgcolor: '#3b6ef8',

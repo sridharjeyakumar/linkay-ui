@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import { useState } from 'react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { clearPreviewAsset } from '@/features/assets/assetSlice';
 
@@ -47,6 +48,7 @@ export default function AssetPreviewModal() {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const open = !!previewAsset;
+  useScrollLock(open);
 
   function handleClose() {
     dispatch(clearPreviewAsset());
