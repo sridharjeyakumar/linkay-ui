@@ -113,6 +113,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     role: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -121,6 +122,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     setForm({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', countryOfResidence: '', role: '' });
     setFieldErrors({});
     setShowPassword(false);
+    setShowConfirmPassword(false);
   }, [open, dispatch]);
 
   useEffect(() => {
@@ -129,6 +131,23 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
+
+  // Lock body scroll (position:fixed approach works on iOS Safari)
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
 
   const isAllFilled =
     form.firstName.trim() !== '' &&
@@ -144,6 +163,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     if (!form.firstName.trim()) errors.firstName = 'First name is required.';
     if (!form.lastName.trim()) errors.lastName = 'Last name is required.';
     if (!form.email) errors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Not a valid email.';
     if (!form.countryOfResidence) errors.countryOfResidence = 'Please select a country.';
     if (!form.role) errors.role = 'Please select a role.';
     if (form.password.length < 8 || !PASSWORD_REGEX.test(form.password))
@@ -196,9 +216,9 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
         bgcolor: 'rgba(0, 0, 0, 0.5)',
         backdropFilter: 'blur(6px)',
         WebkitBackdropFilter: 'blur(6px)',
-        px: 2,
-        py: 4,
-        overflowY: 'auto',
+        p: 2,
+        overflow: 'hidden',
+        touchAction: 'none',
         animation: `${backdropFade} 0.25s ease forwards`,
       }}
     >
@@ -208,13 +228,16 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
           position: 'relative',
           width: '100%',
           maxWidth: '410px',
+          maxHeight: '90vh',
           borderRadius: '24px',
           border: '1px solid #E8E8E8',
           bgcolor: '#FFFFFF',
           p: { xs: '20px', sm: '32px' },
           display: 'flex',
           flexDirection: 'column',
-          my: 'auto',
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
           animation: `${modalEnter} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
         }}
       >
@@ -314,6 +337,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                     );
                   },
                   MenuProps: {
+                    disableScrollLock: true,
                     slotProps: {
                       paper: {
                         sx: {
@@ -358,7 +382,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
-                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        {showPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -369,13 +393,24 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
             <TextField
               placeholder="Confirm Password"
               name="confirmPassword"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={form.confirmPassword}
               onChange={handleChange}
               error={!!fieldErrors.confirmPassword}
               helperText={fieldErrors.confirmPassword}
               fullWidth required autoComplete="new-password"
               sx={fieldSx}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowConfirmPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
+                        {showConfirmPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
 
             {/* Role - Fixed responsive layout */}
