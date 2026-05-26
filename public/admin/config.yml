@@ -213,67 +213,6 @@ collections:
           - { label: Primary Button, name: cta_button_primary, widget: string }
           - { label: Secondary Button, name: cta_button_secondary, widget: string }
 
-  - name: asset-owners
-    label: Asset Owners Page
-    files:
-
-      - name: header
-        label: Header Section
-        file: content/asset-owners/header.json
-        format: json
-        fields:
-          - { label: Heading, name: heading, widget: string }
-          - { label: Subtitle, name: subtitle, widget: text }
-          - { label: Button Text, name: button_text, widget: string }
-
-      - name: valuable_assets
-        label: Valuable Assets Section
-        file: content/asset-owners/valuable-assets.json
-        format: json
-        fields:
-          - { label: Section Title, name: title, widget: string }
-          - label: Asset Boxes
-            name: boxes
-            widget: list
-            fields:
-              - { label: Title, name: title, widget: string }
-              - { label: Description, name: description, widget: text }
-
-      - name: benefits
-        label: Benefits Section
-        file: content/asset-owners/benefits.json
-        format: json
-        fields:
-          - { label: Section Title, name: title, widget: string }
-          - { label: CTA Title, name: cta_title, widget: string }
-          - { label: CTA Primary Button, name: cta_button_primary, widget: string }
-          - label: Benefits
-            name: benefits
-            widget: list
-            fields:
-              - { label: Title, name: title, widget: string }
-              - { label: Image, name: image, widget: image }
-              - label: Points
-                name: points
-                widget: list
-                field: { label: Point, name: point, widget: string }
-
-  - name: marketplace
-    label: Marketplace Page
-    files:
-
-      - name: header
-        label: Header Section
-        file: content/marketplace/header.json
-        format: json
-        fields:
-          - { label: Heading, name: heading, widget: string }
-          - { label: Subtitle, name: subtitle, widget: text }
-          - { label: Button Text, name: button_text, widget: string }
-
-      - name: featured
-        label: Featured Assets Section
-        file: content/marketplace/featured.json
   - name: real_estate
     label: Real Estate Page
     files:
@@ -296,8 +235,6 @@ collections:
         fields:
           - { label: Section Title, name: title, widget: string }
           - { label: Section Subtitle, name: subtitle, widget: text }
-          - { label: Explore Button Text, name: button_text, widget: string }
-          - label: Asset Items
           - { label: Building Image, name: building_image, widget: image }
           - label: Property Types
             name: property_types
@@ -317,20 +254,6 @@ collections:
             widget: list
             fields:
               - { label: Title, name: title, widget: string }
-              - { label: Image, name: image, widget: image }
-              - label: Category
-                name: category
-                widget: select
-                options:
-                  - { label: Artifacts, value: Artifacts }
-                  - { label: Real Estate, value: Real Estate }
-                  - { label: Minerals, value: Minerals }
-              - { label: Current Bid (e.g. 0.80 ETH), name: current_bid, widget: string }
-              - { label: Ends In (e.g. 12h 43m 42s), name: ends_in, widget: string }
-
-      - name: transparency
-        label: Transparency Section
-        file: content/marketplace/transparency.json
               - { label: Description, name: description, widget: text }
 
       - name: re_featured
@@ -355,8 +278,6 @@ collections:
         fields:
           - { label: Section Title, name: title, widget: string }
           - { label: Section Subtitle, name: subtitle, widget: text }
-          - label: Boxes
-            name: boxes
           - label: Visualization Items
             name: items
             widget: list
@@ -416,9 +337,6 @@ collections:
               - { label: Title, name: title, widget: string }
               - { label: Description, name: description, widget: text }
 
-      - name: cta
-        label: CTA Banner
-        file: content/marketplace/cta.json
       - name: investors_designed
         label: Designed For Investors Section
         file: content/landing/investors/designed-for.json
@@ -577,4 +495,104 @@ collections:
           - { label: Title, name: title, widget: string }
           - { label: Primary Button Text, name: button_primary, widget: string }
           - { label: Secondary Button Text, name: button_secondary, widget: string }
-  
+
+  - name: marketplace
+    label: Marketplace Page
+    files:
+
+      - name: marketplace_header
+        label: Header Section
+        file: content/marketplace/header.json
+        format: json
+        fields:
+          - { label: Heading, name: heading, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+
+      - name: marketplace_featured
+        label: Featured Assets Section
+        file: content/marketplace/featured.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+          - label: Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Image, name: image, widget: image }
+              - { label: Category, name: category, widget: string }
+              - { label: Current Bid, name: current_bid, widget: string }
+              - { label: Ends In, name: ends_in, widget: string }
+
+      - name: marketplace_transparency
+        label: Transparency Section
+        file: content/marketplace/transparency.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - label: Boxes
+            name: boxes
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: marketplace_cta
+        label: CTA Section
+        file: content/marketplace/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Button Text, name: button_text, widget: string }
+
+  - name: asset_owners
+    label: Asset Owners Page
+    files:
+
+      - name: ao_header
+        label: Header Section
+        file: content/asset-owners/header.json
+        format: json
+        fields:
+          - { label: Heading, name: heading, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+
+      - name: ao_valuable_assets
+        label: Valuable Assets Section
+        file: content/asset-owners/valuable-assets.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Boxes
+            name: boxes
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: ao_benefits
+        label: Benefits Section
+        file: content/asset-owners/benefits.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: CTA Title, name: cta_title, widget: string }
+          - { label: CTA Button Text, name: cta_button_primary, widget: string }
+          - label: Benefits
+            name: benefits
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Image, name: image, widget: image }
+              - label: Points
+                name: points
+                widget: list
+                field:
+                  label: Point
+                  name: point
+                  widget: string

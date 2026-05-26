@@ -6,7 +6,6 @@ import BenefitsSection from '@/components/landing/for-you/AssetOwners/BenefitsSe
 import {
   getFooterContent,
   getNavbarContent,
-  getMineralModalContent,
   getAssetOwnersHeaderContent,
   getValuableAssetsContent,
   getBenefitsContent,
@@ -15,14 +14,13 @@ import {
 export default function AssetOwnersPage() {
   const footer = getFooterContent();
   const navbar = getNavbarContent();
-  const mineralModal = getMineralModalContent();
   const header = getAssetOwnersHeaderContent();
   const valuableAssets = getValuableAssetsContent();
   const benefits = getBenefitsContent();
 
   return (
     <>
-      <Navbar content={navbar} mineralModal={mineralModal} />
+      <Navbar content={navbar} />
       <HeaderSection content={header} />
       <ValuableAssetsSection content={valuableAssets} />
       <BenefitsSection content={benefits} />
