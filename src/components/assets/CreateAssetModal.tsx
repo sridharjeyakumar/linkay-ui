@@ -991,15 +991,19 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             sx: {
               borderRadius: 3,
               bgcolor: '#fff',
-              width: { xs: '95%', sm: 520 },
-              maxWidth: 520,
+              width: { xs: '95%', sm: 640 },
+              maxWidth: 640,
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
               m: 'auto',
             },
           },
         }}
       >
         {/* Header */}
-        <Box sx={{ px: 3, pt: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box sx={{ flexShrink: 0, px: 3, pt: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1, pr: 2 }}>
             <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#111', mb: 1 }}>
               {threeDModalStep === 1 && '3D Modal Generation'}
@@ -1026,7 +1030,25 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         </Box>
 
         {/* Content */}
-        <Box sx={{ px: 3, pb: 2 }}>
+        <Box
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            px: 3,
+            pb: 2,
+            '&::-webkit-scrollbar': { width: 4 },
+            '&::-webkit-scrollbar-track': { background: '#f9fafb', borderRadius: 4 },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#d1d5db',
+              borderRadius: 4,
+              '&:hover': { background: '#9ca3af' },
+            },
+          }}
+        >
           {/* ── Step 1: Upload ── */}
           {threeDModalStep === 1 && (
             <>
@@ -1242,7 +1264,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         </Box>
 
         {/* Footer */}
-        <Box sx={{ px: 3, pb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ flexShrink: 0, px: 3, pb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {threeDModalStep === 3 ? (
             <>
               {/* Regenerate → back to step 1 */}
