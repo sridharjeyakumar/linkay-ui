@@ -5,6 +5,7 @@ import { Box, Typography, Button, IconButton } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import Image from 'next/image';
 import type { MineralModalContent } from '@/lib/content';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 const backdropFade = keyframes`
   from { opacity: 0; }
@@ -33,6 +34,7 @@ interface MineralModalProps {
 }
 
 export default function MineralModal({ open, onClose, onOpenRegister, content }: MineralModalProps) {
+  useScrollLock(open);
   const [hovered, setHovered] = useState(false);
 
   useEffect(() => {

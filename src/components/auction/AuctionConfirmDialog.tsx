@@ -3,6 +3,7 @@
 import { Box, Button, Dialog, Typography } from '@mui/material';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error }: Props) {
+  useScrollLock(open);
   return (
     <Dialog
       open={open}
