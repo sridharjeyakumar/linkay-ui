@@ -1,0 +1,35 @@
+{
+  "title": "Core Benefits of the Platform",
+  "cta_title": "Start Your Asset Tokenization Journey",
+  "cta_button_primary": "Tokenize an Asset",
+  
+  "benefits": [
+    {
+      "title": "AI-Powered Asset Visualization",
+      "image": "/AssetOwners/abstract5g.svg",
+      "points": [
+        "Immersive digital asset experiences",
+        "Enhanced marketplace presentation",
+        "AI-driven visual storytelling"
+      ]
+    },
+    {
+      "title": "Marketplace Infrastructure",
+      "image": "/AssetOwners/Abstract Glass 3D Icon  (1).svg",
+      "points": [
+        "Structured ownership participation",
+        "Integrated trading capabilities",
+        "Scalable marketplace operations"
+      ]
+    },
+    {
+      "title": "Institutional Trust",
+      "image": "/AssetOwners/Ring Abstract Shape.svg",
+      "points": [
+        "Transparency-focused framework",
+        "Compliance-driven infrastructure",
+        "Secure ownership integrity"
+      ]
+    }
+  ]
+}

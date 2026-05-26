@@ -123,3 +123,72 @@ export const getNavbarContent = () => read<NavbarContent>('landing/navbar.json')
 export const getTokenizationHeaderContent = () => read<TokenizationHeaderContent>('tokenization/header.json');
 export const getModernAssetContent = () => read<ModernAssetContent>('tokenization/modern-asset.json');
 export const getFaqContent = () => read<FaqContent>('tokenization/faq.json');
+
+export type AssetOwnersHeaderContent = {
+  heading: string;
+  subtitle: string;
+  button_text: string;
+};
+export const getAssetOwnersHeaderContent = () => read<AssetOwnersHeaderContent>('asset-owners/header.json');
+
+export type ValuableAssetsBox = {
+  title: string;
+  description: string;
+};
+export type ValuableAssetsContent = {
+  title: string;
+  boxes: ValuableAssetsBox[];
+};
+export const getValuableAssetsContent = () => read<ValuableAssetsContent>('asset-owners/valuable-assets.json');
+
+export type BenefitsItem = {
+  title: string;
+  image: string;
+  points: string[];
+};
+export type BenefitsContent = {
+  title: string;
+  cta_title: string;
+  cta_button_primary: string;
+  benefits: BenefitsItem[];
+};
+export const getBenefitsContent = () => read<BenefitsContent>('asset-owners/benefits.json');
+
+export type MarketplaceHeaderContent = {
+  heading: string;
+  subtitle: string;
+  button_text: string;
+};
+export const getMarketplaceHeaderContent = () => read<MarketplaceHeaderContent>('marketplace/header.json');
+
+export type FeaturedItem = {
+  title: string;
+  image: string;
+  category: string;
+  current_bid: string;
+  ends_in: string;
+};
+export type FeaturedContent = {
+  title: string;
+  subtitle: string;
+  button_text: string;
+  items: FeaturedItem[];
+};
+export const getFeaturedContent = () => read<FeaturedContent>('marketplace/featured.json');
+
+export type TransparencyBox = {
+  title: string;
+  description: string;
+};
+export type TransparencyContent = {
+  title: string;
+  subtitle: string;
+  boxes: TransparencyBox[];
+};
+export const getTransparencyContent = () => read<TransparencyContent>('marketplace/transparency.json');
+
+export type MarketplaceCtaContent = {
+  title: string;
+  button_text: string;
+};
+export const getMarketplaceCtaContent = () => read<MarketplaceCtaContent>('marketplace/cta.json');

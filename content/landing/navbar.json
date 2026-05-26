@@ -1,6 +1,6 @@
 {
   "links": [
-    { "label": "Marketplace", "href": "#marketplace" },
+    { "label": "Marketplace", "href": "/marketplace" },
     { "label": "Tokenization", "href": "/tokenization" },
     { "label": "How It Works", "href": "#ownership" },
     {
