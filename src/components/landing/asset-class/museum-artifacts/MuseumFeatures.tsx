@@ -40,6 +40,11 @@ export default function MuseumFeatures({ content }: { content: MuseumFeaturesCon
                   pb: 4,
                   display: 'flex',
                   flexDirection: 'column',
+                  transition: 'transform 0.5s ease, box-shadow 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-8px)',
+                    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.15)',
+                  },
                 }}
               >
                 {/* Icon — top half, centered */}

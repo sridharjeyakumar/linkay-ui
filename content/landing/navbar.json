@@ -16,7 +16,7 @@
       "label": "For You",
       "href": "#for-you",
       "dropdown": [
-        { "label": "For Asset Owners", "icon": "warehouse", "description": "Tokenize and launch real world assets" },
+        { "label": "For Asset Owners", "icon": "warehouse", "href": "/asset-owners", "description": "Tokenize and launch real world assets" },
         { "label": "For Investors", "icon": "coins", "href": "/for-you/investors", "description": "Access tokenized asset opportunities" }
       ]
     }
