@@ -145,6 +145,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   useScrollLock(open);
   const dispatch = useAppDispatch();
   const { actionLoading, error } = useAppSelector((s) => s.assets);
+  const walletAddress = useAppSelector((s) => s.auth.user?.walletAddress ?? '');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(1);
@@ -165,7 +166,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   const [tokenizePercent, setTokenizePercent]   = useState<number>(5);
   const [totalFractions, setTotalFractions]     = useState('');
   const [royalty, setRoyalty]                   = useState('');
-  const [royaltyWallet, setRoyaltyWallet]       = useState('');
+  const [royaltyWallet, setRoyaltyWallet]       = useState(walletAddress);
 
   // Step 3 – Media
   const [mediaFiles, setMediaFiles]     = useState<File[]>([]);
@@ -228,7 +229,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
           ? (ROYALTY_OPTIONS.find((o) => parseFloat(o) === Number(editAsset.royaltyPercent)) ?? `${editAsset.royaltyPercent}%`)
           : ''
       );
-      setRoyaltyWallet(editAsset.royaltyWallet ?? '');
+      setRoyaltyWallet(editAsset.royaltyWallet ?? walletAddress);
       setThreeDFiles(editAsset.threeDFiles ?? '');
       setLiveStream(editAsset.liveStream ?? '');
       setMediaFiles([]);
@@ -243,7 +244,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setTitle(''); setAssetType(''); setCustodian(''); setOwnershipEntity('');
     setDescription(''); setHistoricalContext(''); setConditionReport(''); setCertificationRef('');
     setValuation(''); setJurisdiction(''); setTokenizePercent(5); setTotalFractions('');
-    setRoyalty(''); setRoyaltyWallet('');
+    setRoyalty(''); setRoyaltyWallet(walletAddress);
     setMediaFiles([]); setExistingImages([]); setThreeDFiles(''); setLiveStream('');
     setGenerated3DFiles([]);
     setStep1Errors({});
@@ -800,8 +801,21 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 </Box>
                 <Box>
                   <Label>Royalty Wallet</Label>
-                  <TextField fullWidth size="small" value={royaltyWallet}
-                    onChange={(e) => setRoyaltyWallet(e.target.value.trim())} sx={inputSx} />
+                  <TextField
+                    fullWidth size="small" value={royaltyWallet}
+                    disabled
+                    sx={{
+                      ...inputSx,
+                      '& .Mui-disabled': {
+                        WebkitTextFillColor: '#374151 !important',
+                        bgcolor: '#f3f4f6',
+                        borderRadius: '8px',
+                      },
+                    }}
+                  />
+                  <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.5 }}>
+                    Auto-filled from your connected wallet
+                  </Typography>
                 </Box>
               </Box>
             </Box>

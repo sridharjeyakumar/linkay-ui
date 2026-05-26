@@ -120,6 +120,7 @@ export default function MuseumDashboardPage() {
   const { jobs, loading: tkLoading, error: tkError } = useAppSelector((s) => s.tokenization);
 
   const [createOpen,    setCreateOpen]    = useState(false);
+  const [guardOpen,     setGuardOpen]     = useState(false);
   const [draftsOpen,    setDraftsOpen]    = useState(false);
   const [editAsset,     setEditAsset]     = useState<Asset | null>(null);
   const [auctionAsset,  setAuctionAsset]  = useState<Asset | null>(null);
@@ -317,7 +318,13 @@ export default function MuseumDashboardPage() {
       sub: 'Create a new real world asset',
       count: null as string | null,
       cardBorder: '2px solid #3b82f6',
-      onClick: () => { setStatusFilter(null); setCreateOpen(true); },
+      onClick: () => {
+        const kycDone    = user?.kycStatus === 'APPROVED';
+        const walletDone = !!user?.walletAddress;
+        if (!kycDone || !walletDone) { setGuardOpen(true); return; }
+        setStatusFilter(null);
+        setCreateOpen(true);
+      },
       filter: null as string | null,
     },
     {
@@ -767,6 +774,50 @@ export default function MuseumDashboardPage() {
           <Button onClick={handleTokenizeConfirm}
             variant="contained" sx={{ borderRadius: 2, textTransform: 'none', bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}>
             Yes, Tokenize
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* KYC / Wallet guard */}
+      <Dialog open={guardOpen} onClose={() => setGuardOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
+          Complete setup to create an asset
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 13, color: '#6b7280', mb: 2 }}>
+            Before creating an asset, please complete the following:
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {user?.kycStatus !== 'APPROVED' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, bgcolor: '#fef3c7', borderRadius: 2, border: '1px solid #fde68a' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>KYC not completed</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#b45309' }}>Complete your identity verification to proceed</Typography>
+                </Box>
+              </Box>
+            )}
+            {!user?.walletAddress && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, bgcolor: '#eff6ff', borderRadius: 2, border: '1px solid #bfdbfe' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3b82f6', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>Wallet not connected</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#2563eb' }}>Connect your wallet before creating an asset</Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={() => setGuardOpen(false)}
+            sx={{ textTransform: 'none', color: '#6b7280', fontWeight: 500 }}>
+            Cancel
+          </Button>
+          <Button onClick={() => { setGuardOpen(false); router.push('/kyc'); }}
+            variant="contained"
+            sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, bgcolor: '#3b6ef8', '&:hover': { bgcolor: '#2d5fe8' } }}>
+            Go to Setup
           </Button>
         </DialogActions>
       </Dialog>

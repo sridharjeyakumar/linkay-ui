@@ -42,9 +42,7 @@ import { useRouter } from 'next/navigation';
 
 function formatValue(v: number | null): string {
   if (v == null) return '—';
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000)     return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${v.toLocaleString()}`;
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatValuation(v: number | null): string {
@@ -509,7 +507,7 @@ export default function AdminDashboardPage() {
 
             {/* Top 3 stat cards */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: { xs: '12px', sm: '14px' } }}>
-              <TopStatCard label="AUCTIONS AWAITING APPROVAL" value={String(stats?.pendingTreasuryCount ?? '—')} loading={loadingStats} />
+              <TopStatCard label="AUCTIONS AWAITING APPROVAL" value={String((stats?.pendingTreasuryCount ?? 0) || queue.length)} loading={loadingStats && loadingQueue} />
               <TopStatCard label="LIVE AUCTIONS"              value={String(stats?.liveAuctionsCount    ?? '—')} loading={loadingStats} />
               <TopStatCard label="REGISTERED ASSET OWNERS"   value={String(stats?.museumAdminCount     ?? '—')} loading={loadingStats} />
             </Box>

@@ -26,7 +26,7 @@ export const fetchAdminQueueThunk = createAsyncThunk<PendingAsset[], void, { rej
         certificationRef: (a.certificationRef ?? a.certification_ref) as string | null,
         totalFractions:   (a.totalFractions ?? a.total_fractions) != null ? Number(a.totalFractions ?? a.total_fractions) : null,
         mediaFiles:       (a.mediaFiles ?? a.media_files) as unknown[] ?? [],
-        ownerName:        (a.ownershipSplit as Array<{ ownerName?: string }>)?.[0]?.ownerName ?? 'Unknown',
+        ownerName: (a.createdByName as string | null) || 'Unknown',
         dynamicFields:    (a.dynamicFields ?? []) as Array<{ fieldKey: string; fieldValue: unknown }>,
         tokenization:     (a.tokenization ?? null) as PendingAsset['tokenization'],
       }));
