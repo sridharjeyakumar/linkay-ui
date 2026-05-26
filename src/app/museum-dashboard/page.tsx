@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, Paper, Snackbar, Table, TableBody,
+  DialogTitle, IconButton, Paper, Snackbar, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TableSortLabel,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import createAssetImg from '@/assets/Create Asset.png';
 import draftsImg from '@/assets/Drafts.png';
 import publishedImg from '@/assets/Published.png';
@@ -781,14 +782,18 @@ export default function MuseumDashboardPage() {
       {/* KYC / Wallet guard */}
       <Dialog open={guardOpen} onClose={() => setGuardOpen(false)} maxWidth="xs" fullWidth
         slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}>
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, color: '#111', pr: 5 }}>
           Complete setup to create an asset
+          <IconButton onClick={() => setGuardOpen(false)} size="small"
+            sx={{ position: 'absolute', top: 16, right: 16, color: '#6b7280' }}>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 13, color: '#6b7280', mb: 2 }}>
             Before creating an asset, please complete the following:
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pb: 1 }}>
             {user?.kycStatus !== 'APPROVED' && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, bgcolor: '#fef3c7', borderRadius: 2, border: '1px solid #fde68a' }}>
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b', flexShrink: 0 }} />
@@ -809,17 +814,6 @@ export default function MuseumDashboardPage() {
             )}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button onClick={() => setGuardOpen(false)}
-            sx={{ textTransform: 'none', color: '#6b7280', fontWeight: 500 }}>
-            Cancel
-          </Button>
-          <Button onClick={() => { setGuardOpen(false); router.push('/kyc'); }}
-            variant="contained"
-            sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2, bgcolor: '#3b6ef8', '&:hover': { bgcolor: '#2d5fe8' } }}>
-            Go to Setup
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Modals */}
