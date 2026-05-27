@@ -471,8 +471,16 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     const errs: Record<string, string> = {};
     if (!valuation || parseFloat(valuation) <= 0) errs.valuation     = 'Asset Valuation is required.';
     if (!jurisdiction)                             errs.jurisdiction  = 'Jurisdiction is required.';
-    if (!totalFractions || parseInt(totalFractions, 10) <= 0)
-                                                   errs.totalFractions = 'Total Fractions is required.';
+    if (!totalFractions || parseInt(totalFractions, 10) <= 0) {
+      errs.totalFractions = 'Total Fractions is required.';
+    } else {
+      const fractions = parseInt(totalFractions, 10);
+      const publicFractions = Math.floor(fractions * tokenizePercent / 100);
+      if (publicFractions < 1) {
+        const minFractions = Math.ceil(100 / tokenizePercent);
+        errs.totalFractions = `Too low: with ${tokenizePercent}% tokenization, minimum is ${minFractions} fractions. Recommended: 1000+`;
+      }
+    }
     setStep2Errors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -751,7 +759,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
                     onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
-                    error={!!step2Errors.totalFractions} helperText={step2Errors.totalFractions}
+                    error={!!step2Errors.totalFractions}
+                    helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% tokenization → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
                     sx={inputSx}
                     slotProps={{ htmlInput: { min: 1 } }}
                   />
