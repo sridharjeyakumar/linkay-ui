@@ -1,16 +1,9 @@
-'use client';
+﻿'use client';
 
 import { Box, Typography, Container } from '@mui/material';
 import Image from 'next/image';
-import { Archivo } from 'next/font/google';
 import type { BenefitsContent } from '@/lib/content';
 import ArrowButton from '@/components/ui/ArrowButton';
-
-const archivo = Archivo({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
 
 const POINT_ICON = '/AssetOwners/Frame 2147225127.svg';
 
@@ -38,7 +31,7 @@ export default function BenefitsSection({
           alignItems: 'center',
         }}
       >
-        {/* Section Title — Figma: Archivo SemiBold 600 48px, #0A0A0A */}
+        {/* Section Title â€” Figma: Archivo SemiBold 600 48px, #0A0A0A */}
         <Typography
           component="h2"
           sx={{
@@ -82,7 +75,7 @@ export default function BenefitsSection({
                   gap: { xs: 3, md: 0 },
                 }}
               >
-                {/* Image — dynamic from JSON */}
+                {/* Image â€” dynamic from JSON */}
                 <Box
                   sx={{
                     width: { xs: '150px', md: '320px' },
@@ -109,7 +102,7 @@ export default function BenefitsSection({
                   )}
                 </Box>
 
-                {/* Content — title + points */}
+                {/* Content â€” title + points */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -119,7 +112,7 @@ export default function BenefitsSection({
                     pl: { xs: 0, md: 12 },
                   }}
                 >
-                  {/* Title — Figma: Inter SemiBold 600 30px, #1E40AF */}
+                  {/* Title â€” Figma: Inter SemiBold 600 30px, #1E40AF */}
                   <Typography
                     sx={{
                       fontFamily: '"Inter", sans-serif',
@@ -160,7 +153,7 @@ export default function BenefitsSection({
                           unoptimized
                         />
 
-                        {/* Point text — Figma: Inter Regular 400 20px, #737373 */}
+                        {/* Point text â€” Figma: Inter Regular 400 20px, #737373 */}
                         <Typography
                           sx={{
                             fontFamily: '"Inter", sans-serif',
@@ -184,38 +177,33 @@ export default function BenefitsSection({
         {/* CTA Banner */}
         <Box
           sx={{
+            position: 'relative',
+            overflow: 'hidden',
             width: '100%',
-            maxWidth: '1196px',
-            height: { xs: 'auto', md: '239px' },
-            mx: 'auto',
-            mt: { xs: '60px', md: '80px' },
-            mb: { xs: '100px', md: '10px' },
-            borderRadius: '28px',
+            mt: { xs: 7, md: 8 },
+            mb: { xs: 2, md: 4 },
+            borderRadius: { xs: '16px', sm: '24px', md: '32px' },
             border: '2px solid #ABE2FB',
             background: 'linear-gradient(90deg, #0EA5E9 -10%, #C2FFFB 50%, #0EA5E9 115%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            px: { xs: '30px', md: '60px' },
-            py: { xs: '40px', md: '0' },
-            gap: { xs: '24px', md: '30px' },
-            boxSizing: 'border-box',
+            px: { xs: 3, sm: 5, md: 8, lg: 10 },
+            py: { xs: 7, sm: 8, md: 10 },
             boxShadow: 'inset 0 0 40px rgba(83, 181, 246, 0.25)',
           }}
         >
           <Typography
             component="h2"
             sx={{
-              position: 'relative',
-              zIndex: 1,
               fontFamily: 'var(--font-archivo), sans-serif',
               fontWeight: 600,
-              fontSize: { xs: '2rem', sm: '2.5rem', md: '48px' },
+              fontSize: '48px',
               lineHeight: 1,
               textAlign: 'center',
               color: '#0A0A0A',
-              mb: { xs: 3.5, md: 1.5 },
+              mb: { xs: 3.5, md: 4.5 },
             }}
           >
             {content.cta_title}

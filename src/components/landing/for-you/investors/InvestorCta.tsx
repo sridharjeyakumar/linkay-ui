@@ -58,7 +58,7 @@ export default function InvestorCta({ content }: { content: InvestorCtaContent }
               zIndex: 1,
               fontFamily: 'var(--font-archivo), sans-serif',
               fontWeight: 600,
-              fontSize: { xs: '2rem', sm: '2.5rem', md: '48px' },
+              fontSize: '48px',
               lineHeight: 1,
               color: '#0A0A0A',
               mb: { xs: 3.5, md: 4.5 },

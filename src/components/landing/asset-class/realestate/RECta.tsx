@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Container } from '@mui/material';
 import Image from 'next/image';
-import { Archivo, Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import type { RECtaContent } from '@/lib/content';
 
-const archivo = Archivo({ subsets: ['latin'], weight: ['600', '700'], display: 'swap' });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '600'], display: 'swap' });
 
 const openRegister = () =>
@@ -16,39 +15,35 @@ export default function RECta({ content }: { content: RECtaContent }) {
   const [hovered, setHovered] = useState(false);
 
   return (
-    <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: '20px', md: '0' } }}>
+    <Box sx={{ bgcolor: '#ffffff', py: { xs: 6, md: 8 } }}>
+      <Container maxWidth={false} sx={{ maxWidth: '1400px', px: { xs: 2, sm: 4, md: 6 } }}>
       <Box
         sx={{
-          width: '100%',
-          maxWidth: '1196px',
-          height: { xs: 'auto', md: '239px' },
-          mx: 'auto',
-          mt: { xs: '60px', md: '80px' },
-          mb: { xs: '60px', md: '80px' },
-          borderRadius: '28px',
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: { xs: '16px', sm: '24px', md: '32px' },
           border: '2px solid #ABE2FB',
           background: 'linear-gradient(90deg, #0EA5E9 -10%, #C2FFFB 50%, #0EA5E9 115%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          px: { xs: '20px', sm: '30px', md: '60px' },
-          py: { xs: '40px', md: '0' },
-          gap: { xs: '24px', md: '30px' },
-          boxSizing: 'border-box',
+          px: { xs: 3, sm: 5, md: 8, lg: 10 },
+          py: { xs: 7, sm: 8, md: 10 },
           boxShadow: 'inset 0 0 40px rgba(83, 181, 246, 0.25)',
         }}
       >
         <Typography
           component="h2"
-          className={archivo.className}
           sx={{
+            fontFamily: 'var(--font-archivo), sans-serif',
             fontWeight: 600,
-            fontSize: { xs: '18px', sm: '24px', md: '36px' },
-            lineHeight: 1.2,
+            fontSize: '48px',
+            lineHeight: 1,
             letterSpacing: '-0.03em',
             color: '#0A0A0A',
             textAlign: 'center',
+            mb: { xs: 3.5, md: 4.5 },
           }}
         >
           {content.cta_title}
@@ -151,6 +146,7 @@ export default function RECta({ content }: { content: RECtaContent }) {
           </Button>
         </Box>
       </Box>
+      </Container>
     </Box>
   );
 }
