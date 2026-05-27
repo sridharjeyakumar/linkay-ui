@@ -1,11 +1,14 @@
-'use client';
+﻿'use client';
 
 import { Box, Typography, Container } from '@mui/material';
 import Image from 'next/image';
-import { Columns, Rows, Diamond } from '@phosphor-icons/react';
 import type { MuseumAssetClassesContent } from '@/lib/content';
 
-const ICONS = [Columns, Rows, Diamond];
+const ICON_PATHS = [
+  '/landing/museum-artifacts/pillar icon.svg',
+  '/landing/museum-artifacts/Frame icon.svg',
+  '/landing/museum-artifacts/diamond icon.svg',
+];
 
 const hoverCard = {
   position: 'relative' as const,
@@ -75,7 +78,6 @@ export default function MuseumAssetClasses({ content }: { content: MuseumAssetCl
             }}
           >
             {content.categories.map((cat, i) => {
-              const Icon = ICONS[i];
               return (
                 <Box key={cat.title} sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
                   <Box
@@ -90,7 +92,14 @@ export default function MuseumAssetClasses({ content }: { content: MuseumAssetCl
                       justifyContent: 'center',
                     }}
                   >
-                    <Icon size={32} color="white" weight={i === 2 ? 'regular' : 'bold'} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={ICON_PATHS[i]}
+                      alt=""
+                      width={32}
+                      height={32}
+                      style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
+                    />
                   </Box>
                   <Box>
                     <Typography
