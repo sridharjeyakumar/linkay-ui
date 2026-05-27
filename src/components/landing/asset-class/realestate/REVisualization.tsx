@@ -40,7 +40,10 @@ export default function IntelligentPropertyVisualization({
           className={archivo.className}
           sx={{
             fontWeight: 700,
-            fontSize: { xs: '1.75rem', sm: '2rem', md: '2.225rem' },
+            fontSize: {
+              xs: '2rem',
+              md: '3rem',
+            },
             color: '#0d1b2a',
             lineHeight: 1.25,
             letterSpacing: '-0.01em',

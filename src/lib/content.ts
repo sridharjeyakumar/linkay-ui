@@ -219,11 +219,10 @@ export type REHeroContent = {
   hero_image: string;
 };
 
-export type REPropertyType = { num: string; title: string; description: string };
+export type REPropertyType = { num: string; title: string; description: string; image: string };
 export type REInfrastructureContent = {
   title: string;
   subtitle: string;
-  building_image: string;
   property_types: REPropertyType[];
 };
 

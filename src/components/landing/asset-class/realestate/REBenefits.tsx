@@ -28,12 +28,12 @@ export default function REBenefits({ content }: { content: REBenefitsContent }) 
         >
           {content.items.map((b, i) => (
             <Box key={b.title} sx={{ flex: 1 }}>
-              <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'flex-start' }}>
+              <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'flex-start',fontweight:"bold" }}>
                 {ICONS[i] ?? ICONS[0]}
               </Box>
               <Typography
                 className={archivo.className}
-                sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'rgba(14, 165, 233, 1)', mb: 1, textAlign: 'left' }}
+                sx={{ fontWeight: 700, fontSize: '1rem', color: 'rgba(14, 165, 233, 1)', mb: 1, textAlign: 'left' }}
               >
                 {b.title}
               </Typography>
