@@ -1,28 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box, Button, TextField, Typography, MenuItem,
-  Alert, CircularProgress, IconButton, InputAdornment, Radio,
+  Alert, CircularProgress, IconButton, InputAdornment, Radio, Dialog,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import { keyframes } from '@emotion/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { registerThunk } from '@/features/auth/authThunks';
 import { clearMessages } from '@/features/auth/authSlice';
 
-const backdropFade = keyframes`
-  from { opacity: 0; }
-  to   { opacity: 1; }
-`;
-
-const modalEnter = keyframes`
-  from { opacity: 0; transform: scale(0.93) translateY(16px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-`;
 
 const COUNTRIES = [
   { code: 'US', name: 'United States',        flag: '/flags/us.png' },
@@ -116,6 +106,10 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Redirect backdrop scroll into the modal's scroll container
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+
   useEffect(() => {
     if (!open) return;
     dispatch(clearMessages());
@@ -132,22 +126,19 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
 
-  // Lock body scroll (position:fixed approach works on iOS Safari)
+  // iOS Safari ignores overflow:hidden on body — block backdrop touchmove with a
+  // non-passive listener (passive:false is required to call preventDefault).
+  // Touches inside the scrollable Box are allowed through; backdrop touches are blocked.
   useEffect(() => {
     if (!open) return;
-    const scrollY = window.scrollY;
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, scrollY);
+    const blockBackdropScroll = (e: TouchEvent) => {
+      if (scrollRef.current?.contains(e.target as Node)) return; // inside modal — allow
+      e.preventDefault(); // on backdrop — block background scroll
     };
+    document.addEventListener('touchmove', blockBackdropScroll, { passive: false });
+    return () => document.removeEventListener('touchmove', blockBackdropScroll);
   }, [open]);
+
 
   const isAllFilled =
     form.firstName.trim() !== '' &&
@@ -201,44 +192,61 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     );
   };
 
-  if (!open) return null;
-
   return (
-    <Box
-      onClick={onClose}
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1300,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        p: 2,
-        overflow: 'hidden',
-        touchAction: 'none',
-        animation: `${backdropFade} 0.25s ease forwards`,
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      onWheel={(e) => {
+        if (scrollRef.current) scrollRef.current.scrollTop += e.deltaY;
+      }}
+      onTouchStart={(e) => {
+        touchStartY.current = e.touches[0].clientY;
+      }}
+      onTouchMove={(e) => {
+        if (scrollRef.current) {
+          const delta = touchStartY.current - e.touches[0].clientY;
+          touchStartY.current = e.touches[0].clientY;
+          scrollRef.current.scrollTop += delta;
+        }
+      }}
+      slotProps={{
+        backdrop: {
+          sx: {
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            bgcolor: 'rgba(0,0,0,0.5)',
+          },
+        },
+        paper: {
+          sx: {
+            borderRadius: '24px',
+            border: '1px solid #E8E8E8',
+            bgcolor: '#FFFFFF',
+            width: '100%',
+            maxWidth: '410px',
+            maxHeight: '90vh',
+            m: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          },
+        },
       }}
     >
+      {/* Scrollable content — backdrop wheel/touch is forwarded here via scrollRef */}
       <Box
-        onClick={(e) => e.stopPropagation()}
+        ref={scrollRef}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
         sx={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: '410px',
-          maxHeight: '90vh',
-          borderRadius: '24px',
-          border: '1px solid #E8E8E8',
-          bgcolor: '#FFFFFF',
-          p: { xs: '20px', sm: '32px' },
-          display: 'flex',
-          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
-          animation: `${modalEnter} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
+          position: 'relative',
+          p: { xs: '20px', sm: '32px' },
         }}
       >
         {/* Close button */}
@@ -345,7 +353,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                           borderRadius: '12px',
                           boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
                           border: '1px solid #ECECEC',
-                          maxHeight: '300px', // Fix for scroll
+                          maxHeight: '200px', // Fix for scroll
                           overflowY: 'auto',   // Fix for scroll
                           '& .MuiMenuItem-root': { fontSize: '14px', padding: '10px 14px', borderRadius: '8px', mx: 0.5, my: 0.3 },
                           '& .MuiMenuItem-root:hover': { backgroundColor: '#F5F7FB' },
@@ -508,6 +516,6 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
           </Box>
         )}
       </Box>
-    </Box>
+    </Dialog>
   );
 }
