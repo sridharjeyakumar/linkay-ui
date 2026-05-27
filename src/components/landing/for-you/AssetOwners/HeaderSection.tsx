@@ -130,6 +130,29 @@ export default function HeaderSection({ content }: { content: AssetOwnersHeaderC
 
           {/* CTA Button */}
           <ArrowButton label={content.button_text} onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))} />
+
+
+             {/* White blur blend at bottom */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: '-80px',
+                left: 0,
+                width: '100%',
+                height: { xs: '140px', md: '220px' },
+                background: `
+                  linear-gradient(
+                    to bottom,
+                    rgba(255,255,255,0) 0%,
+                    rgba(255,255,255,0.85) 70%,
+                    #ffffff 100%
+                  )
+                `,
+                filter: 'blur(26px)',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
         </Box>
       </Container>
     </Box>
