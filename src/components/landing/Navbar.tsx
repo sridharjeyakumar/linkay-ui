@@ -59,12 +59,38 @@ export default function Navbar({ content }: NavbarProps) {
   const [registerOpen, setRegisterOpen] = useState(false);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
+  const [currentHash, setCurrentHash] = useState('');
 
-  // Check if a link is active (only for non-hash links)
+  // Check if a link is active
   const isLinkActive = (href: string | undefined) => {
-    if (!href || href.startsWith('#')) return false;
+    if (!href) return false;
+    
+    // Handle hash links (sections on homepage)
+    if (href.startsWith('#')) {
+      return pathname === '/' && currentHash === href;
+    }
+    
+    // Handle regular page links
     return pathname === href || pathname.startsWith(href + '/');
   };
+
+  // Check if any dropdown item is active
+  const isDropdownActive = (dropdown: any[] | undefined) => {
+    if (!dropdown) return false;
+    return dropdown.some((item) => isLinkActive(item.href));
+  };
+
+  useEffect(() => {
+    // Update hash on mount and when location changes
+    setCurrentHash(window.location.hash);
+    
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash);
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     const handler = () => setRegisterOpen(true);
@@ -130,8 +156,8 @@ export default function Navbar({ content }: NavbarProps) {
                         />
                       }
                       sx={{
-                        color: '#374151',
-                        fontWeight: 400,
+                        color: isDropdownActive(link.dropdown) ? '#010303' : '#374151',
+                        fontWeight: isDropdownActive(link.dropdown) ? 600 : 400,
                         fontSize: { md: '0.82rem', lg: '0.92rem' },
                         textTransform: 'none',
                         px: { md: 1.2, lg: 1.8 },
@@ -151,6 +177,7 @@ export default function Navbar({ content }: NavbarProps) {
                     >
                       {link.dropdown.map((item, idx, arr) => {
                         const ItemIcon = ICON_MAP[item.icon];
+                        const isActive = isLinkActive(item.href);
                         return (
                           <Box key={item.label}>
                             <MenuItem
@@ -158,7 +185,7 @@ export default function Navbar({ content }: NavbarProps) {
                                 closeDropdown(link.label);
                                 if (item.href) router.push(item.href);
                               }}
-                              sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
+                              sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', bgcolor: isActive ? 'rgba(21, 101, 192, 0.1)' : 'transparent', '&:hover': { bgcolor: '#f5f7fa' } }}
                             >
                               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, width: '100%' }}>
                                 {ItemIcon && (
@@ -168,7 +195,7 @@ export default function Navbar({ content }: NavbarProps) {
                                 )}
                                 <Box sx={{ flex: 1 }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: '16px', lineHeight: 1.5, letterSpacing: 0, color: '#0A0A0A' }}>
+                                    <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: isActive ? 700 : 600, fontSize: '16px', lineHeight: 1.5, letterSpacing: 0, color: isActive ? '#1565c0' : '#0A0A0A' }}>
                                       {item.label}
                                     </Typography>
                                     {item.comingSoon && (
@@ -340,7 +367,7 @@ export default function Navbar({ content }: NavbarProps) {
                 <ListItemButton onClick={() => toggleMobileExpand(link.label)}>
                   <ListItemText
                     primary={link.label}
-                    slotProps={{ primary: { sx: { fontWeight: 500, color: '#111827' } } }}
+                    slotProps={{ primary: { sx: { fontWeight: isDropdownActive(link.dropdown) ? 600 : 500, color: isDropdownActive(link.dropdown) ? '#010303' : '#111827' } } }}
                   />
                   <ExpandMoreIcon
                     sx={{
@@ -355,20 +382,21 @@ export default function Navbar({ content }: NavbarProps) {
                   <List disablePadding>
                     {link.dropdown.map((item) => {
                       const ItemIcon = ICON_MAP[item.icon];
+                      const isActive = isLinkActive(item.href);
                       return (
                         <ListItemButton
                           key={item.label}
-                          sx={{ pl: 4 }}
+                          sx={{ pl: 4, bgcolor: isActive ? 'rgba(21, 101, 192, 0.1)' : 'transparent' }}
                           onClick={() => {
                             setMobileOpen(false);
                             if (item.href) router.push(item.href);
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
-                            {ItemIcon && <ItemIcon size={18} color="#6b7280" />}
+                            {ItemIcon && <ItemIcon size={18} color={isActive ? '#1565c0' : '#6b7280'} />}
                             <ListItemText
                               primary={item.label}
-                              slotProps={{ primary: { sx: { fontSize: '0.9rem', color: '#6b7280' } } }}
+                              slotProps={{ primary: { sx: { fontSize: '0.9rem', color: isActive ? '#1565c0' : '#6b7280', fontWeight: isActive ? 600 : 400 } } }}
                             />
                             {item.comingSoon && (
                               <Chip label="Soon" size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: '#e8eaf6', color: '#5c6bc0' }} />
