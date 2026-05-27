@@ -116,7 +116,7 @@ export default function MuseumDashboardPage() {
   const theme     = useTheme();
   const isMobile  = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const { user }                          = useAppSelector((s) => s.auth);
+  const { user, loading: authLoading }    = useAppSelector((s) => s.auth);
   const { assets }                        = useAppSelector((s) => s.assets);
   const { jobs, loading: tkLoading, error: tkError } = useAppSelector((s) => s.tokenization);
 
@@ -141,7 +141,8 @@ export default function MuseumDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;           // wait until auth fetch completes
+    if (!user) return;                 // no user yet — guard above handles this
     if (!user.is_museum_user) {
       router.replace('/user-dashboard');
     } else {
@@ -152,7 +153,7 @@ export default function MuseumDashboardPage() {
         setScheduledAssets(ids);
       }).catch(() => {});
     }
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   /* re-fetch assets when any job transitions to completed/failed */
   useEffect(() => {
