@@ -497,6 +497,13 @@ export default function AdminDashboardPage() {
 
   const TABLE_COLS = ['Tokenized Asset', 'Asset Owner', 'Valuation', 'Category', 'Actions'];
 
+  // Only show items still awaiting a platform decision — hide anything already approved or rejected
+  const pendingQueue = queue.filter(
+    (a) =>
+      a.tokenization?.tokenizationStatus !== 'TREASURY_APPROVED' &&
+      a.tokenization?.tokenizationStatus !== 'TREASURY_REJECTED',
+  );
+
   return (
     <Box sx={{ bgcolor: '#F8F8F8', minHeight: 'calc(100vh - 60px)' }}>
       <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: '16px', sm: '24px', md: '32px' }, py: { xs: '16px', sm: '20px', md: '24px' } }}>
@@ -507,7 +514,7 @@ export default function AdminDashboardPage() {
 
             {/* Top 3 stat cards */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: { xs: '12px', sm: '14px' } }}>
-              <TopStatCard label="AUCTIONS AWAITING APPROVAL" value={String((stats?.pendingTreasuryCount ?? 0) || queue.length)} loading={loadingStats && loadingQueue} />
+              <TopStatCard label="AUCTIONS AWAITING APPROVAL" value={String((stats?.pendingTreasuryCount ?? 0) || pendingQueue.length)} loading={loadingStats && loadingQueue} />
               <TopStatCard label="LIVE AUCTIONS"              value={String(stats?.liveAuctionsCount    ?? '—')} loading={loadingStats} />
               <TopStatCard label="REGISTERED ASSET OWNERS"   value={String(stats?.museumAdminCount     ?? '—')} loading={loadingStats} />
             </Box>
@@ -550,15 +557,15 @@ export default function AdminDashboardPage() {
                           ))}
                         </TableRow>
                       ))
-                    ) : queue.length === 0 ? (
+                    ) : pendingQueue.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} align="center" sx={{ py: '32px', color: '#9CA3AF', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
                           No assets pending treasury review
                         </TableCell>
                       </TableRow>
                     ) : (
-                      queue.map((asset, i) => (
-                        <TableRow key={asset.id} sx={{ '& .MuiTableCell-root': { borderBottom: i < queue.length - 1 ? '1px solid #F5F5F5' : 'none' }, '&:hover': { bgcolor: '#FAFAFA' } }}>
+                      pendingQueue.map((asset, i) => (
+                        <TableRow key={asset.id} sx={{ '& .MuiTableCell-root': { borderBottom: i < pendingQueue.length - 1 ? '1px solid #F5F5F5' : 'none' }, '&:hover': { bgcolor: '#FAFAFA' } }}>
                           <TableCell sx={{ fontSize: '13px', fontWeight: 500, color: '#111111', fontFamily: 'Inter, sans-serif', px: { xs: '12px', sm: '16px' }, py: '13px', minWidth: '130px', maxWidth: '180px' }}>
                             {asset.title}
                           </TableCell>

@@ -38,7 +38,7 @@ axiosInstance.interceptors.response.use(
     // Guard 1 — never retry auth endpoints (refresh, login, register)
     if (original.url?.includes('/auth/refresh') || original.url?.includes('/auth/login') || original.url?.includes('/auth/register')) {
       localStorage.removeItem('accessToken');
-      if (original.url?.includes('/auth/refresh')) window.location.href = '/login';
+      if (original.url?.includes('/auth/refresh')) window.location.href = '/';
       return Promise.reject(error);
     }
 
@@ -68,7 +68,7 @@ axiosInstance.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       localStorage.removeItem('accessToken');
-      window.location.href = '/login';
+      window.location.href = '/';
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

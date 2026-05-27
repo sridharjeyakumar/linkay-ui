@@ -17,7 +17,7 @@ export const fetchAdminQueueThunk = createAsyncThunk<PendingAsset[], void, { rej
     try {
       const { data } = await assetApi.listAll({ tokenizationStatus: 'TREASURY_PENDING', limit: '100' });
       const rows = data?.data?.rows ?? data?.data ?? [];
-      return rows.map((a: Record<string, unknown>) => ({
+      return (rows.map((a: Record<string, unknown>) => ({
         id:               a.id as string,
         title:            (a.title as string) ?? 'Untitled',
         valuation:        a.valuation != null ? Number(a.valuation) : null,
@@ -26,10 +26,14 @@ export const fetchAdminQueueThunk = createAsyncThunk<PendingAsset[], void, { rej
         certificationRef: (a.certificationRef ?? a.certification_ref) as string | null,
         totalFractions:   (a.totalFractions ?? a.total_fractions) != null ? Number(a.totalFractions ?? a.total_fractions) : null,
         mediaFiles:       (a.mediaFiles ?? a.media_files) as unknown[] ?? [],
-        ownerName: (a.createdByName as string | null) || 'Unknown',
+        ownerName:        (a.createdByName as string | null) || 'Unknown',
         dynamicFields:    (a.dynamicFields ?? []) as Array<{ fieldKey: string; fieldValue: unknown }>,
         tokenization:     (a.tokenization ?? null) as PendingAsset['tokenization'],
-      }));
+      })) as PendingAsset[]).filter(
+        (a) =>
+          a.tokenization?.tokenizationStatus !== 'TREASURY_APPROVED' &&
+          a.tokenization?.tokenizationStatus !== 'TREASURY_REJECTED',
+      );
     } catch (err) {
       return rejectWithValue(extractMsg(err));
     }

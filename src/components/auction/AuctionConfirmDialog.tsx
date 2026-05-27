@@ -11,9 +11,10 @@ interface Props {
   onConfirm: () => void;
   loading?: boolean;
   error?: string | null;
+  cancelLabel?: string;
 }
 
-export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error }: Props) {
+export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error, cancelLabel }: Props) {
   useScrollLock(open);
   return (
     <Dialog
@@ -91,7 +92,7 @@ export function AuctionConfirmDialog({ open, onCancel, onConfirm, loading, error
             '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' },
           }}
         >
-          Cancel
+          {cancelLabel ?? (error ? 'Back' : 'Cancel')}
         </Button>
         <Button
           onClick={onConfirm}
