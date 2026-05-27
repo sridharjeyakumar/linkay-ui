@@ -100,6 +100,18 @@ export default function Navbar({ content }: NavbarProps) {
     return () => window.removeEventListener('linkay:open-register', handler);
   }, []);
 
+  // Fallback: open login modal when PASSWORD_RESET arrives and modal is already closed.
+  // Primary handler is LoginModal's own listener (switches view to 'login' while modal stays open).
+  useEffect(() => {
+    const channel = new BroadcastChannel('password_reset');
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'PASSWORD_RESET') {
+        setLoginOpen(true);
+      }
+    };
+    return () => channel.close();
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('resetToken');

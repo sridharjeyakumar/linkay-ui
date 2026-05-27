@@ -124,6 +124,19 @@ export default function LoginModal({ open, onClose, resetToken, verifyToken }: L
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
 
+  // When the reset-password tab signals success, switch to the login view.
+  // Mirrors RegisterModal's EMAIL_VERIFIED listener — LoginModal stays open
+  // throughout the forgot-password flow so this always fires.
+  useEffect(() => {
+    const channel = new BroadcastChannel('password_reset');
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'PASSWORD_RESET') {
+        setView('login');
+      }
+    };
+    return () => channel.close();
+  }, []);
+
   const validate = () => {
     const errors: Record<string, string> = {};
     if (!form.email) errors.email = 'Email is required.';
@@ -271,7 +284,7 @@ export default function LoginModal({ open, onClose, resetToken, verifyToken }: L
 
         {/* Logo + Title */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <Image src="/Vector.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
+          <Image src="/landing/LinkBlock Assets Logo.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
           <Typography
             sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '28px', lineHeight: '1.2', color: '#3D3D3D', textAlign: 'center' }}
           >
@@ -316,7 +329,7 @@ export default function LoginModal({ open, onClose, resetToken, verifyToken }: L
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#D1D1D1', mr: 0.5 }}>
-                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                          {showPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                         </IconButton>
                       </InputAdornment>
                     ),
@@ -423,7 +436,7 @@ export default function LoginModal({ open, onClose, resetToken, verifyToken }: L
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton onClick={() => setRpShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
-                            {rpShowPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                            {rpShowPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                           </IconButton>
                         </InputAdornment>
                       ),

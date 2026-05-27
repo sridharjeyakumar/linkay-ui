@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { registerThunk } from '@/features/auth/authThunks';
 import { clearMessages } from '@/features/auth/authSlice';
-import { useScrollLock } from '@/hooks/useScrollLock';
 
 
 const COUNTRIES = [
@@ -79,10 +78,20 @@ interface RegisterModalProps {
 }
 
 export default function RegisterModal({ open, onClose, onSwitchToLogin }: RegisterModalProps) {
-  useScrollLock(open);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error, successMessage } = useAppSelector((s) => s.auth);
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('email_verification');
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'EMAIL_VERIFIED') {
+        onClose();
+        onSwitchToLogin?.();
+      }
+    };
+    return () => channel.close();
+  }, [router, onClose]);
 
   const [form, setForm] = useState({
     firstName: '',
@@ -258,7 +267,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
 
         {/* Logo + Title */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', mb: 2.5 }}>
-          <Image src="/Vector.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
+          <Image src="/landing/LinkBlock Assets Logo.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
           <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '24px', color: '#3D3D3D', textAlign: 'center' }}>
             Register
           </Typography>

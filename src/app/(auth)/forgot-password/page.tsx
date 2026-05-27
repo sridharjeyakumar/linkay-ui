@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -137,7 +136,7 @@ export default function ForgotPasswordPage() {
           }}
         >
           <Image
-            src="/Vector.svg"
+            src="/landing/LinkBlock Assets Logo.svg"
             alt="Linkay Logo"
             width={38}
             height={38}
