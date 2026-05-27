@@ -85,7 +85,10 @@ builder.addCase(getMeThunk.fulfilled, (state, action) => {
 });
 builder.addCase(getMeThunk.rejected, (state) => {
   state.loading = false;
-  state.user = null;
+  // Only clear user if there is no token — avoids wiping state on transient network errors
+  if (typeof window !== 'undefined' && !localStorage.getItem('accessToken')) {
+    state.user = null;
+  }
 });
 
 // Save wallet address

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { Box, Button, CircularProgress, Dialog, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import type { Asset } from '@/types/asset.types';
@@ -68,15 +69,28 @@ const emptySchedule: ScheduleValues = {
   showCountdown: true,
 };
 
-function isPricingComplete(p: SupplyPricingValues) {
-  return (
-    !!p.fractionsAllocated &&
-    !!p.minPurchaseQty &&
-    !!p.maxPurchaseQty &&
-    !!p.startingBidPrice &&
-    !!p.reservePrice &&
-    !!p.minIncrement
-  );
+function toInt(s: string): number | null {
+  const n = parseInt(s, 10);
+  return isNaN(n) ? null : n;
+}
+
+function isPricingComplete(p: SupplyPricingValues, totalFractions?: number | null): boolean {
+  if (!p.fractionsAllocated || !p.minPurchaseQty || !p.maxPurchaseQty ||
+      !p.startingBidPrice   || !p.reservePrice   || !p.minIncrement) return false;
+
+  const fa  = toInt(p.fractionsAllocated);
+  const min = toInt(p.minPurchaseQty);
+  const max = toInt(p.maxPurchaseQty);
+
+  if (fa  === null || fa  <= 0) return false;
+  if (min === null || min <= 0) return false;
+  if (max === null || max <= 0) return false;
+  if (totalFractions != null && fa > totalFractions) return false;
+  if (min > max) return false;
+  if (min > fa)  return false;
+  if (max > fa)  return false;
+
+  return true;
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
@@ -88,6 +102,7 @@ export function CreateAuctionModal({
   onSaveDraft,
   onSchedule,
 }: CreateAuctionModalProps) {
+  useScrollLock(open);
   const [view, setView] = useState<View>('step1');
   const [submitting, setSubmitting] = useState(false);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -124,9 +139,9 @@ export function CreateAuctionModal({
     setSchedule((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSaveDraft() {
-    onSaveDraft?.({ assetId: asset.id, auctionTitle, auctionDescription, pricing });
-  }
+  // function handleSaveDraft() {
+  //   onSaveDraft?.({ assetId: asset.id, auctionTitle, auctionDescription, pricing });
+  // }
 
   async function handleConfirmSchedule() {
     if (!onSchedule) { setView('success'); return; }
@@ -151,8 +166,8 @@ export function CreateAuctionModal({
   // Which main-dialog step is shown (1 or 2)?
   const mainDialogOpen = open && (view === 'step1' || view === 'step2');
   const stepNumber = view === 'step2' ? 2 : 1;
-  const canNext = auctionTitle.trim() !== '';
-  const pricingComplete = isPricingComplete(pricing);
+  const canNext = auctionTitle.trim() !== '' && auctionDescription.trim() !== '';
+  const pricingComplete = isPricingComplete(pricing, asset.totalFractions);
 
   return (
     <>
@@ -263,13 +278,13 @@ export function CreateAuctionModal({
             px: 3,
             py: 2,
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: 'center',
             gap: 1,
           }}
         >
-          {/* Save Draft */}
-          <Button
+          {/* Save Draft — commented out, not needed for now */}
+          {/* <Button
             onClick={handleSaveDraft}
             sx={{
               bgcolor: '#6B7280',
@@ -284,7 +299,7 @@ export function CreateAuctionModal({
             }}
           >
             Save Draft
-          </Button>
+          </Button> */}
 
           {view === 'step1' && (
             <Button
@@ -330,6 +345,7 @@ export function CreateAuctionModal({
               </Button>
               <Button
                 onClick={() => setView('schedule')}
+                disabled={!pricingComplete}
                 sx={{
                   bgcolor: '#1D4ED8',
                   color: '#fff',
@@ -340,13 +356,10 @@ export function CreateAuctionModal({
                   fontSize: 13,
                   textTransform: 'none',
                   '&:hover': { bgcolor: '#1E3A8A' },
+                  '&.Mui-disabled': { bgcolor: '#93c5fd', color: '#fff' },
                 }}
               >
-                {submitting ? (
-                  <CircularProgress size={16} sx={{ color: '#fff' }} />
-                ) : (
-                  'Proceed to schedule'
-                )}
+                Proceed to schedule
               </Button>
             </Box>
           )}
@@ -379,7 +392,7 @@ export function CreateAuctionModal({
         open={open && view === 'confirm'}
         loading={submitting}
         error={scheduleError}
-        onCancel={handleClose}
+        onCancel={() => { setScheduleError(null); setView('schedule'); }}
         onConfirm={handleConfirmSchedule}
       />
 

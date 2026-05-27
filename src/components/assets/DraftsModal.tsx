@@ -6,7 +6,9 @@ import {
   TableRow, TableSortLabel, Typography,
 } from '@mui/material';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks/useAppDispatch';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import type { Asset } from '@/types/asset.types';
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -35,6 +37,7 @@ interface Props {
 }
 
 export default function DraftsModal({ open, onClose, onEdit, onTokenize: _onTokenize }: Props) {
+  useScrollLock(open);
   const { assets } = useAppSelector((s) => s.assets);
   const drafts = assets.filter((a) => a.status === 'DRAFT');
 

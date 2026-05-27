@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { registerThunk } from '@/features/auth/authThunks';
 import { clearMessages } from '@/features/auth/authSlice';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 
 const COUNTRIES = [
@@ -78,20 +79,10 @@ interface RegisterModalProps {
 }
 
 export default function RegisterModal({ open, onClose, onSwitchToLogin }: RegisterModalProps) {
+  useScrollLock(open);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error, successMessage } = useAppSelector((s) => s.auth);
-
-  useEffect(() => {
-    const channel = new BroadcastChannel('email_verification');
-    channel.onmessage = (event) => {
-      if (event.data?.type === 'EMAIL_VERIFIED') {
-        onClose();
-        onSwitchToLogin?.();
-      }
-    };
-    return () => channel.close();
-  }, [router, onClose]);
 
   const [form, setForm] = useState({
     firstName: '',

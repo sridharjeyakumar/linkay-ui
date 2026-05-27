@@ -8,7 +8,13 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role) config.headers['x-user-role'] = payload.role;
+    } catch { /* malformed token — skip */ }
+  }
   return config;
 });
 
@@ -32,7 +38,7 @@ axiosInstance.interceptors.response.use(
     // Guard 1 — never retry auth endpoints (refresh, login, register)
     if (original.url?.includes('/auth/refresh') || original.url?.includes('/auth/login') || original.url?.includes('/auth/register')) {
       localStorage.removeItem('accessToken');
-      if (original.url?.includes('/auth/refresh')) window.location.href = '/login';
+      if (original.url?.includes('/auth/refresh')) window.location.href = '/';
       return Promise.reject(error);
     }
 
@@ -62,7 +68,7 @@ axiosInstance.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       localStorage.removeItem('accessToken');
-      window.location.href = '/login';
+      window.location.href = '/';
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

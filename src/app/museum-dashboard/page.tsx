@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, Paper, Snackbar, Table, TableBody,
+  DialogTitle, IconButton, Paper, Snackbar, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TableSortLabel,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import createAssetImg from '@/assets/Create Asset.png';
 import draftsImg from '@/assets/Drafts.png';
 import publishedImg from '@/assets/Published.png';
@@ -115,11 +116,12 @@ export default function MuseumDashboardPage() {
   const theme     = useTheme();
   const isMobile  = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const { user }                          = useAppSelector((s) => s.auth);
+  const { user, loading: authLoading }    = useAppSelector((s) => s.auth);
   const { assets }                        = useAppSelector((s) => s.assets);
   const { jobs, loading: tkLoading, error: tkError } = useAppSelector((s) => s.tokenization);
 
   const [createOpen,    setCreateOpen]    = useState(false);
+  const [guardOpen,     setGuardOpen]     = useState(false);
   const [draftsOpen,    setDraftsOpen]    = useState(false);
   const [editAsset,     setEditAsset]     = useState<Asset | null>(null);
   const [auctionAsset,  setAuctionAsset]  = useState<Asset | null>(null);
@@ -139,7 +141,8 @@ export default function MuseumDashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;           // wait until auth fetch completes
+    if (!user) return;                 // no user yet — guard above handles this
     if (!user.is_museum_user) {
       router.replace('/user-dashboard');
     } else {
@@ -150,7 +153,7 @@ export default function MuseumDashboardPage() {
         setScheduledAssets(ids);
       }).catch(() => {});
     }
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   /* re-fetch assets when any job transitions to completed/failed */
   useEffect(() => {
@@ -184,7 +187,7 @@ export default function MuseumDashboardPage() {
     };
   }, [jobs]);
 
-  /* show tokenization error as snackbar */
+  
   useEffect(() => {
     if (tkError) {
       setSnack({ msg: tkError, severity: 'error' });
@@ -317,7 +320,13 @@ export default function MuseumDashboardPage() {
       sub: 'Create a new real world asset',
       count: null as string | null,
       cardBorder: '2px solid #3b82f6',
-      onClick: () => { setStatusFilter(null); setCreateOpen(true); },
+      onClick: () => {
+        const kycDone    = user?.kycStatus === 'APPROVED';
+        const walletDone = !!user?.walletAddress;
+        if (!kycDone || !walletDone) { setGuardOpen(true); return; }
+        setStatusFilter(null);
+        setCreateOpen(true);
+      },
       filter: null as string | null,
     },
     {
@@ -769,6 +778,43 @@ export default function MuseumDashboardPage() {
             Yes, Tokenize
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* KYC / Wallet guard */}
+      <Dialog open={guardOpen} onClose={() => setGuardOpen(false)} maxWidth="xs" fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, color: '#111', pr: 5 }}>
+          Complete setup to create an asset
+          <IconButton onClick={() => setGuardOpen(false)} size="small"
+            sx={{ position: 'absolute', top: 16, right: 16, color: '#6b7280' }}>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 13, color: '#6b7280', mb: 2 }}>
+            Before creating an asset, please complete the following:
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pb: 1 }}>
+            {user?.kycStatus !== 'APPROVED' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, bgcolor: '#fef3c7', borderRadius: 2, border: '1px solid #fde68a' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>KYC not completed</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#b45309' }}>Complete your identity verification to proceed</Typography>
+                </Box>
+              </Box>
+            )}
+            {!user?.walletAddress && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5, bgcolor: '#eff6ff', borderRadius: 2, border: '1px solid #bfdbfe' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#3b82f6', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#1e40af' }}>Wallet not connected</Typography>
+                  <Typography sx={{ fontSize: 12, color: '#2563eb' }}>Connect your wallet before creating an asset</Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
       </Dialog>
 
       {/* Modals */}

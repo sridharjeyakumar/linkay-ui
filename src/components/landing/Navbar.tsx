@@ -57,6 +57,8 @@ export default function Navbar({ content }: NavbarProps) {
   const [registerHovered, setRegisterHovered] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [verifyToken, setVerifyToken] = useState<string | null>(null);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
   const [currentHash, setCurrentHash] = useState('');
@@ -96,6 +98,30 @@ export default function Navbar({ content }: NavbarProps) {
     const handler = () => setRegisterOpen(true);
     window.addEventListener('linkay:open-register', handler);
     return () => window.removeEventListener('linkay:open-register', handler);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('resetToken');
+    if (token) {
+      setResetToken(token);
+      setLoginOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('resetToken');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('verifyToken');
+    if (token) {
+      setVerifyToken(token);
+      setLoginOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verifyToken');
+      window.history.replaceState({}, '', url.toString());
+    }
   }, []);
 
   const openDropdown = (key: string, e: React.MouseEvent<HTMLElement>) =>

@@ -42,9 +42,7 @@ import { useRouter } from 'next/navigation';
 
 function formatValue(v: number | null): string {
   if (v == null) return '—';
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000)     return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${v.toLocaleString()}`;
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatValuation(v: number | null): string {
@@ -227,16 +225,91 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
     : '—';
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen={fullScreen} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: fullScreen ? 0 : '12px', overflow: 'hidden', m: fullScreen ? 0 : '16px' } } }}>
-      <IconButton onClick={onClose} size="small" sx={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10, bgcolor: 'rgba(255,255,255,0.9)', width: '28px', height: '28px', '&:hover': { bgcolor: '#F3F4F6' } }}>
-        <CloseIcon sx={{ fontSize: '16px', color: '#374151' }} />
-      </IconButton>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={fullScreen}
+      maxWidth="sm"
+      fullWidth
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: fullScreen ? 0 : '12px',
+            overflow: 'hidden',
+            m: fullScreen ? 0 : '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: fullScreen ? '100vh' : 'calc(100vh - 32px)',
+          },
+        },
+      }}
+    >
 
-      <DialogContent sx={{ p: 0, overflowX: 'hidden', overflowY: 'auto' }}>
+      {/* ══ Sticky header ════════════════════════════════════════ */}
+      <Box sx={{ flexShrink: 0, position: 'relative', bgcolor: '#FFFFFF' }}>
+
+        {/* X close button — nudged inward */}
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: '14px',
+            right: '14px',
+            zIndex: 10,
+            bgcolor: 'rgba(255,255,255,0.9)',
+            width: '28px',
+            height: '28px',
+            '&:hover': { bgcolor: '#F3F4F6' },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: '16px', color: '#374151' }} />
+        </IconButton>
+
         {/* Hero image */}
-        <Box sx={{ width: '100%', height: { xs: '150px', sm: '180px' }, background: isUrlBg ? undefined : imageBg, backgroundImage: isUrlBg ? imageBg : undefined, backgroundSize: 'cover', backgroundPosition: 'center', flexShrink: 0 }} />
+        <Box
+          sx={{
+            width: '100%',
+            height: { xs: '150px', sm: '180px' },
+            background: isUrlBg ? undefined : imageBg,
+            backgroundImage: isUrlBg ? imageBg : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
 
-        {/* Loading overlay */}
+        {/* Title & summary — only shown once loaded */}
+        {!loading && asset && (
+          <>
+            <Box sx={{ px: '18px', pt: '14px', pb: '14px', textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '17px', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif', mb: '4px' }}>
+                {asset.title}
+              </Typography>
+              <Typography sx={{ fontSize: '12px', color: '#777777', fontFamily: 'Inter, sans-serif', mb: '2px' }}>
+                {asset.assetType ?? '—'}{asset.jurisdiction ? ` · ${asset.jurisdiction}` : ''}
+              </Typography>
+              <Typography sx={{ fontSize: '12px', color: '#777777', fontFamily: 'Inter, sans-serif' }}>
+                {formatValuation(asset.valuation)} · {asset.totalFractions ?? '—'} fractions · {perFraction}/fraction
+              </Typography>
+            </Box>
+            <Box sx={{ height: '1px', bgcolor: '#F0F0F0' }} />
+          </>
+        )}
+      </Box>
+
+      {/* ══ Scrollable body ══════════════════════════════════════ */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          '&::-webkit-scrollbar': { width: '4px' },
+          '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { bgcolor: '#D1D5DB', borderRadius: '4px' },
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#D1D5DB transparent',
+        }}
+      >
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: '48px' }}>
             <CircularProgress size={32} sx={{ color: '#2563EB' }} />
@@ -245,18 +318,6 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
 
         {!loading && asset && (
           <>
-            {/* Title & summary */}
-            <Box sx={{ px: '18px', pt: '14px', pb: '14px', textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '17px', fontWeight: 700, color: '#111111', fontFamily: 'Inter, sans-serif', mb: '4px' }}>{asset.title}</Typography>
-              <Typography sx={{ fontSize: '12px', color: '#777777', fontFamily: 'Inter, sans-serif', mb: '2px' }}>
-                {asset.assetType ?? '—'} {asset.jurisdiction ? `· ${asset.jurisdiction}` : ''}
-              </Typography>
-              <Typography sx={{ fontSize: '12px', color: '#777777', fontFamily: 'Inter, sans-serif' }}>
-                {formatValuation(asset.valuation)} · {asset.totalFractions ?? '—'} fractions · {perFraction}/fraction
-              </Typography>
-            </Box>
-
-            {/* Description */}
             {asset.description && (
               <>
                 <SectionTitle>Description</SectionTitle>
@@ -266,7 +327,6 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
               </>
             )}
 
-            {/* Historical Context */}
             {asset.historicalContext && (
               <>
                 <SectionTitle>Historical Context</SectionTitle>
@@ -276,7 +336,6 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
               </>
             )}
 
-            {/* Condition Report */}
             {asset.conditionReport && (
               <>
                 <SectionTitle>Condition Report</SectionTitle>
@@ -286,19 +345,14 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
               </>
             )}
 
-            {/* Asset Details grid */}
             <SectionTitle>Asset Details</SectionTitle>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', px: '18px', py: '14px' }}>
-              <DetailRow label="Certification Ref"  value={asset.certificationRef} />
-              <DetailRow label="Jurisdiction"        value={asset.jurisdiction} />
-              <DetailRow label="Custodian"           value={asset.custodian} />
-              <DetailRow label="Ownership Entity"    value={asset.ownershipEntity} />
+              <DetailRow label="Certification Ref" value={asset.certificationRef} />
+              <DetailRow label="Jurisdiction"       value={asset.jurisdiction} />
+              <DetailRow label="Custodian"          value={asset.custodian} />
+              <DetailRow label="Ownership Entity"   value={asset.ownershipEntity} />
             </Box>
 
-            {/* Tokenization details */}
-        
-
-            {/* Ownership Split */}
             {asset.ownershipSplit && asset.ownershipSplit.length > 0 && (
               <>
                 <SectionTitle>Ownership Split</SectionTitle>
@@ -315,20 +369,55 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
                 </Box>
               </>
             )}
-
-            {/* Action buttons */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: '18px', pb: '18px', pt: '10px', gap: '8px', flexWrap: { xs: 'wrap', sm: 'nowrap' }, borderTop: '1px solid #F0F0F0', mt: '8px' }}>
-              <Button onClick={onClose} variant="contained" size="small" sx={{ bgcolor: '#374151', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '8px', px: '20px', py: '8px', boxShadow: 'none', flex: { xs: '1 1 100%', sm: '0 0 auto' }, '&:hover': { bgcolor: '#1F2937', boxShadow: 'none' } }}>
-                Close
-              </Button>
-              <Box sx={{ display: 'flex', gap: '8px', flex: { xs: '1 1 100%', sm: '0 0 auto' }, justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
-                <Button variant="contained" size="small" onClick={onReject}  sx={{ bgcolor: '#EF4444', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '8px', px: '20px', py: '8px', boxShadow: 'none', flex: { xs: 1, sm: '0 0 auto' }, '&:hover': { bgcolor: '#DC2626', boxShadow: 'none' } }}>Reject</Button>
-                <Button variant="contained" size="small" onClick={onApprove} sx={{ bgcolor: '#2563EB', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '8px', px: '20px', py: '8px', boxShadow: 'none', flex: { xs: 1, sm: '0 0 auto' }, '&:hover': { bgcolor: '#1D4ED8', boxShadow: 'none' } }}>Approve</Button>
-              </Box>
-            </Box>
           </>
         )}
-      </DialogContent>
+      </Box>
+
+      {/* ══ Fixed footer ═════════════════════════════════════════ */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          borderTop: '1px solid #F0F0F0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          px: '18px',
+          py: '14px',
+          gap: '8px',
+          bgcolor: '#FFFFFF',
+          flexWrap: { xs: 'wrap', sm: 'nowrap' },
+        }}
+      >
+        <Button
+          onClick={onClose}
+          variant="contained"
+          size="small"
+          sx={{ bgcolor: '#374151', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '8px', px: '20px', py: '8px', boxShadow: 'none', flex: { xs: '1 1 100%', sm: '0 0 auto' }, '&:hover': { bgcolor: '#1F2937', boxShadow: 'none' } }}
+        >
+          Close
+        </Button>
+        <Box sx={{ display: 'flex', gap: '8px', flex: { xs: '1 1 100%', sm: '0 0 auto' }, justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={onReject}
+            disabled={loading || !asset}
+            sx={{ bgcolor: '#EF4444', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '8px', px: '20px', py: '8px', boxShadow: 'none', flex: { xs: 1, sm: '0 0 auto' }, '&:hover': { bgcolor: '#DC2626', boxShadow: 'none' }, '&.Mui-disabled': { bgcolor: '#FCA5A5', color: '#FFFFFF' } }}
+          >
+            Reject
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={onApprove}
+            disabled={loading || !asset}
+            sx={{ bgcolor: '#2563EB', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '8px', px: '20px', py: '8px', boxShadow: 'none', flex: { xs: 1, sm: '0 0 auto' }, '&:hover': { bgcolor: '#1D4ED8', boxShadow: 'none' }, '&.Mui-disabled': { bgcolor: '#93C5FD', color: '#FFFFFF' } }}
+          >
+            Approve
+          </Button>
+        </Box>
+      </Box>
+
     </Dialog>
   );
 }
@@ -408,6 +497,13 @@ export default function AdminDashboardPage() {
 
   const TABLE_COLS = ['Tokenized Asset', 'Asset Owner', 'Valuation', 'Category', 'Actions'];
 
+  // Only show items still awaiting a platform decision — hide anything already approved or rejected
+  const pendingQueue = queue.filter(
+    (a) =>
+      a.tokenization?.tokenizationStatus !== 'TREASURY_APPROVED' &&
+      a.tokenization?.tokenizationStatus !== 'TREASURY_REJECTED',
+  );
+
   return (
     <Box sx={{ bgcolor: '#F8F8F8', minHeight: 'calc(100vh - 60px)' }}>
       <Box sx={{ maxWidth: '1440px', mx: 'auto', px: { xs: '16px', sm: '24px', md: '32px' }, py: { xs: '16px', sm: '20px', md: '24px' } }}>
@@ -418,7 +514,7 @@ export default function AdminDashboardPage() {
 
             {/* Top 3 stat cards */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: { xs: '12px', sm: '14px' } }}>
-              <TopStatCard label="AUCTIONS AWAITING APPROVAL" value={String(stats?.pendingTreasuryCount ?? '—')} loading={loadingStats} />
+              <TopStatCard label="AUCTIONS AWAITING APPROVAL" value={String((stats?.pendingTreasuryCount ?? 0) || pendingQueue.length)} loading={loadingStats && loadingQueue} />
               <TopStatCard label="LIVE AUCTIONS"              value={String(stats?.liveAuctionsCount    ?? '—')} loading={loadingStats} />
               <TopStatCard label="REGISTERED ASSET OWNERS"   value={String(stats?.museumAdminCount     ?? '—')} loading={loadingStats} />
             </Box>
@@ -461,15 +557,15 @@ export default function AdminDashboardPage() {
                           ))}
                         </TableRow>
                       ))
-                    ) : queue.length === 0 ? (
+                    ) : pendingQueue.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} align="center" sx={{ py: '32px', color: '#9CA3AF', fontFamily: 'Inter, sans-serif', fontSize: '13px' }}>
                           No assets pending treasury review
                         </TableCell>
                       </TableRow>
                     ) : (
-                      queue.map((asset, i) => (
-                        <TableRow key={asset.id} sx={{ '& .MuiTableCell-root': { borderBottom: i < queue.length - 1 ? '1px solid #F5F5F5' : 'none' }, '&:hover': { bgcolor: '#FAFAFA' } }}>
+                      pendingQueue.map((asset, i) => (
+                        <TableRow key={asset.id} sx={{ '& .MuiTableCell-root': { borderBottom: i < pendingQueue.length - 1 ? '1px solid #F5F5F5' : 'none' }, '&:hover': { bgcolor: '#FAFAFA' } }}>
                           <TableCell sx={{ fontSize: '13px', fontWeight: 500, color: '#111111', fontFamily: 'Inter, sans-serif', px: { xs: '12px', sm: '16px' }, py: '13px', minWidth: '130px', maxWidth: '180px' }}>
                             {asset.title}
                           </TableCell>
