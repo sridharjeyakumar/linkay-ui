@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Box, CircularProgress } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { Box } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
-import { getMeThunk } from '@/features/auth/authThunks';
 import { getKycStatusThunk } from '@/features/ekyc/ekycThunks';
 import { DashboardFilterProvider } from '@/context/DashboardFilterContext';
 import FilterSidebar from '@/components/user-dashboard/home/FilterSidebar';
@@ -13,36 +11,11 @@ import LiveAuctions from '@/components/user-dashboard/home/LiveAuctions';
 
 export default function UserDashboardPage() {
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const { user } = useAppSelector((s) => s.auth);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) { router.replace('/'); return; }
-
-    if (!user) {
-      dispatch(getMeThunk())
-        .unwrap()
-        .then((data) => {
-          const resolvedUser = data.user ?? data;
-          if (resolvedUser.is_user === false) router.replace('/');
-          else dispatch(getKycStatusThunk());
-        })
-        .catch(() => router.replace('/'));
-    } else if (user.is_user === false) {
-      router.replace('/');
-    } else {
-      dispatch(getKycStatusThunk());
-    }
+    dispatch(getKycStatusThunk());
   }, []);
-
-  if (!user) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
     <DashboardFilterProvider>
