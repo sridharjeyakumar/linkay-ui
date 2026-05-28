@@ -12,9 +12,7 @@ import createAssetImg from '@/assets/Create Asset.png';
 import draftsImg from '@/assets/Drafts.png';
 import publishedImg from '@/assets/Published.png';
 import tokenizedImg from '@/assets/Tokenized.png';
-import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
-import { getMeThunk } from '@/features/auth/authThunks';
 import { fetchAssetsThunk, changeStatusThunk } from '@/features/assets/assetThunks';
 import { createAuctionThunk, saveDraftAuctionThunk } from '@/features/auction/auctionThunks';
 import { loadStoredJobs, clearError } from '@/features/tokenization/tokenizationSlice';
@@ -112,11 +110,10 @@ function progressLabel(job: TokenizationJob): string {
 
 export default function MuseumDashboardPage() {
   const dispatch  = useAppDispatch();
-  const router    = useRouter();
   const theme     = useTheme();
   const isMobile  = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const { user, loading: authLoading }    = useAppSelector((s) => s.auth);
+  const { user }                          = useAppSelector((s) => s.auth);
   const { assets }                        = useAppSelector((s) => s.assets);
   const { jobs, loading: tkLoading, error: tkError } = useAppSelector((s) => s.tokenization);
 
@@ -133,27 +130,15 @@ export default function MuseumDashboardPage() {
   const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevJobsRef = useRef<typeof jobs>([]);
 
-  /* auth guard */
+  /* data bootstrap — RoleGuard in the layout guarantees user is a MUSEUM_ADMIN here */
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) { router.replace('/'); return; }
-    if (!user) dispatch(getMeThunk()).unwrap().catch(() => router.replace('/'));
+    dispatch(fetchAssetsThunk());
+    dispatch(loadStoredJobs());
+    auctionApi.list({ status: 'SCHEDULED' }).then((res) => {
+      const ids = new Set<string>(res.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []);
+      setScheduledAssets(ids);
+    }).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (authLoading) return;           // wait until auth fetch completes
-    if (!user) return;                 // no user yet — guard above handles this
-    if (!user.is_museum_user) {
-      router.replace('/user-dashboard');
-    } else {
-      dispatch(fetchAssetsThunk());
-      dispatch(loadStoredJobs());
-      auctionApi.list({ status: 'SCHEDULED' }).then((res) => {
-        const ids = new Set<string>(res.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []);
-        setScheduledAssets(ids);
-      }).catch(() => {});
-    }
-  }, [user?.id, authLoading]);
 
   /* re-fetch assets when any job transitions to completed/failed */
   useEffect(() => {

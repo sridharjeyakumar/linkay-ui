@@ -7,7 +7,7 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = sessionStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
     try {
@@ -37,7 +37,7 @@ axiosInstance.interceptors.response.use(
 
     // Guard 1 — never retry auth endpoints (refresh, login, register)
     if (original.url?.includes('/auth/refresh') || original.url?.includes('/auth/login') || original.url?.includes('/auth/register')) {
-      localStorage.removeItem('accessToken');
+      sessionStorage.removeItem('accessToken');
       if (original.url?.includes('/auth/refresh')) window.location.href = '/';
       return Promise.reject(error);
     }
@@ -61,13 +61,13 @@ axiosInstance.interceptors.response.use(
     try {
       const { data } = await axiosInstance.post('/api/v1/auth/refresh');
       const newToken: string = data.accessToken;
-      localStorage.setItem('accessToken', newToken);
+      sessionStorage.setItem('accessToken', newToken);
       original.headers.Authorization = `Bearer ${newToken}`;
       processQueue(null, newToken);
       return axiosInstance(original);
     } catch (refreshError) {
       processQueue(refreshError, null);
-      localStorage.removeItem('accessToken');
+      sessionStorage.removeItem('accessToken');
       window.location.href = '/';
       return Promise.reject(refreshError);
     } finally {
@@ -96,7 +96,7 @@ export default axiosInstance;
 // });
 
 // axiosInstance.interceptors.request.use((config) => {
-//   const token = localStorage.getItem('accessToken');
+//   const token = sessionStorage.getItem('accessToken');
 //   if (token) config.headers.Authorization = `Bearer ${token}`;
 //   return config;
 // });
@@ -109,11 +109,11 @@ export default axiosInstance;
 //       original._retry = true;
 //       try {
 //         const { data } = await axiosInstance.post('/api/v1/auth/refresh');
-//         localStorage.setItem('accessToken', data.accessToken);
+//         sessionStorage.setItem('accessToken', data.accessToken);
 //         original.headers.Authorization = `Bearer ${data.accessToken}`;
 //         return axiosInstance(original);
 //       } catch {
-//         localStorage.removeItem('accessToken');
+//         sessionStorage.removeItem('accessToken');
 //         window.location.href = '/';
 //       }
 //     }

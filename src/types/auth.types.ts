@@ -31,4 +31,5 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
   successMessage: string | null;
+  authReady: boolean;
 }

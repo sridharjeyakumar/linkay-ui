@@ -36,7 +36,6 @@ import {
   fetchFullAssetThunk,
 } from '@/features/admin/adminThunks';
 import type { PendingAsset, FullAssetDetail } from '@/features/admin/adminSlice';
-import { useRouter } from 'next/navigation';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -426,7 +425,6 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
 
 export default function AdminDashboardPage() {
   const dispatch    = useAppDispatch();
-  const router      = useRouter();
   const { user }    = useAppSelector((s) => s.auth);
   const { queue, loadingQueue, stats, loadingStats, reviewingIds, selectedFullAsset, loadingFullAsset } = useAppSelector((s) => s.admin);
 
@@ -435,13 +433,6 @@ export default function AdminDashboardPage() {
   const [approveOpen, setApproveOpen] = useState(false);
   const [declineOpen, setDeclineOpen] = useState(false);
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' } | null>(null);
-
-  // Guard: only SUPER_ADMIN
-  useEffect(() => {
-    if (user && user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN') {
-      router.replace('/admin/login');
-    }
-  }, [user, router]);
 
   useEffect(() => {
     dispatch(fetchAdminQueueThunk());
