@@ -6,7 +6,6 @@ import OwnershipSection from '@/components/landing/Tokenization/OwnershipSection
 import {
   getFooterContent,
   getNavbarContent,
-  getMineralModalContent,
   getTokenizationHeaderContent,
   getModernAssetContent,
   getFaqContent,
@@ -15,14 +14,13 @@ import {
 export default function TokenizationPage() {
   const footer = getFooterContent();
   const navbar = getNavbarContent();
-  const mineralModal = getMineralModalContent();
   const header = getTokenizationHeaderContent();
   const modernAsset = getModernAssetContent();
   const faq = getFaqContent();
 
   return (
     <>
-      <Navbar content={navbar} mineralModal={mineralModal} />
+      <Navbar content={navbar} />
       <HeaderSection content={header} />
       <ModernAsset content={modernAsset} />
       <OwnershipSection content={faq} />

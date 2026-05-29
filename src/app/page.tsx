@@ -17,7 +17,6 @@ import {
   getCtaContent,
   getFooterContent,
   getNavbarContent,
-  getMineralModalContent,
 } from '@/lib/content';
 
 export default function LandingPage() {
@@ -30,11 +29,10 @@ export default function LandingPage() {
   const cta = getCtaContent();
   const footer = getFooterContent();
   const navbar = getNavbarContent();
-  const mineralModal = getMineralModalContent();
 
   return (
     <>
-      <Navbar content={navbar} mineralModal={mineralModal} />
+      <Navbar content={navbar} />
       <main>
         <HeroSection content={hero} />
         <FeaturesSection content={features} />

@@ -14,6 +14,9 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { loginThunk } from '@/features/auth/authThunks';
 import { clearMessages } from '@/features/auth/authSlice';
 import axiosInstance from '@/api/axiosInstance';
+import { useScrollLock } from '@/hooks/useScrollLock';
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
 
 const backdropFade = keyframes`
   from { opacity: 0; }
@@ -50,14 +53,17 @@ const fieldSx = {
 interface LoginModalProps {
   open: boolean;
   onClose: () => void;
+  resetToken?: string | null;
+  verifyToken?: string | null;
 }
 
-export default function LoginModal({ open, onClose }: LoginModalProps) {
+export default function LoginModal({ open, onClose, resetToken, verifyToken }: LoginModalProps) {
+  useScrollLock(open);
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error, user } = useAppSelector((s) => s.auth);
 
-  const [view, setView] = useState<'login' | 'forgot'>('login');
+  const [view, setView] = useState<'login' | 'forgot' | 'reset'>('login');
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -69,17 +75,38 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
   const [fpError, setFpError] = useState('');
   const [fpSubmitted, setFpSubmitted] = useState(false);
 
+  const [rpForm, setRpForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [rpShowPassword, setRpShowPassword] = useState(false);
+  const [rpFieldErrors, setRpFieldErrors] = useState<Record<string, string>>({});
+  const [rpLoading, setRpLoading] = useState(false);
+  const [rpError, setRpError] = useState('');
+  const [rpSuccess, setRpSuccess] = useState(false);
+  const [verifyStatus, setVerifyStatus] = useState<'loading' | 'success' | 'error' | null>(null);
+
   useEffect(() => {
     if (!open) return;
     dispatch(clearMessages());
     setForm({ email: '', password: '' });
     setFieldErrors({});
-    setView('login');
+    setView(resetToken ? 'reset' : 'login');
     setFpEmail('');
     setFpEmailError('');
     setFpError('');
     setFpSubmitted(false);
-  }, [open, dispatch]);
+    setRpForm({ newPassword: '', confirmPassword: '' });
+    setRpFieldErrors({});
+    setRpError('');
+    setRpSuccess(false);
+    setVerifyStatus(null);
+  }, [open, dispatch, resetToken]);
+
+  useEffect(() => {
+    if (!open || !verifyToken) return;
+    setVerifyStatus('loading');
+    axiosInstance.get(`/api/v1/auth/verify-email?token=${verifyToken}`)
+      .then(() => setVerifyStatus('success'))
+      .catch(() => setVerifyStatus('error'));
+  }, [open, verifyToken]);
 
   useEffect(() => {
     if (user) {
@@ -96,6 +123,19 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
+
+  // When the reset-password tab signals success, switch to the login view.
+  // Mirrors RegisterModal's EMAIL_VERIFIED listener — LoginModal stays open
+  // throughout the forgot-password flow so this always fires.
+  useEffect(() => {
+    const channel = new BroadcastChannel('password_reset');
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'PASSWORD_RESET') {
+        setView('login');
+      }
+    };
+    return () => channel.close();
+  }, []);
 
   const validate = () => {
     const errors: Record<string, string> = {};
@@ -130,6 +170,41 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     e.preventDefault();
     if (!validate()) return;
     await dispatch(loginThunk({ email: form.email.trim(), password: form.password }));
+  };
+
+  const rpValidate = () => {
+    const errors: Record<string, string> = {};
+    if (rpForm.newPassword.length < 8 || !PASSWORD_REGEX.test(rpForm.newPassword)) {
+      errors.newPassword = 'Min 8 chars with uppercase, number & special character.';
+    }
+    if (rpForm.newPassword !== rpForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
+    }
+    setRpFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const rpHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRpForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setRpFieldErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+  };
+
+  const rpHandleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rpValidate()) return;
+    setRpLoading(true);
+    setRpError('');
+    try {
+      await axiosInstance.post('/api/v1/auth/reset-password', {
+        token: resetToken,
+        newPassword: rpForm.newPassword,
+      });
+      setRpSuccess(true);
+    } catch (err: any) {
+      setRpError(err.response?.data?.message || 'Reset failed. The link may have expired.');
+    } finally {
+      setRpLoading(false);
+    }
   };
 
   if (navigating) {
@@ -209,15 +284,20 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
 
         {/* Logo + Title */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <Image src="/Vector.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
+          <Image src="/landing/LinkBlock Assets Logo.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
           <Typography
             sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '28px', lineHeight: '1.2', color: '#3D3D3D', textAlign: 'center' }}
           >
-            {view === 'login' ? 'Welcome Back' : 'Forgot Password'}
+            {view === 'login' ? 'Welcome Back' : view === 'forgot' ? 'Forgot Password' : 'Reset Password'}
           </Typography>
           {view === 'forgot' && (
             <Typography sx={{ fontSize: '14px', color: '#666666', textAlign: 'center', lineHeight: 1.5 }}>
               Enter your email and we&apos;ll send you a reset link
+            </Typography>
+          )}
+          {view === 'reset' && (
+            <Typography sx={{ fontSize: '14px', color: '#666666', textAlign: 'center', lineHeight: 1.5 }}>
+              Enter your new password below
             </Typography>
           )}
         </Box>
@@ -225,6 +305,9 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
         {view === 'login' ? (
           /* ── Login form ── */
           <Box component="form" onSubmit={handleSubmit} noValidate autoComplete="off" sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {verifyStatus === 'loading' && <Alert severity="info" icon={<CircularProgress size={16} sx={{ color: 'inherit' }} />}>Verifying your email…</Alert>}
+            {verifyStatus === 'success' && <Alert severity="success">Email verified! You can now log in.</Alert>}
+            {verifyStatus === 'error' && <Alert severity="error">Verification failed. The link may have expired.</Alert>}
             {error && <Alert severity="error" sx={{ mt: -1 }}>{error}</Alert>}
 
             <TextField
@@ -246,7 +329,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#D1D1D1', mr: 0.5 }}>
-                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                          {showPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                         </IconButton>
                       </InputAdornment>
                     ),
@@ -277,7 +360,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
               <Link href="/register" style={{ color: '#071A2F', fontWeight: 700, textDecoration: 'none' }}>Register</Link>
             </Typography> */}
           </Box>
-        ) : (
+        ) : view === 'forgot' ? (
           /* ── Forgot password form ── */
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {fpError && <Alert severity="error">{fpError}</Alert>}
@@ -319,6 +402,65 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
                     Login
                   </Typography>
                 </Typography>
+              </Box>
+            )}
+          </Box>
+        ) : (
+          /* ── Reset password form ── */
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {rpError && <Alert severity="error">{rpError}</Alert>}
+
+            {rpSuccess ? (
+              <>
+                <Alert severity="success">Password reset successful!</Alert>
+                <Button
+                  variant="contained" fullWidth onClick={() => setView('login')}
+                  sx={{ height: '52px', borderRadius: '8px', bgcolor: '#0B2745', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '16px', textTransform: 'none', boxShadow: 'none', '&:hover': { bgcolor: '#0a2035', boxShadow: 'none' } }}
+                >
+                  Back to Login
+                </Button>
+              </>
+            ) : (
+              <Box component="form" onSubmit={rpHandleSubmit} noValidate autoComplete="off" sx={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <TextField
+                  placeholder="New Password"
+                  name="newPassword"
+                  type={rpShowPassword ? 'text' : 'password'}
+                  value={rpForm.newPassword}
+                  onChange={rpHandleChange}
+                  error={!!rpFieldErrors.newPassword}
+                  helperText={rpFieldErrors.newPassword}
+                  fullWidth required autoComplete="new-password" sx={fieldSx}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setRpShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
+                            {rpShowPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+
+                <TextField
+                  placeholder="Confirm Password"
+                  name="confirmPassword"
+                  type="password"
+                  value={rpForm.confirmPassword}
+                  onChange={rpHandleChange}
+                  error={!!rpFieldErrors.confirmPassword}
+                  helperText={rpFieldErrors.confirmPassword}
+                  fullWidth required autoComplete="new-password" sx={fieldSx}
+                />
+
+                <Button
+                  type="submit" variant="contained" fullWidth disabled={rpLoading}
+                  sx={{ height: '52px', borderRadius: '8px', bgcolor: '#0B2745', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '16px', textTransform: 'none', boxShadow: 'none', '&:hover': { bgcolor: '#0a2035', boxShadow: 'none' }, '&.Mui-disabled': { bgcolor: '#0B2745', color: '#FFFFFF', opacity: 0.7 } }}
+                >
+                  {rpLoading ? <CircularProgress size={22} sx={{ color: '#FFFFFF' }} /> : 'Reset Password'}
+                </Button>
               </Box>
             )}
           </Box>

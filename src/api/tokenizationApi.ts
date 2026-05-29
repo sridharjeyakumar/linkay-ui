@@ -6,4 +6,7 @@ export const tokenizationApi = {
 
   getStatus: (jobId: string) =>
     axiosInstance.get(`/api/v1/tokenization/status/${jobId}`),
+
+  treasuryReview: (assetId: string, action: 'approve' | 'reject', reason?: string) =>
+    axiosInstance.patch(`/api/v1/tokenization/${assetId}/treasury-review`, { action, reason }),
 };

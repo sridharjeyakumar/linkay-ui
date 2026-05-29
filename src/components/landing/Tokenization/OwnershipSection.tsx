@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import {
@@ -8,18 +8,11 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import { Archivo, Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import ArrowButton from '@/components/ui/ArrowButton';
 import OutlineButton from '@/components/ui/OutlineButton';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import type { FaqContent } from '@/lib/content';
-
-const archivo = Archivo({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
 
 const inter = Inter({
   subsets: ['latin'],
@@ -128,37 +121,33 @@ export default function OwnershipSection({ content }: { content: FaqContent }) {
         {/* CTA Banner */}
         <Box
           sx={{
-            width: '100%',
-            maxWidth: '1196px',
-            height: { xs: 'auto', md: '239px' },
-            mx: 'auto',
-            mt: { xs: '60px', md: '80px' },
-            mb: { xs: '100px', md: '10px' },
-            borderRadius: '28px',
+            position: 'relative',
+            overflow: 'hidden',
+            mt: { xs: 7, md: 8 },
+            mb: { xs: 2, md: 4 },
+            borderRadius: { xs: '16px', sm: '24px', md: '32px' },
             border: '2px solid #ABE2FB',
             background: 'linear-gradient(90deg, #0EA5E9 -10%, #C2FFFB 50%, #0EA5E9 115%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            px: { xs: '30px', md: '60px' },
-            py: { xs: '40px', md: '0' },
-            gap: { xs: '24px', md: '30px' },
-            boxSizing: 'border-box',
+            px: { xs: 3, sm: 5, md: 8, lg: 10 },
+            py: { xs: 7, sm: 8, md: 10 },
             boxShadow: 'inset 0 0 40px rgba(83, 181, 246, 0.25)',
           }}
         >
           <Typography
             component="h2"
-            className={archivo.className}
             sx={{
+              fontFamily: 'var(--font-archivo), sans-serif',
               fontWeight: 600,
-              fontSize: { xs: '28px', sm: '36px', md: '48px' },
-              lineHeight: '100%',
+              fontSize: '48px',
+              lineHeight: 1,
               letterSpacing: '-0.03em',
               color: '#0A0A0A',
-              maxWidth: '680px',
               textAlign: 'center',
+              mb: { xs: 3.5, md: 4.5 },
             }}
           >
             {content.cta_title}
@@ -173,8 +162,8 @@ export default function OwnershipSection({ content }: { content: FaqContent }) {
               flexShrink: 0,
             }}
           >
-            <ArrowButton label={content.cta_button_primary} href="/tokenize" />
-            <OutlineButton label={content.cta_button_secondary} href="/list-asset" />
+            <ArrowButton label={content.cta_button_primary} onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))} />
+            <OutlineButton label={content.cta_button_secondary} onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))}/>
           </Box>
         </Box>
       </Box>

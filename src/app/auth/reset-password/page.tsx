@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import {
   Box,
   Button,
@@ -20,8 +20,14 @@ import {
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import axiosInstance from '@/api/axiosInstance';
+
+// Module-level channel — mirrors how verify-email broadcasts EMAIL_VERIFIED
+const resetChannel =
+  typeof window !== 'undefined'
+    ? new BroadcastChannel('password_reset')
+    : null;
 
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
@@ -66,10 +72,9 @@ const fieldSx = {
   },
 };
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const router = useRouter();
 
   const [form, setForm] = useState({
     newPassword: '',
@@ -77,6 +82,7 @@ export default function ResetPasswordPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] =
     useState<Record<string, string>>({});
 
@@ -137,9 +143,14 @@ export default function ResetPasswordPage() {
 
       setSuccess(true);
 
-      setTimeout(() => {
-        router.push('/login');
-      }, 3000);
+      // Notify the original tab — LoginModal is still open showing "Reset link sent!"
+      // This mirrors how verify-email notifies RegisterModal via BroadcastChannel.
+      try {
+        resetChannel?.postMessage({ type: 'PASSWORD_RESET' });
+      } catch {}
+
+      // Auto-close this tab after 3 seconds
+      setTimeout(() => window.close(), 3000);
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
@@ -158,7 +169,7 @@ export default function ResetPasswordPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: '#0D0D0D',
+          bgcolor: '#ffffff',
           px: 2,
         }}
       >
@@ -208,7 +219,7 @@ export default function ResetPasswordPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: '#0D0D0D',
+        bgcolor: '#ffffff',
         px: 2,
       }}
     >
@@ -236,7 +247,7 @@ export default function ResetPasswordPage() {
           }}
         >
           <Image
-            src="/Vector.svg"
+            src="/landing/LinkBlock Assets Logo.svg"
             alt="Linkay Logo"
             width={38}
             height={38}
@@ -272,30 +283,9 @@ export default function ResetPasswordPage() {
         )}
 
         {success ? (
-          <>
-            <Alert severity="success">
-              Password reset successful! Redirecting to login...
-            </Alert>
-
-            <Button
-              component={Link}
-              href="/login"
-              variant="contained"
-              fullWidth
-              sx={{
-                height: '52px',
-                borderRadius: '8px',
-                bgcolor: '#0B2745',
-                textTransform: 'none',
-
-                '&:hover': {
-                  bgcolor: '#0a2035',
-                },
-              }}
-            >
-              Go to Login
-            </Button>
-          </>
+          <Alert severity="success">
+            Password reset successful! You can close this page and try login now.
+          </Alert>
         ) : (
           <Box
             component="form"
@@ -321,6 +311,7 @@ export default function ResetPasswordPage() {
               autoComplete="new-password"
               sx={fieldSx}
               slotProps={{
+                htmlInput: { suppressHydrationWarning: true },
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
@@ -330,15 +321,16 @@ export default function ResetPasswordPage() {
                         }
                         edge="end"
                         size="small"
+                        suppressHydrationWarning
                         sx={{
                           color: '#9E9E9E',
                           mr: 0.5,
                         }}
                       >
                         {showPassword ? (
-                          <VisibilityOff fontSize="small" />
-                        ) : (
                           <Visibility fontSize="small" />
+                        ) : (
+                          <VisibilityOff fontSize="small" />
                         )}
                       </IconButton>
                     </InputAdornment>
@@ -350,7 +342,7 @@ export default function ResetPasswordPage() {
             <TextField
               placeholder="Confirm Password"
               name="confirmPassword"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={form.confirmPassword}
               onChange={handleChange}
               error={!!fieldErrors.confirmPassword}
@@ -359,6 +351,33 @@ export default function ResetPasswordPage() {
               required
               autoComplete="new-password"
               sx={fieldSx}
+              slotProps={{
+                htmlInput: { suppressHydrationWarning: true },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() =>
+                          setShowConfirmPassword((v) => !v)
+                        }
+                        edge="end"
+                        size="small"
+                        suppressHydrationWarning
+                        sx={{
+                          color: '#9E9E9E',
+                          mr: 0.5,
+                        }}
+                      >
+                        {showConfirmPassword ? (
+                          <Visibility fontSize="small" />
+                        ) : (
+                          <VisibilityOff fontSize="small" />
+                        )}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
 
             <Button
@@ -366,6 +385,7 @@ export default function ResetPasswordPage() {
               variant="contained"
               fullWidth
               disabled={loading}
+              {...{ suppressHydrationWarning: true }}
               sx={{
                 height: '52px',
                 borderRadius: '8px',
@@ -404,3 +424,11 @@ export default function ResetPasswordPage() {
   );
 }
 
+// Suspense wrapper required by Next.js App Router when using useSearchParams
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}

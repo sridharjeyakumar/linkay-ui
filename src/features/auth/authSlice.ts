@@ -5,10 +5,11 @@ import { saveWalletThunk } from '../wallet/walletThunks';
 
 const initialState: AuthState = {
   user: null,
-  accessToken: typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null,
+  accessToken: typeof window !== 'undefined' ? sessionStorage.getItem('accessToken') : null,
   loading: false,
   error: null,
   successMessage: null,
+  authReady: false,
 };
 
 const authSlice = createSlice({
@@ -21,6 +22,9 @@ const authSlice = createSlice({
     },
     setWalletAddress(state, action: PayloadAction<string>) {
       if (state.user) state.user.walletAddress = action.payload;
+    },
+    setAuthReady(state) {
+      state.authReady = true;
     },
   },
   extraReducers: (builder) => {
@@ -56,7 +60,7 @@ const authSlice = createSlice({
       const token = action.payload.accessToken ?? action.payload.access_token;
       if (token) {
         state.accessToken = token;
-        localStorage.setItem('accessToken', token);
+        sessionStorage.setItem('accessToken', token);
       }
     });
     builder.addCase(loginThunk.rejected, (state, action) => {
@@ -68,7 +72,7 @@ const authSlice = createSlice({
     builder.addCase(logoutThunk.fulfilled, (state) => {
       state.user = null;
       state.accessToken = null;
-      localStorage.removeItem('accessToken');
+      sessionStorage.removeItem('accessToken');
     });
     builder.addCase(getMeThunk.pending, (state) => {
   state.loading = true;
@@ -85,7 +89,10 @@ builder.addCase(getMeThunk.fulfilled, (state, action) => {
 });
 builder.addCase(getMeThunk.rejected, (state) => {
   state.loading = false;
-  state.user = null;
+  // Only clear user if there is no token — avoids wiping state on transient network errors
+  if (typeof window !== 'undefined' && !sessionStorage.getItem('accessToken')) {
+    state.user = null;
+  }
 });
 
 // Save wallet address
@@ -97,11 +104,11 @@ builder.addCase(saveWalletThunk.fulfilled, (state, action) => {
   const newToken = action.payload.accessToken ?? action.payload.access_token;
   if (newToken) {
     state.accessToken = newToken;
-    localStorage.setItem('accessToken', newToken);
+    sessionStorage.setItem('accessToken', newToken);
   }
 });
   },
 });
 
-export const { clearMessages, setWalletAddress } = authSlice.actions;
+export const { clearMessages, setWalletAddress, setAuthReady } = authSlice.actions;
 export default authSlice.reducer;

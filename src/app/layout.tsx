@@ -4,6 +4,7 @@ import { Archivo } from 'next/font/google';
 import ReduxProvider from '@/components/providers/ReduxProvider';
 import MuiProvider from '@/components/providers/MuiProvider';
 import SmoothScrollProvider from '@/components/providers/SmoothScrollProvider';
+import AuthProvider from '@/components/providers/AuthProvider';
 
 const archivo = Archivo({
   subsets: ['latin'],
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ReduxProvider>
           <MuiProvider>
             <SmoothScrollProvider>
-              <Suspense fallback={null}>{children}</Suspense>
+              <AuthProvider>
+                <Suspense fallback={null}>{children}</Suspense>
+              </AuthProvider>
             </SmoothScrollProvider>
           </MuiProvider>
         </ReduxProvider>

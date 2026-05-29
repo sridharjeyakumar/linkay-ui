@@ -104,7 +104,7 @@ export default function HeaderSection({ content }) {
           {content.subtitle}
         </Typography>
 
-        <ArrowButton label={content.button_text} href="/tokenize" />
+        <ArrowButton label={content.button_text} onClick={() => window.dispatchEvent(new CustomEvent('linkay:open-register'))} />
       </Container>
 
       {/* WHY TOKENIZATION SECTION */}

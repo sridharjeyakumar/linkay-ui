@@ -1,0 +1,91 @@
+{
+  "title": "Featured Marketplace Opportunities",
+  "subtitle": "A curated selection of high value real world assets structured for modern participation and transparent digital ownership.",
+  "button_text": "Explore more",
+  "items": [
+    {
+      "title": "Bronze Helm",
+      "image": "/Marketplace/Asset_images/Bronze Helm (2).svg",
+      "category": "Artifacts",
+      "current_bid": "0.80 ETH",
+      "ends_in": "12h 43m 42s"
+    },
+    {
+      "title": "Axis Hall",
+      "image": "/Marketplace/Asset_images/Axis Hall (2).svg",
+      "category": "Real Estate",
+      "current_bid": "3.21 ETH",
+      "ends_in": "12h 43m 40s"
+    },
+    {
+      "title": "Noir Crystal",
+      "image": "/Marketplace/Asset_images/Noir Crystal (2).svg",
+      "category": "Minerals",
+      "current_bid": "0.21 ETH",
+      "ends_in": "12h 43m 42s"
+    },
+    {
+      "title": "Riviera Bay",
+      "image": "/Marketplace/Asset_images/Riviera Bay (2).svg",
+      "category": "Real Estate",
+      "current_bid": "0.31 ETH",
+      "ends_in": "12h 43m 42s"
+    },
+    {
+      "title": "lokmansevim",
+      "image": "/Marketplace/Asset_images/lokmansevim (2).svg",
+      "category": "Artifacts",
+      "current_bid": "0.55 ETH",
+      "ends_in": "13h 45m 21s"
+    },
+    {
+      "title": "Gold Cluster",
+      "image": "/Marketplace/Asset_images/Gold Cluster (2).svg",
+      "category": "Minerals",
+      "current_bid": "0.88 ETH",
+      "ends_in": "03h 36m 22s"
+    },
+    {
+      "title": "Verona Estate",
+      "image": "/Marketplace/Asset_images/Verona Estate (2).svg",
+      "category": "Real Estate",
+      "current_bid": "11.9 ETH",
+      "ends_in": "07h 15m 32s"
+    },
+    {
+      "title": "Legacy Totem",
+      "image": "/Marketplace/Asset_images/Legacy Totem (2).svg",
+      "category": "Artifacts",
+      "current_bid": "0.15 ETH",
+      "ends_in": "02h 42m 32s"
+    },
+    {
+      "title": "Arctic Crystal",
+      "image": "/Marketplace/Asset_images/Arctic Crystal (2).svg",
+      "category": "Minerals",
+      "current_bid": "11.00 ETH",
+      "ends_in": "23h 12m 45s"
+    },
+    {
+      "title": "Bellmont House",
+      "image": "/Marketplace/Asset_images/Bellmont House (2).svg",
+      "category": "Real Estate",
+      "current_bid": "7.25 ETH",
+      "ends_in": "09h 18m 12s"
+    },
+    {
+      "title": "Echo of Anubis",
+      "image": "/Marketplace/Asset_images/Echo of Anubis (2).svg",
+      "category": "Artifacts",
+      "current_bid": "0.09 ETH",
+      "ends_in": "08h 17m 19s"
+    },
+    {
+      "title": "Cosmic Ore",
+      "image": "/Marketplace/Asset_images/Cosmic Ore.svg",
+      "category": "Minerals",
+      "current_bid": "0.31 ETH",
+      "ends_in": "21h 42m 30s"
+    }
+  ]
+}

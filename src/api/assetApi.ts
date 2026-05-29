@@ -57,4 +57,7 @@ export const assetApi = {
 
   marketplace: (params?: Record<string, string>) =>
     axiosInstance.get('/api/v1/assets/marketplace', { params }),
+
+  adminStats: () =>
+    axiosInstance.get('/api/v1/assets/admin-stats'),
 };

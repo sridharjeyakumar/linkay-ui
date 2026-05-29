@@ -2,6 +2,30 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { assetApi } from '@/api/assetApi';
 import type { CreateAssetPayload, UpdateAssetPayload } from '@/types/asset.types';
 
+function extractErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: unknown } })?.response?.data as Record<string, unknown> | undefined;
+  if (!data) return fallback;
+
+  // NestJS ValidationPipe: message is a string array
+  if (Array.isArray(data.message) && (data.message as unknown[]).length > 0) {
+    return (data.message as string[]).join('; ');
+  }
+
+  // Custom validation response: top-level message + nested errors array
+  if (typeof data.message === 'string' && data.message) {
+    if (Array.isArray(data.errors) && (data.errors as unknown[]).length > 0) {
+      const details = (data.errors as { message?: string; msg?: string }[])
+        .map((e) => e.message || e.msg || '')
+        .filter(Boolean)
+        .join('; ');
+      if (details) return details;
+    }
+    return data.message;
+  }
+
+  return fallback;
+}
+
 export const fetchAssetsThunk = createAsyncThunk(
   'assets/fetchAll',
   async (_, { rejectWithValue }) => {
@@ -26,10 +50,7 @@ export const createAssetThunk = createAsyncThunk(
       // API returns { success, data: <asset> }
       return data.data ?? data;
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Failed to create asset';
-      return rejectWithValue(msg);
+      return rejectWithValue(extractErrorMessage(err, 'Failed to create asset'));
     }
   },
 );
@@ -45,10 +66,7 @@ export const updateAssetThunk = createAsyncThunk(
       // API returns { success, data: <asset> }
       return data.data ?? data;
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? 'Failed to update asset';
-      return rejectWithValue(msg);
+      return rejectWithValue(extractErrorMessage(err, 'Failed to update asset'));
     }
   },
 );

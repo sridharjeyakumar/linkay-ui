@@ -212,3 +212,387 @@ collections:
           - { label: CTA Title, name: cta_title, widget: string }
           - { label: Primary Button, name: cta_button_primary, widget: string }
           - { label: Secondary Button, name: cta_button_secondary, widget: string }
+
+  - name: real_estate
+    label: Real Estate Page
+    files:
+
+      - name: re_hero
+        label: Hero Section
+        file: content/real-estate/hero.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Explore Button Text, name: button_explore, widget: string }
+          - { label: Tokenize Button Text, name: button_tokenize, widget: string }
+          - { label: Hero Background Image, name: hero_image, widget: image }
+
+      - name: re_infrastructure
+        label: Infrastructure Section
+        file: content/real-estate/infrastructure.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - { label: Building Image, name: building_image, widget: image }
+          - label: Property Types
+            name: property_types
+            widget: list
+            fields:
+              - { label: Number Label, name: num, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: re_benefits
+        label: Benefits Section
+        file: content/real-estate/benefits.json
+        format: json
+        fields:
+          - label: Benefits
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: re_featured
+        label: Featured Properties Section
+        file: content/real-estate/featured.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Properties
+            name: properties
+            widget: list
+            fields:
+              - { label: Property Name, name: name, widget: string }
+              - { label: Property Image, name: image, widget: image }
+              - { label: Stats Text, name: stats, widget: string }
+              - { label: Button Label, name: button_label, widget: string }
+
+      - name: re_visualization
+        label: Visualization Section
+        file: content/real-estate/visualization.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - label: Visualization Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+              - { label: Image, name: image, widget: image }
+              - { label: Image on Left Side, name: image_left, widget: boolean, default: false }
+
+      - name: re_faq
+        label: FAQ Section
+        file: content/real-estate/faq.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: FAQ Items
+            name: items
+            widget: list
+            fields:
+              - { label: Question, name: question, widget: string }
+              - { label: Answer, name: answer, widget: text }
+
+      - name: re_cta
+        label: CTA Section
+        file: content/real-estate/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Primary Button Text, name: button_primary, widget: string }
+          - { label: Secondary Button Text, name: button_secondary, widget: string }
+
+  - name: investors
+    label: For Investors Page
+    files:
+
+      - name: investors_hero
+        label: Hero Section
+        file: content/landing/investors/hero.json
+        format: json
+        fields:
+          - { label: Top Label, name: label, widget: string }
+          - { label: Headline Line 1, name: headline_line1, widget: string }
+          - { label: Headline Line 2 (Blue), name: headline_line2, widget: string }
+          - { label: Subheading, name: subheading, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+
+      - name: investors_modern
+        label: Modern Investing Section
+        file: content/landing/investors/modern-investing.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Feature Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: investors_designed
+        label: Designed For Investors Section
+        file: content/landing/investors/designed-for.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Floating Image, name: image, widget: image }
+          - label: Features
+            name: features
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: investors_featured
+        label: Featured Opportunities Section
+        file: content/landing/investors/featured.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Opportunities
+            name: opportunities
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Category, name: category, widget: string }
+              - { label: Price, name: price, widget: string }
+              - { label: Min Investment, name: minInvestment, widget: string }
+              - { label: Image, name: image, widget: image }
+
+      - name: investors_cta
+        label: CTA Section
+        file: content/landing/investors/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Button Text, name: button_text, widget: string }
+
+  - name: museum_artifacts
+    label: Museum Artifacts Page
+    files:
+
+      - name: museum_hero
+        label: Hero Section
+        file: content/landing/museum-artifacts/hero.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Subheading, name: subheading, widget: text }
+          - { label: Primary Button Text, name: button_primary, widget: string }
+          - { label: Secondary Button Text, name: button_secondary, widget: string }
+          - { label: Hero Image, name: image, widget: image }
+
+      - name: museum_asset_classes
+        label: Asset Classes Section
+        file: content/landing/museum-artifacts/asset-classes.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Subheading, name: subheading, widget: text }
+          - label: Categories
+            name: categories
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+          - label: Images
+            name: images
+            widget: list
+            field:
+              label: Image Path
+              name: image
+              widget: image
+
+      - name: museum_features
+        label: Features Section
+        file: content/landing/museum-artifacts/features.json
+        format: json
+        fields:
+          - label: Feature Cards
+            name: items
+            widget: list
+            fields:
+              - { label: Icon SVG Path, name: icon, widget: string }
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: museum_visualization
+        label: Visualization Section
+        file: content/landing/museum-artifacts/visualization.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - label: Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - label: Bullet Points
+                name: bullets
+                widget: list
+                field:
+                  label: Bullet
+                  name: bullet
+                  widget: string
+              - { label: Image, name: image, widget: image }
+
+      - name: museum_featured
+        label: Featured Artifacts Section
+        file: content/landing/museum-artifacts/featured.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Artifacts
+            name: properties
+            widget: list
+            fields:
+              - { label: Name, name: name, widget: string }
+              - { label: Image, name: image, widget: image }
+              - { label: Button Label, name: button_label, widget: string }
+              - { label: Current Bid, name: current_bid, widget: string }
+              - { label: Ends In, name: ends_in, widget: string }
+
+      - name: museum_transparency
+        label: Transparency Section
+        file: content/landing/museum-artifacts/transparency.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: museum_faq
+        label: FAQ Section
+        file: content/landing/museum-artifacts/faq.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: FAQ Items
+            name: items
+            widget: list
+            fields:
+              - { label: Question, name: question, widget: string }
+              - { label: Answer, name: answer, widget: text }
+
+      - name: museum_cta
+        label: CTA Section
+        file: content/landing/museum-artifacts/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Primary Button Text, name: button_primary, widget: string }
+          - { label: Secondary Button Text, name: button_secondary, widget: string }
+
+  - name: marketplace
+    label: Marketplace Page
+    files:
+
+      - name: marketplace_header
+        label: Header Section
+        file: content/marketplace/header.json
+        format: json
+        fields:
+          - { label: Heading, name: heading, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+
+      - name: marketplace_featured
+        label: Featured Assets Section
+        file: content/marketplace/featured.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: Section Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+          - label: Items
+            name: items
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Image, name: image, widget: image }
+              - { label: Category, name: category, widget: string }
+              - { label: Current Bid, name: current_bid, widget: string }
+              - { label: Ends In, name: ends_in, widget: string }
+
+      - name: marketplace_transparency
+        label: Transparency Section
+        file: content/marketplace/transparency.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - label: Boxes
+            name: boxes
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: marketplace_cta
+        label: CTA Section
+        file: content/marketplace/cta.json
+        format: json
+        fields:
+          - { label: Title, name: title, widget: string }
+          - { label: Button Text, name: button_text, widget: string }
+
+  - name: asset_owners
+    label: Asset Owners Page
+    files:
+
+      - name: ao_header
+        label: Header Section
+        file: content/asset-owners/header.json
+        format: json
+        fields:
+          - { label: Heading, name: heading, widget: string }
+          - { label: Subtitle, name: subtitle, widget: text }
+          - { label: Button Text, name: button_text, widget: string }
+
+      - name: ao_valuable_assets
+        label: Valuable Assets Section
+        file: content/asset-owners/valuable-assets.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - label: Boxes
+            name: boxes
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Description, name: description, widget: text }
+
+      - name: ao_benefits
+        label: Benefits Section
+        file: content/asset-owners/benefits.json
+        format: json
+        fields:
+          - { label: Section Title, name: title, widget: string }
+          - { label: CTA Title, name: cta_title, widget: string }
+          - { label: CTA Button Text, name: cta_button_primary, widget: string }
+          - label: Benefits
+            name: benefits
+            widget: list
+            fields:
+              - { label: Title, name: title, widget: string }
+              - { label: Image, name: image, widget: image }
+              - label: Points
+                name: points
+                widget: list
+                field:
+                  label: Point
+                  name: point
+                  widget: string

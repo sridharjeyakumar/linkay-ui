@@ -1,0 +1,26 @@
+{
+  "title": "Featured Artifacts",
+  "properties": [
+    {
+      "name": "Painting",
+      "image": "/landing/museum-artifacts/museum i1.svg",
+      "button_label": "Bid now",
+      "current_bid": "0.25 ETH",
+      "ends_in": "05h 13m 42s"
+    },
+    {
+      "name": "Ivory villa",
+      "image": "/landing/museum-artifacts/museum i2.svg",
+      "button_label": "Bid now",
+      "current_bid": "7.25 ETH",
+      "ends_in": "10h 39m 12s"
+    },
+    {
+      "name": "Gold Bark",
+      "image": "/landing/museum-artifacts/museum i3.svg",
+      "button_label": "Bid now",
+      "current_bid": "0.31 ETH",
+      "ends_in": "03h 42m 01s"
+    }
+  ]
+}

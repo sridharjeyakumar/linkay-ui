@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Box, Button, Dialog, Typography } from '@mui/material';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { AssetInfoCard } from './shared/AssetInfoCard';
 import { formatDateDisplay, formatTimeDisplay } from './shared/styles';
 import type { Asset } from '@/types/asset.types';
@@ -36,6 +38,7 @@ export function AuctionSuccessModal({
   schedule,
   onClose,
 }: Props) {
+  useScrollLock(open);
   const startLabel = schedule.startDate
     ? `${formatDateDisplay(schedule.startDate)} | ${formatTimeDisplay(schedule.startTime)} ${schedule.timezone}`
     : '—';

@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Box, Button, Dialog, IconButton, Typography } from '@mui/material';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import CloseIcon from '@mui/icons-material/Close';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { ASSET_TYPE_LABELS, fmtCurrency, parseImages } from './shared/styles';
@@ -21,6 +23,7 @@ interface Props {
 export function AuctionPreviewModal({
   open, asset, activeImageIndex, onDotClick, pricing, onEdit, onProceed, onClose,
 }: Props) {
+  useScrollLock(open);
   const images    = parseImages(asset.mediaFiles);
   const dotCount  = Math.max(images.length, 1);
   const src       = images[activeImageIndex] ?? '';

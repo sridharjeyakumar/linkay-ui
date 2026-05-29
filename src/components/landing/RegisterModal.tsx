@@ -1,28 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box, Button, TextField, Typography, MenuItem,
-  Alert, CircularProgress, IconButton, InputAdornment, Radio,
+  Alert, CircularProgress, IconButton, InputAdornment, Radio, Dialog,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import { keyframes } from '@emotion/react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { registerThunk } from '@/features/auth/authThunks';
 import { clearMessages } from '@/features/auth/authSlice';
 
-const backdropFade = keyframes`
-  from { opacity: 0; }
-  to   { opacity: 1; }
-`;
-
-const modalEnter = keyframes`
-  from { opacity: 0; transform: scale(0.93) translateY(16px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-`;
 
 const COUNTRIES = [
   { code: 'US', name: 'United States',        flag: '/flags/us.png' },
@@ -113,7 +103,12 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     role: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Redirect backdrop scroll into the modal's scroll container
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -121,6 +116,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     setForm({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', countryOfResidence: '', role: '' });
     setFieldErrors({});
     setShowPassword(false);
+    setShowConfirmPassword(false);
   }, [open, dispatch]);
 
   useEffect(() => {
@@ -129,6 +125,20 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
+
+  // iOS Safari ignores overflow:hidden on body — block backdrop touchmove with a
+  // non-passive listener (passive:false is required to call preventDefault).
+  // Touches inside the scrollable Box are allowed through; backdrop touches are blocked.
+  useEffect(() => {
+    if (!open) return;
+    const blockBackdropScroll = (e: TouchEvent) => {
+      if (scrollRef.current?.contains(e.target as Node)) return; // inside modal — allow
+      e.preventDefault(); // on backdrop — block background scroll
+    };
+    document.addEventListener('touchmove', blockBackdropScroll, { passive: false });
+    return () => document.removeEventListener('touchmove', blockBackdropScroll);
+  }, [open]);
+
 
   const isAllFilled =
     form.firstName.trim() !== '' &&
@@ -144,6 +154,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     if (!form.firstName.trim()) errors.firstName = 'First name is required.';
     if (!form.lastName.trim()) errors.lastName = 'Last name is required.';
     if (!form.email) errors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Not a valid email.';
     if (!form.countryOfResidence) errors.countryOfResidence = 'Please select a country.';
     if (!form.role) errors.role = 'Please select a role.';
     if (form.password.length < 8 || !PASSWORD_REGEX.test(form.password))
@@ -181,41 +192,61 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     );
   };
 
-  if (!open) return null;
-
   return (
-    <Box
-      onClick={onClose}
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1300,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        px: 2,
-        py: 4,
-        overflowY: 'auto',
-        animation: `${backdropFade} 0.25s ease forwards`,
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      onWheel={(e) => {
+        if (scrollRef.current) scrollRef.current.scrollTop += e.deltaY;
+      }}
+      onTouchStart={(e) => {
+        touchStartY.current = e.touches[0].clientY;
+      }}
+      onTouchMove={(e) => {
+        if (scrollRef.current) {
+          const delta = touchStartY.current - e.touches[0].clientY;
+          touchStartY.current = e.touches[0].clientY;
+          scrollRef.current.scrollTop += delta;
+        }
+      }}
+      slotProps={{
+        backdrop: {
+          sx: {
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            bgcolor: 'rgba(0,0,0,0.5)',
+          },
+        },
+        paper: {
+          sx: {
+            borderRadius: '24px',
+            border: '1px solid #E8E8E8',
+            bgcolor: '#FFFFFF',
+            width: '100%',
+            maxWidth: '410px',
+            maxHeight: '90vh',
+            m: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          },
+        },
       }}
     >
+      {/* Scrollable content — backdrop wheel/touch is forwarded here via scrollRef */}
       <Box
-        onClick={(e) => e.stopPropagation()}
+        ref={scrollRef}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
         sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          overscrollBehavior: 'contain',
           position: 'relative',
-          width: '100%',
-          maxWidth: '410px',
-          borderRadius: '24px',
-          border: '1px solid #E8E8E8',
-          bgcolor: '#FFFFFF',
-          p: '32px',
-          display: 'flex',
-          flexDirection: 'column',
-          my: 'auto',
-          animation: `${modalEnter} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards`,
+          p: { xs: '20px', sm: '32px' },
         }}
       >
         {/* Close button */}
@@ -236,7 +267,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
 
         {/* Logo + Title */}
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', mb: 2.5 }}>
-          <Image src="/Vector.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
+          <Image src="/landing/LinkBlock Assets Logo.svg" alt="Linkay Logo" width={38} height={38} style={{ objectFit: 'contain' }} />
           <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, fontSize: '24px', color: '#3D3D3D', textAlign: 'center' }}>
             Register
           </Typography>
@@ -251,7 +282,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
         ) : (
           <Box component="form" onSubmit={handleSubmit} noValidate autoComplete="off">
 
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
               <TextField
                 placeholder="First Name"
                 name="firstName"
@@ -314,12 +345,16 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                     );
                   },
                   MenuProps: {
+                    disableScrollLock: true,
                     slotProps: {
                       paper: {
                         sx: {
-                          mt: 1, borderRadius: '12px',
+                          mt: 1, 
+                          borderRadius: '12px',
                           boxShadow: '0px 8px 24px rgba(0,0,0,0.08)',
                           border: '1px solid #ECECEC',
+                          maxHeight: '200px', // Fix for scroll
+                          overflowY: 'auto',   // Fix for scroll
                           '& .MuiMenuItem-root': { fontSize: '14px', padding: '10px 14px', borderRadius: '8px', mx: 0.5, my: 0.3 },
                           '& .MuiMenuItem-root:hover': { backgroundColor: '#F5F7FB' },
                           '& .Mui-selected': { backgroundColor: '#EEF3FF !important', color: '#0B2745', fontWeight: 600 },
@@ -355,7 +390,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
-                        {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        {showPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -366,23 +401,34 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
             <TextField
               placeholder="Confirm Password"
               name="confirmPassword"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               value={form.confirmPassword}
               onChange={handleChange}
               error={!!fieldErrors.confirmPassword}
               helperText={fieldErrors.confirmPassword}
               fullWidth required autoComplete="new-password"
               sx={fieldSx}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowConfirmPassword((v) => !v)} edge="end" size="small" sx={{ color: '#9E9E9E', mr: 0.5 }}>
+                        {showConfirmPassword ? <Visibility fontSize="small" /> : <VisibilityOff fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
 
-            {/* Role */}
+            {/* Role - Fixed responsive layout */}
             <Box sx={{ mt: 0.5, mb: 2 }}>
               {fieldErrors.role && (
                 <Typography sx={{ fontSize: '12px', color: '#d32f2f', mb: 0.75, ml: 0.5 }}>
                   {fieldErrors.role}
                 </Typography>
               )}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 {ROLE_OPTIONS.map((r) => {
                   const selected = form.role === r.value;
                   return (
@@ -391,10 +437,14 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                       onClick={() => handleRoleSelect(r.value)}
                       sx={{
                         flex: 1,
-                        height: '59px',
+                        minHeight: '59px',
+                        height: 'auto',
                         border: selected ? '1px solid #1E40AF' : '1px solid #E8E8E8',
                         borderRadius: '8px',
-                        pt: '12px', pr: '8px', pb: '8px', pl: '8px',
+                        pt: '12px', 
+                        pr: '8px', 
+                        pb: '8px', 
+                        pl: '8px',
                         cursor: 'pointer',
                         bgcolor: selected ? 'rgba(30,64,175,0.05)' : '#F6F6F6',
                         display: 'flex',
@@ -410,13 +460,13 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
                         size="small"
                         readOnly
                         tabIndex={-1}
-                        sx={{ p: 0, mt: '1px', color: selected ? '#1E40AF' : '#BDBDBD', '&.Mui-checked': { color: '#1E40AF' } }}
+                        sx={{ p: 0, mt: '1px', flexShrink: 0, color: selected ? '#1E40AF' : '#BDBDBD', '&.Mui-checked': { color: '#1E40AF' } }}
                       />
-                      <Box>
+                      <Box sx={{ flex: 1 }}>
                         <Typography sx={{ fontSize: '13px', fontWeight: 600, color: selected ? '#1E40AF' : '#262626', lineHeight: 1.2 }}>
                           {r.label}
                         </Typography>
-                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '10px', lineHeight: '24px', letterSpacing: '-0.04em', color: '#666666', whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 400, fontSize: '10px', lineHeight: '16px', letterSpacing: '-0.04em', color: '#666666', whiteSpace: { xs: 'normal', sm: 'nowrap' } }}>
                           {r.desc}
                         </Typography>
                       </Box>
@@ -466,6 +516,6 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
           </Box>
         )}
       </Box>
-    </Box>
+    </Dialog>
   );
 }

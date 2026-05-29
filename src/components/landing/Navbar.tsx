@@ -16,10 +16,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useScrollTrigger } from '@mui/material';
 import { usePathname } from 'next/navigation';
-import MineralModal from './MineralModal';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
-import type { NavbarContent, MineralModalContent } from '@/lib/content';
+import { useRouter } from 'next/navigation';
+import type { NavbarContent } from '@/lib/content';
 
 const ICON_MAP: Record<string, Icon> = {
   bank: Bank,
@@ -46,31 +46,94 @@ function smoothScrollTo(id: string, duration = 1500) {
 
 interface NavbarProps {
   content: NavbarContent;
-  mineralModal: MineralModalContent;
 }
 
-export default function Navbar({ content, mineralModal }: NavbarProps) {
+export default function Navbar({ content }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<Record<string, HTMLElement | null>>({});
   const [registerHovered, setRegisterHovered] = useState(false);
-  const [mineralOpen, setMineralOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [verifyToken, setVerifyToken] = useState<string | null>(null);
 
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
+  const [currentHash, setCurrentHash] = useState('');
 
-  // Check if a link is active (only for non-hash links)
+  // Check if a link is active
   const isLinkActive = (href: string | undefined) => {
-    if (!href || href.startsWith('#')) return false;
+    if (!href) return false;
+    
+    // Handle hash links (sections on homepage)
+    if (href.startsWith('#')) {
+      return pathname === '/' && currentHash === href;
+    }
+    
+    // Handle regular page links
     return pathname === href || pathname.startsWith(href + '/');
   };
+
+  // Check if any dropdown item is active
+  const isDropdownActive = (dropdown: any[] | undefined) => {
+    if (!dropdown) return false;
+    return dropdown.some((item) => isLinkActive(item.href));
+  };
+
+  useEffect(() => {
+    // Update hash on mount and when location changes
+    setCurrentHash(window.location.hash);
+    
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash);
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     const handler = () => setRegisterOpen(true);
     window.addEventListener('linkay:open-register', handler);
     return () => window.removeEventListener('linkay:open-register', handler);
+  }, []);
+
+  // Fallback: open login modal when PASSWORD_RESET arrives and modal is already closed.
+  // Primary handler is LoginModal's own listener (switches view to 'login' while modal stays open).
+  useEffect(() => {
+    const channel = new BroadcastChannel('password_reset');
+    channel.onmessage = (event) => {
+      if (event.data?.type === 'PASSWORD_RESET') {
+        setLoginOpen(true);
+      }
+    };
+    return () => channel.close();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('resetToken');
+    if (token) {
+      setResetToken(token);
+      setLoginOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('resetToken');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('verifyToken');
+    if (token) {
+      setVerifyToken(token);
+      setLoginOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('verifyToken');
+      window.history.replaceState({}, '', url.toString());
+    }
   }, []);
 
   const openDropdown = (key: string, e: React.MouseEvent<HTMLElement>) =>
@@ -94,7 +157,7 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
           transition: 'background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
         }}
       >
-        <Container maxWidth={false} sx={{ maxWidth: '1600px', px: { xs: 2, sm: 4, md: 6 } }}>
+        <Container maxWidth={false} sx={{ maxWidth: '16S00px', px: { xs: 2, sm: 4, md: 6 } }}>
           <Toolbar disableGutters sx={{ py: { xs: 0.5, md: 1 }, minHeight: { xs: 56, md: 64 } }}>
 
             {/* Logo */}
@@ -131,8 +194,8 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                         />
                       }
                       sx={{
-                        color: '#374151',
-                        fontWeight: 400,
+                        color: isDropdownActive(link.dropdown) ? '#010303' : '#374151',
+                        fontWeight: isDropdownActive(link.dropdown) ? 600 : 400,
                         fontSize: { md: '0.82rem', lg: '0.92rem' },
                         textTransform: 'none',
                         px: { md: 1.2, lg: 1.8 },
@@ -152,14 +215,15 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                     >
                       {link.dropdown.map((item, idx, arr) => {
                         const ItemIcon = ICON_MAP[item.icon];
+                        const isActive = isLinkActive(item.href);
                         return (
                           <Box key={item.label}>
                             <MenuItem
                               onClick={() => {
                                 closeDropdown(link.label);
-                                if (item.label === 'Minerals') setMineralOpen(true);
+                                if (item.href) router.push(item.href);
                               }}
-                              sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', '&:hover': { bgcolor: '#f5f7fa' } }}
+                              sx={{ px: 2, py: item.description ? 1.5 : 1.2, alignItems: 'flex-start', bgcolor: isActive ? 'rgba(21, 101, 192, 0.1)' : 'transparent', '&:hover': { bgcolor: '#f5f7fa' } }}
                             >
                               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, width: '100%' }}>
                                 {ItemIcon && (
@@ -169,7 +233,7 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                                 )}
                                 <Box sx={{ flex: 1 }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 600, fontSize: '16px', lineHeight: 1.5, letterSpacing: 0, color: '#0A0A0A' }}>
+                                    <Typography sx={{ fontFamily: '"Inter", sans-serif', fontWeight: isActive ? 700 : 600, fontSize: '16px', lineHeight: 1.5, letterSpacing: 0, color: isActive ? '#1565c0' : '#0A0A0A' }}>
                                       {item.label}
                                     </Typography>
                                     {item.comingSoon && (
@@ -312,7 +376,6 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
         </Container>
       </AppBar>
 
-      <MineralModal open={mineralOpen} onClose={() => setMineralOpen(false)} onOpenRegister={() => setRegisterOpen(true)} content={mineralModal} />
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <RegisterModal
         open={registerOpen}
@@ -342,7 +405,7 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                 <ListItemButton onClick={() => toggleMobileExpand(link.label)}>
                   <ListItemText
                     primary={link.label}
-                    slotProps={{ primary: { sx: { fontWeight: 500, color: '#111827' } } }}
+                    slotProps={{ primary: { sx: { fontWeight: isDropdownActive(link.dropdown) ? 600 : 500, color: isDropdownActive(link.dropdown) ? '#010303' : '#111827' } } }}
                   />
                   <ExpandMoreIcon
                     sx={{
@@ -357,20 +420,21 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                   <List disablePadding>
                     {link.dropdown.map((item) => {
                       const ItemIcon = ICON_MAP[item.icon];
+                      const isActive = isLinkActive(item.href);
                       return (
                         <ListItemButton
                           key={item.label}
-                          sx={{ pl: 4 }}
+                          sx={{ pl: 4, bgcolor: isActive ? 'rgba(21, 101, 192, 0.1)' : 'transparent' }}
                           onClick={() => {
                             setMobileOpen(false);
-                            if (item.label === 'Minerals') setMineralOpen(true);
+                            if (item.href) router.push(item.href);
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
-                            {ItemIcon && <ItemIcon size={18} color="#6b7280" />}
+                            {ItemIcon && <ItemIcon size={18} color={isActive ? '#1565c0' : '#6b7280'} />}
                             <ListItemText
                               primary={item.label}
-                              slotProps={{ primary: { sx: { fontSize: '0.9rem', color: '#6b7280' } } }}
+                              slotProps={{ primary: { sx: { fontSize: '0.9rem', color: isActive ? '#1565c0' : '#6b7280', fontWeight: isActive ? 600 : 400 } } }}
                             />
                             {item.comingSoon && (
                               <Chip label="Soon" size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: '#e8eaf6', color: '#5c6bc0' }} />
@@ -442,7 +506,7 @@ export default function Navbar({ content, mineralModal }: NavbarProps) {
                 <Image
                   src="/landing/arrow-hover.svg"
                   alt="arrow"
-                  width={20}
+                  width={20}  
                   height={20}
                   unoptimized
                   style={{ position: 'absolute', opacity: registerHovered ? 1 : 0, transform: registerHovered ? 'scale(1)' : 'scale(0.6)', transition: 'opacity 0.15s ease, transform 0.15s ease' }}
