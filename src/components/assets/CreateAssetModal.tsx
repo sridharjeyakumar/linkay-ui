@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import LinkIcon from '@mui/icons-material/Link';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import RemoveIcon from '@mui/icons-material/Remove';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
@@ -127,6 +128,129 @@ function Label({ children, required }: { children: React.ReactNode; required?: b
       {children}
       {required && <Box component="span" sx={{ color: '#ef4444', ml: 0.25 }}>*</Box>}
     </Typography>
+  );
+}
+
+// ── Lightbox with zoom ────────────────────────────────────────────────────────
+
+function LightboxDialog({ src, onClose }: { src: string; onClose: () => void }) {
+  const [zoom, setZoom] = useState(1);
+  const [dragging, setDragging] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragStart = useRef<{ mx: number; my: number; ox: number; oy: number } | null>(null);
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    setZoom((z) => Math.min(5, Math.max(1, z - e.deltaY * 0.001)));
+  }
+
+  function handleMouseDown(e: React.MouseEvent) {
+    if (zoom <= 1) return;
+    setDragging(true);
+    dragStart.current = { mx: e.clientX, my: e.clientY, ox: offset.x, oy: offset.y };
+  }
+
+  function handleMouseMove(e: React.MouseEvent) {
+    if (!dragging || !dragStart.current) return;
+    setOffset({
+      x: dragStart.current.ox + e.clientX - dragStart.current.mx,
+      y: dragStart.current.oy + e.clientY - dragStart.current.my,
+    });
+  }
+
+  function handleMouseUp() { setDragging(false); }
+
+  function resetZoom() { setZoom(1); setOffset({ x: 0, y: 0 }); }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      maxWidth={false}
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: 'rgba(0,0,0,0.92)',
+            boxShadow: 'none',
+            borderRadius: 3,
+            width: '92vw',
+            maxWidth: '92vw',
+            height: '90vh',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        },
+      }}
+    >
+      {/* Toolbar */}
+      <Box sx={{
+        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        px: 2, py: 1, borderBottom: '1px solid rgba(255,255,255,0.1)',
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton
+            size="small"
+            onClick={() => setZoom((z) => Math.min(5, +(z + 0.25).toFixed(2)))}
+            sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
+            <ZoomInIcon fontSize="small" />
+          </IconButton>
+          <Typography sx={{ color: '#fff', fontSize: 13, minWidth: 44, textAlign: 'center' }}>
+            {Math.round(zoom * 100)}%
+          </Typography>
+          <IconButton
+            size="small"
+            onClick={() => { setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2))); if (zoom <= 1.25) setOffset({ x: 0, y: 0 }); }}
+            sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+          >
+            <RemoveIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={resetZoom}
+            sx={{ color: '#d1d5db', fontSize: 12, bgcolor: 'rgba(255,255,255,0.08)', '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' }, px: 1.5, borderRadius: 1 }}
+          >
+            <Typography sx={{ fontSize: 11, color: '#d1d5db', lineHeight: 1 }}>Reset</Typography>
+          </IconButton>
+        </Box>
+        <IconButton onClick={onClose} sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      {/* Image area */}
+      <Box
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        sx={{
+          flex: 1, overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: zoom > 1 ? (dragging ? 'grabbing' : 'grab') : 'default',
+          userSelect: 'none',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt="Preview"
+          draggable={false}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain',
+            borderRadius: 8,
+            transform: `scale(${zoom}) translate(${offset.x / zoom}px, ${offset.y / zoom}px)`,
+            transformOrigin: 'center',
+            transition: dragging ? 'none' : 'transform 0.15s ease',
+          }}
+        />
+      </Box>
+    </Dialog>
   );
 }
 
@@ -915,7 +1039,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                       ))}
                     </Box>
                   )}
-                </Box>
+</Box>
 
                 <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 0.75 }}>
                   Add your media files here and you can upload up to {MAX_FILES} files max
@@ -1289,7 +1413,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     {bgRemovedPreviews.map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img key={i} src={src} alt={`preview-${i}`}
-                        style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f3f4f6' }}
+                        onClick={() => setLightboxSrc(src)}
+                        style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f3f4f6', cursor: 'pointer' }}
                       />
                     ))}
                   </Box>
@@ -1436,28 +1561,9 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       </Dialog>
 
       {/* Lightbox */}
-      <Dialog
-        open={!!lightboxSrc}
-        onClose={() => setLightboxSrc(null)}
-        maxWidth="lg"
-        slotProps={{ paper: { sx: { bgcolor: 'transparent', boxShadow: 'none', overflow: 'visible' } } }}
-      >
-        <Box sx={{ position: 'relative' }}>
-          <IconButton
-            onClick={() => setLightboxSrc(null)}
-            sx={{ position: 'absolute', top: -16, right: -16, bgcolor: '#fff', zIndex: 1, '&:hover': { bgcolor: '#f3f4f6' } }}
-          >
-            <CloseIcon />
-          </IconButton>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {lightboxSrc && (
-            <img
-              src={lightboxSrc} alt="Preview"
-              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 12, display: 'block', objectFit: 'contain' }}
-            />
-          )}
-        </Box>
-      </Dialog>
+      {lightboxSrc && (
+        <LightboxDialog src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+      )}
     </>
   );
 }
