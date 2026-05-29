@@ -43,7 +43,7 @@ function countWords(text: string): number {
 
 // ── TRELLIS API ───────────────────────────────────────────────────────────────
 
-const TRELLIS_API = 'https://unseemly-showgirl-unmixable.ngrok-free.dev';
+const TRELLIS_API = "https://5qv9mx49dw7ai5-7860.proxy.runpod.net";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 

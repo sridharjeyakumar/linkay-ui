@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 
-const API =
-  // "https://unseemly-showgirl-unmixable.ngrok-free.dev";
-  "https://5qv9mx49dw7ai5-7860.proxy.runpod.net";
+const API ="https://5qv9mx49dw7ai5-7860.proxy.runpod.net";
 
 export default function App() {
 
