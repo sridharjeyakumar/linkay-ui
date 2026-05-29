@@ -1222,9 +1222,9 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         <Box sx={{ flexShrink: 0, px: 3, pt: 3, pb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1, pr: 2 }}>
             <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#111', mb: 1 }}>
-              {threeDModalStep === 1 && '3D Modal Generation'}
-              {threeDModalStep === 2 && '3D Modal Generation - Background Removal'}
-              {threeDModalStep === 3 && '3D Modal Generation - Preview'}
+              {threeDModalStep === 1 && '3D Model Generation'}
+              {threeDModalStep === 2 && '3D Model Generation - Background Removal'}
+              {threeDModalStep === 3 && '3D Model Generation - Preview'}
             </Typography>
             {threeDModalStep === 1 && (
               <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
@@ -1512,7 +1512,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   '&:hover': { bgcolor: '#2d5fe8' },
                 }}
               >
-                Upload as 3D Modal
+                Upload as 3D Model
               </Button>
             </>
           ) : (
