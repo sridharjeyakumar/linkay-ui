@@ -633,7 +633,7 @@ export default function MuseumDashboardPage() {
                                     cursor: scheduledAssets.has(asset.id) ? 'not-allowed' : 'pointer',
                                     '&:hover': { bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ddd6fe' },
                                   }}>
-                                  {scheduledAssets.has(asset.id) ? 'Scheduled' : 'Auction'}
+                                  {scheduledAssets.has(asset.id) ? 'Scheduled' : 'Ready for Auction'}
                                 </Box>
                               )}
                             </Box>
