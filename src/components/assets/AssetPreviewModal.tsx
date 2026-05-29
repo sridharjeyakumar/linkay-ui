@@ -40,6 +40,7 @@ function resolveImg(path: string) {
   return path;
 }
 
+
 export default function AssetPreviewModal() {
   const dispatch = useAppDispatch();
   const { previewAsset } = useAppSelector((s) => s.assets);
