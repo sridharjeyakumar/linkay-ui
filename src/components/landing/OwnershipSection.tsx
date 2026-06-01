@@ -30,7 +30,7 @@ export default function OwnershipSection({ content }: { content: OwnershipConten
             sx={{
               fontWeight: 700,
               fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem', lg: '2.8rem' },
-              color: '#0A0A0A',
+              color: '#431407',
               mb: 0,
               letterSpacing: '-0.02em',
               fontFamily: "'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -110,7 +110,7 @@ export default function OwnershipSection({ content }: { content: OwnershipConten
                     sx={{
                       fontWeight: 600,
                       fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem', lg: '2.2rem' },
-                      color: '#0A0A0A',
+                      color: '#431407',
                       mb: { xs: 2, md: 2.5 },
                       fontFamily: "'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                       letterSpacing: '-0.01em',

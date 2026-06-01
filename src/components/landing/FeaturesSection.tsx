@@ -21,7 +21,7 @@ export default function FeaturesSection({ content }: { content: FeaturesContent 
             fontSize: { xs: '2rem', sm: '2.8rem', md: '48px' },
             lineHeight: 1,
             letterSpacing: '0',
-            color: '#0A0A0A',
+            color: '#431407',
             mb: 2,
           }}
         >
@@ -72,7 +72,7 @@ export default function FeaturesSection({ content }: { content: FeaturesContent 
                     cursor: 'pointer',
                     transition: 'background-color 0.8s ease-in-out',
                     '&:hover': {
-                      bgcolor: '#EEF1FF',
+                      bgcolor: '#FFF3E6',
                     },
                   }}
                 >
@@ -81,8 +81,8 @@ export default function FeaturesSection({ content }: { content: FeaturesContent 
                       width: { xs: 60, md: 68 },
                       height: { xs: 60, md: 68 },
                       borderRadius: '14px',
-                      bgcolor: '#eef1ff',
-                      border: '1px solid #1E40AF',
+                      bgcolor: '#FFF3E6',
+                      border: '1px solid #FB8200',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -90,12 +90,12 @@ export default function FeaturesSection({ content }: { content: FeaturesContent 
                       flexShrink: 0,
                       transition: 'all 0.8s ease-in-out',
                       '& svg': {
-                        color: '#1E40AF',
+                        color: '#FB8200',
                         transition: 'color 0.8s ease-in-out',
                       },
                       '.card-hover:hover &': {
-                        bgcolor: '#1E40AF',
-                        borderColor: '#1E40AF',
+                        bgcolor: '#FB8200',
+                        borderColor: '#FB8200',
                       },
                       '.card-hover:hover & svg': {
                         color: '#ffffff',
