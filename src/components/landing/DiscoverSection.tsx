@@ -12,14 +12,47 @@ export default function DiscoverSection({ content }: { content: DiscoverContent 
           sx={{
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: { xs: '16px', sm: '24px', md: '32px' },
+            borderRadius: { xs: '16px', md: '42px' },
+
+            // Main blue gradient matching uploaded image
             background: `
-              radial-gradient(circle, rgba(239, 238, 255, 0.18) 1.5px, transparent 1.5px),
-              linear-gradient(135deg, #4a56c0 0%, #5b66cc 45%, #6d6dcc 100%)
+              radial-gradient(circle at center, rgba(255,255,255,0.12) 1px, transparent 1px),
+              linear-gradient(
+                180deg,
+                #037DC8 0%,
+                #1E8FD8 38%,
+                #6EB7E8 72%,
+                #C7E0F3 100%
+              )
             `,
-            backgroundSize: '22px 22px, 100% 100%',
-            px: { xs: 3, sm: 5, md: 8, lg: 10 },
-            py: { xs: 6, sm: 7, md: 9, lg: 10 },
+
+            // Dot grid density
+            backgroundSize: '18px 18px, 100% 100%',
+
+            // Soft outer glow like the image
+            
+
+            px: { xs: 3, sm: 4, md: 5, lg: 6 },
+            py: { xs: 13, sm: 15, md: 17, lg: 19 },
+
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+
+            // Optional subtle overlay for depth
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              inset: 0,
+              background: `
+                radial-gradient(
+                  circle at top center,
+                  rgba(255,255,255,0.18),
+                  transparent 55%
+                )
+              `,
+              pointerEvents: 'none',
+            },
           }}
         >
           <Typography

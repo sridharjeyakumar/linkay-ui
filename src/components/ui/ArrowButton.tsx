@@ -37,8 +37,8 @@ export default function ArrowButton({ label = 'Get Started', onClick, href, sx }
           <Image
             src="/landing/arrow-default.svg"
             alt="arrow"
-            width={20}
-            height={20}
+            width={26}
+            height={26}
             unoptimized
             style={{
               position: 'absolute',
@@ -63,7 +63,7 @@ export default function ArrowButton({ label = 'Get Started', onClick, href, sx }
         </Box>
       }
       sx={{
-        bgcolor: '#0A0A0A',
+        bgcolor: '#0C3468',
         color: '#FAFAFA',
         borderRadius: '50px',
         px: { xs: 2.5, md: 3 },
@@ -72,7 +72,7 @@ export default function ArrowButton({ label = 'Get Started', onClick, href, sx }
         fontSize: { xs: '0.9rem', md: '1rem' },
         textTransform: 'none',
         boxShadow: 'none',
-        '&:hover': { bgcolor: '#1a1a1a', boxShadow: '0 6px 20px rgba(0,0,0,0.25)' },
+        '&:hover': { bgcolor: '#0C3468', boxShadow: '0 6px 20px rgba(0,0,0,0.25)' },
         transition: 'all 0.2s ease',
         ...sx,
       }}
