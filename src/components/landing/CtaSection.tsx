@@ -69,7 +69,7 @@ export default function CtaSection({ content }: { content: CtaContent }) {
               fontSize: '48px',
               lineHeight: 1,
               letterSpacing: '0%',
-              color: 'rgba(10, 10, 10, 1)',
+              color: 'rgba(251, 130, 0, 1)',
               textAlign: 'center',
               mb: { xs: 3.5, md: 4.5 },
             }}
@@ -109,8 +109,8 @@ export default function CtaSection({ content }: { content: CtaContent }) {
                   <Image
                     src="/landing/arrow-default.svg"
                     alt="arrow"
-                    width={20}
-                    height={20}
+                    width={26}
+                    height={26}
                     unoptimized
                     style={{
                       position: 'absolute',

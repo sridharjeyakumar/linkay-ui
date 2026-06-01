@@ -58,13 +58,13 @@ export default function MuseumCta({ content }: { content: MuseumCtaContent }) {
           <Typography
             component="h2"
             sx={{
-              position: 'relative',
-              zIndex: 1,
               fontFamily: 'var(--font-archivo), sans-serif',
               fontWeight: 600,
               fontSize: '48px',
               lineHeight: 1,
+              letterSpacing: '-0.03em',
               color: '#0A0A0A',
+              textAlign: 'center',
               mb: { xs: 3.5, md: 4.5 },
             }}
           >

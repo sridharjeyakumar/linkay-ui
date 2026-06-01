@@ -71,7 +71,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
             fontWeight: 500,
             fontSize: { xs: '2.4rem', sm: '3.2rem', md: '4.4rem', lg: '70px' },
             lineHeight: 1.04,
-            color: '#0A0A0A',
+            color: '#FB8200',
             letterSpacing: '-0.03em',
           }}
         >
@@ -87,7 +87,7 @@ export default function HeroSection({ content }: { content: HeroContent }) {
             fontWeight: 500,
             fontSize: { xs: '2.4rem', sm: '3.2rem', md: '4.4rem', lg: '70px' },
             lineHeight: 1.04,
-            color: '#1a6fd4',
+            color: '#037DC8',
             letterSpacing: '-0.03em',
             mb: { xs: 2, md: 3 },
           }}
