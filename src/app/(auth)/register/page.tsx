@@ -78,7 +78,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loading, error, successMessage } = useAppSelector((s) => s.auth);
-  const [isVerified, setIsVerified] = useState(searchParams.get('verified') === 'true');
+  const [isVerified, setIsVerified] = useState(searchParams?.get('verified') === 'true');
 
   useEffect(() => {
     const channel = new BroadcastChannel('email_verification');

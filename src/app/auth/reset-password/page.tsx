@@ -74,7 +74,7 @@ const fieldSx = {
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
 
   const [form, setForm] = useState({
     newPassword: '',
