@@ -73,7 +73,7 @@ export default function Navbar({ content }: NavbarProps) {
     }
     
     // Handle regular page links
-    return pathname === href || pathname.startsWith(href + '/');
+    return pathname === href || (pathname ?? '').startsWith(href + '/');
   };
 
   // Check if any dropdown item is active
