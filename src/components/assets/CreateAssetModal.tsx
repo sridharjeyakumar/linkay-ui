@@ -16,7 +16,14 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import LoopIcon from '@mui/icons-material/Loop';
+import dynamic           from 'next/dynamic';
+import axiosInstance      from '@/api/axiosInstance';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
+
+const ThreeDViewer = dynamic(
+  () => import('./ThreeDViewer'),
+  { ssr: false, loading: () => null },
+);
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { createAssetThunk, updateAssetThunk, fetchAssetsThunk, changeStatusThunk } from '@/features/assets/assetThunks';
 import { clearError } from '@/features/assets/assetSlice';
@@ -42,9 +49,9 @@ function countWords(text: string): number {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
-// ── TRELLIS API ───────────────────────────────────────────────────────────────
+// ── Backend 3D API (proxied through Next.js → asset-management-service) ──────
 
-const TRELLIS_API = 'https://unseemly-showgirl-unmixable.ngrok-free.dev';
+const BACKEND_3D_API = '/api/v1/3d';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -314,12 +321,17 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   const [threeDDragOver, setThreeDDragOver] = useState(false);
   const [generated3DFiles, setGenerated3DFiles] = useState<File[]>([]);
 
-  // TRELLIS API state
+  // 3D generation state (Meshy via backend)
   const [bgRemovedPreviews, setBgRemovedPreviews] = useState<string[]>([]);
   const [loadingBgRemoval, setLoadingBgRemoval] = useState(false);
   const [loadingGenerate3D, setLoadingGenerate3D] = useState(false);
   const [generatedModel, setGeneratedModel] = useState<{ preview_video: string; glb_model: string } | null>(null);
   const [trellisError, setTrellisError] = useState<string | null>(null);
+  const [meshyTaskId, setMeshyTaskId] = useState<string | null>(null);
+  const [meshyProgress, setMeshyProgress] = useState<number>(0);
+  const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
+  const [loadingVideo, setLoadingVideo] = useState(false);
+  const [savedGlbUrl, setSavedGlbUrl] = useState<string>('');
 
   // Auto-calculated price per fraction
   const pricePerFraction = (() => {
@@ -356,6 +368,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setRoyaltyWallet(editAsset.royaltyWallet ?? walletAddress);
       setThreeDFiles(editAsset.threeDFiles ?? '');
       setLiveStream(editAsset.liveStream ?? '');
+      setSavedGlbUrl(editAsset.threeDModelUrl ?? '');
       setMediaFiles([]);
       setExistingImages(parseMediaFiles(editAsset.mediaFiles));
     } else {
@@ -370,7 +383,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setValuation(''); setJurisdiction(''); setTokenizePercent(5); setTotalFractions('');
     setRoyalty(''); setRoyaltyWallet(walletAddress);
     setMediaFiles([]); setExistingImages([]); setThreeDFiles(''); setLiveStream('');
-    setGenerated3DFiles([]);
+    setGenerated3DFiles([]); setSavedGlbUrl('');
     setStep1Errors({});
     setStep2Errors({});
   }
@@ -419,57 +432,28 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setThreeDUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
-  // ── TRELLIS API calls ───────────────────────────────────────────────────────
+  // ── Backend Meshy 3D API calls ──────────────────────────────────────────────
 
-  async function callPreviewRemoveBG(selectedFiles: File[]): Promise<boolean> {
+  // Step 1 → 2: upload images to backend, get taskId from Meshy
+  async function callGenerate3DTask(selectedFiles: File[]): Promise<boolean> {
     setLoadingBgRemoval(true);
     setTrellisError(null);
+    setMeshyProgress(0);
     const formData = new FormData();
-    selectedFiles.forEach((f) => formData.append('files', f));
+    selectedFiles.forEach((f) => formData.append('images', f));
     try {
-      const res = await fetch(`${TRELLIS_API}/preview-removebg`, {
-        method: 'POST',
-        body: formData,
+      const { data } = await axiosInstance.post(`${BACKEND_3D_API}/generate`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      const data = await res.json();
-      if (data.success) {
-        setBgRemovedPreviews(data.previews ?? []);
-        setLoadingBgRemoval(false);
-        return true;
-      }
-      throw new Error(data.message ?? 'Background removal failed');
-    } catch (e) {
-      setTrellisError(e instanceof Error ? e.message : 'Background removal failed');
+      if (!data.success) throw new Error(data.message ?? '3D task creation failed');
+      setMeshyTaskId(data.data.taskId);
       setLoadingBgRemoval(false);
-      return false;
-    }
-  }
-
-  async function callGenerate3D(selectedFiles: File[]): Promise<boolean> {
-    setLoadingGenerate3D(true);
-    setTrellisError(null);
-    const formData = new FormData();
-    selectedFiles.forEach((f) => formData.append('files', f));
-    formData.append('seed', '0');
-    formData.append('ss_guidance_strength', '7.5');
-    formData.append('ss_sampling_steps', '12');
-    formData.append('slat_guidance_strength', '3');
-    formData.append('slat_sampling_steps', '12');
-    formData.append('multiimage_algo', 'stochastic');
-    formData.append('mesh_simplify', '0.95');
-    formData.append('texture_size', '1024');
-    try {
-      const res = await fetch(`${TRELLIS_API}/generate`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      setGeneratedModel(data);
-      setLoadingGenerate3D(false);
       return true;
-    } catch (e) {
-      setTrellisError(e instanceof Error ? e.message : '3D generation failed');
-      setLoadingGenerate3D(false);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } }; message?: string })
+        ?.response?.data?.message ?? (e instanceof Error ? e.message : '3D generation failed');
+      setTrellisError(msg);
+      setLoadingBgRemoval(false);
       return false;
     }
   }
@@ -479,13 +463,59 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   async function handleThreeDGenerate() {
     if (threeDModalStep === 1) {
       if (threeDUploadedFiles.length === 0) return;
-      const ok = await callPreviewRemoveBG(threeDUploadedFiles);
-      if (ok) setThreeDModalStep(2);
-    } else if (threeDModalStep === 2) {
-      const ok = await callGenerate3D(threeDUploadedFiles);
-      if (ok) setThreeDModalStep(3);
+      const ok = await callGenerate3DTask(threeDUploadedFiles);
+      if (ok) setThreeDModalStep(2); // step 2 auto-polls via useEffect
     }
   }
+
+  // Auto-poll Meshy task status while on step 2
+  useEffect(() => {
+    if (threeDModalStep !== 2 || !meshyTaskId) return;
+    let cancelled = false;
+
+    async function poll() {
+      while (!cancelled) {
+        try {
+          const { data } = await axiosInstance.get(`${BACKEND_3D_API}/status/${meshyTaskId}`);
+          if (cancelled) return;
+          if (data.success) {
+            setMeshyProgress(data.data.progress ?? 0);
+            if (data.data.status === 'SUCCEEDED') {
+              setThreeDModalStep(3);
+              // Download video + GLB from Meshy → save on backend → get static URLs
+              setLoadingVideo(true);
+              axiosInstance
+                .post(`${BACKEND_3D_API}/save/${meshyTaskId}`)
+                .then(({ data: saveRes }) => {
+                  if (saveRes.success) {
+                    const glbUrl = saveRes.data.glbUrl ?? '';
+                    setGeneratedModel({
+                      preview_video: saveRes.data.videoUrl ?? '',
+                      glb_model:     glbUrl,
+                    });
+                    setSavedGlbUrl(glbUrl);
+                  } else {
+                    setTrellisError('Failed to save 3D files on server.');
+                  }
+                })
+                .catch(() => setTrellisError('Failed to save 3D files. Please try again.'))
+                .finally(() => setLoadingVideo(false));
+              return;
+            }
+            if (data.data.status === 'FAILED') {
+              setTrellisError('3D generation failed on server. Please try again.');
+              setThreeDModalStep(1);
+              return;
+            }
+          }
+        } catch (_) { /* network hiccup — keep polling */ }
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    }
+
+    poll();
+    return () => { cancelled = true; };
+  }, [threeDModalStep, meshyTaskId]);
 
   function close3DModal() {
     setShow3DModal(false);
@@ -494,11 +524,20 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setBgRemovedPreviews([]);
     setGeneratedModel(null);
     setTrellisError(null);
+    setMeshyTaskId(null);
+    setMeshyProgress(0);
+    if (videoObjectUrl) { URL.revokeObjectURL(videoObjectUrl); }
+    setVideoObjectUrl(null);
+    setLoadingVideo(false);
   }
 
   function handleUploadAs3DModal() {
     setThreeDFiles('generated-3d-model');
     setGenerated3DFiles([...threeDUploadedFiles]);
+    // Persist the GLB URL so it's included when saving the asset
+    if (generatedModel?.glb_model) {
+      setSavedGlbUrl(generatedModel.glb_model);
+    }
     close3DModal();
   }
 
@@ -550,6 +589,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       ...(royaltyWallet   && { royaltyWallet: royaltyWallet.trim() }),
       ...(threeDFiles      && { threeDFiles }),
       ...(liveStream       && { liveStream }),
+      ...(savedGlbUrl      && { threeDModelUrl: savedGlbUrl }),
     };
 
     try {
@@ -1223,7 +1263,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
           <Box sx={{ flex: 1, pr: 2 }}>
             <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#111', mb: 1 }}>
               {threeDModalStep === 1 && '3D Model Generation'}
-              {threeDModalStep === 2 && '3D Model Generation - Background Removal'}
+              {threeDModalStep === 2 && '3D Model Generation - Processing'}
               {threeDModalStep === 3 && '3D Model Generation - Preview'}
             </Typography>
             {threeDModalStep === 1 && (
@@ -1347,80 +1387,53 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             </>
           )}
 
-          {/* ── Step 2: Background Removal (real API previews) ── */}
+          {/* ── Step 2: Meshy 3D Generation in Progress ── */}
           {threeDModalStep === 2 && (
-            <>
-              {trellisError && (
-                <Alert severity="error" sx={{ mb: 1.5, fontSize: 13 }}>{trellisError}</Alert>
+            <Box sx={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', gap: 3, py: 4, minHeight: 260,
+            }}>
+              {trellisError ? (
+                <Alert severity="error" sx={{ width: '100%', fontSize: 13 }}>{trellisError}</Alert>
+              ) : (
+                <>
+                  <CircularProgress
+                    size={72}
+                    thickness={4}
+                    variant={meshyProgress > 0 ? 'determinate' : 'indeterminate'}
+                    value={meshyProgress}
+                    sx={{ color: '#3b6ef8' }}
+                  />
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#111', mb: 0.5 }}>
+                      Generating 3D Model...
+                    </Typography>
+                    <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
+                      {meshyProgress > 0
+                        ? `${meshyProgress}% complete — this may take 2–5 minutes`
+                        : 'Processing your images with AI — please wait'}
+                    </Typography>
+                  </Box>
+                  {/* Thumbnail strip of uploaded images */}
+                  {threeDUploadedFiles.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+                      {threeDUploadedFiles.slice(0, 5).map((f, i) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={URL.createObjectURL(f)}
+                          alt={`img-${i}`}
+                          style={{
+                            width: 56, height: 56, objectFit: 'cover',
+                            borderRadius: 8, border: '1px solid #e5e7eb', opacity: 0.7,
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </>
               )}
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                {/* Original images (left column — first image shown) */}
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1, mb: 1, width: 'fit-content' }}>
-                    <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
-                    <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Input Image</Typography>
-                  </Box>
-                  <Box sx={{
-                    border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
-                    aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    bgcolor: '#fafafa',
-                  }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={URL.createObjectURL(threeDUploadedFiles[0])}
-                      alt="input"
-                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                    />
-                  </Box>
-                </Box>
-
-                {/* BG-removed preview (right column — first preview from API) */}
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1, py: 0.25, bgcolor: '#f3f4f6', borderRadius: 1, mb: 1, width: 'fit-content' }}>
-                    <ImageOutlinedIcon sx={{ fontSize: 14, color: '#6b7280' }} />
-                    <Typography sx={{ fontSize: 11, color: '#6b7280' }}>Background Removed</Typography>
-                  </Box>
-                  <Box sx={{
-                    border: '2px dashed #d1d5db', borderRadius: 2, overflow: 'hidden',
-                    aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backgroundImage: [
-                      'linear-gradient(45deg, #d0d0d0 25%, transparent 25%)',
-                      'linear-gradient(-45deg, #d0d0d0 25%, transparent 25%)',
-                      'linear-gradient(45deg, transparent 75%, #d0d0d0 75%)',
-                      'linear-gradient(-45deg, transparent 75%, #d0d0d0 75%)',
-                    ].join(', '),
-                    backgroundSize: '16px 16px',
-                    backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0',
-                  }}>
-                    {bgRemovedPreviews[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={bgRemovedPreviews[0]} alt="bg-removed"
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                    ) : (
-                      <CircularProgress size={28} sx={{ color: '#3b6ef8' }} />
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* All previews grid (if more than 1) */}
-              {bgRemovedPreviews.length > 1 && (
-                <Box sx={{ mt: 1.5 }}>
-                  <Typography sx={{ fontSize: 12, color: '#6b7280', mb: 1 }}>
-                    All {bgRemovedPreviews.length} previews
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {bgRemovedPreviews.map((src, i) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img key={i} src={src} alt={`preview-${i}`}
-                        onClick={() => setLightboxSrc(src)}
-                        style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f3f4f6', cursor: 'pointer' }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </>
+            </Box>
           )}
 
           {/* ── Step 3: 3D Preview (real video + GLB download) ── */}
@@ -1443,37 +1456,45 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>3D Model</Typography>
                 </Box>
 
-                {generatedModel?.preview_video ? (
-                  <video
-                    controls
-                    src={generatedModel.preview_video}
-                    style={{ maxWidth: '100%', maxHeight: 260, borderRadius: 8 }}
-                  />
+                {loadingVideo ? (
+                  /* Downloading & saving GLB from Meshy */
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
+                    <CircularProgress size={48} sx={{ color: '#3b6ef8' }} />
+                    <Typography sx={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>
+                      Saving 3D model to server…
+                    </Typography>
+                  </Box>
+                ) : generatedModel?.glb_model ? (
+                  /* GLB saved — render interactive 3D viewer */
+                  <ThreeDViewer glbUrl={generatedModel.glb_model} height={300} />
                 ) : (
-                  /* Fallback: show uploaded image if video not yet available */
+                  /* Fallback while loading */
                   threeDUploadedFiles.length > 0 && (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={bgRemovedPreviews[0] ?? URL.createObjectURL(threeDUploadedFiles[0])}
+                      src={URL.createObjectURL(threeDUploadedFiles[0])}
                       alt="3d-preview"
                       style={{ maxWidth: '80%', maxHeight: 260, objectFit: 'contain' }}
                     />
                   )
                 )}
 
-                {generatedModel?.glb_model && (
-                  <Box
-                    component="a"
-                    href={generatedModel.glb_model}
-                    target="_blank"
-                    rel="noreferrer"
+                {generatedModel?.glb_model && !loadingVideo && (
+                  <Button
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = generatedModel.glb_model;
+                      a.download = `model-${meshyTaskId}.glb`;
+                      a.click();
+                    }}
+                    startIcon={<IosShareIcon sx={{ fontSize: '16px !important' }} />}
                     sx={{
                       mt: 1, fontSize: 13, fontWeight: 600, color: '#3b6ef8',
-                      textDecoration: 'underline', cursor: 'pointer',
+                      textTransform: 'none', textDecoration: 'underline',
                     }}
                   >
-                    ⬇ Download GLB Model
-                  </Box>
+                    Download GLB Model
+                  </Button>
                 )}
               </Box>
             </>
@@ -1491,6 +1512,11 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   setBgRemovedPreviews([]);
                   setGeneratedModel(null);
                   setTrellisError(null);
+                  setMeshyTaskId(null);
+                  setMeshyProgress(0);
+                  if (videoObjectUrl) { URL.revokeObjectURL(videoObjectUrl); }
+                  setVideoObjectUrl(null);
+                  setLoadingVideo(false);
                 }}
                 variant="contained"
                 startIcon={<LoopIcon />}
@@ -1515,12 +1541,26 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 Upload as 3D Model
               </Button>
             </>
+          ) : threeDModalStep === 2 ? (
+            /* Step 2: auto-polling — only show Cancel */
+            <Button
+              onClick={close3DModal}
+              variant="outlined"
+              sx={{
+                borderColor: '#d1d5db', color: '#374151', borderRadius: 20,
+                px: 3, textTransform: 'none', fontWeight: 600, fontSize: 13,
+                '&:hover': { bgcolor: '#f9fafb', borderColor: '#9ca3af' },
+              }}
+            >
+              Cancel
+            </Button>
           ) : (
+            /* Step 1 */
             <>
               <Button
                 onClick={close3DModal}
                 variant="outlined"
-                disabled={loadingBgRemoval || loadingGenerate3D}
+                disabled={loadingBgRemoval}
                 sx={{
                   borderColor: '#d1d5db', color: '#374151', borderRadius: 20,
                   px: 3, textTransform: 'none', fontWeight: 600, fontSize: 13,
@@ -1531,14 +1571,10 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               </Button>
               <Button
                 onClick={handleThreeDGenerate}
-                disabled={
-                  (threeDModalStep === 1 && threeDUploadedFiles.length === 0) ||
-                  loadingBgRemoval ||
-                  loadingGenerate3D
-                }
+                disabled={threeDUploadedFiles.length === 0 || loadingBgRemoval}
                 variant="contained"
                 startIcon={
-                  loadingBgRemoval || loadingGenerate3D
+                  loadingBgRemoval
                     ? <CircularProgress size={16} sx={{ color: '#fff' }} />
                     : <AutoFixHighIcon />
                 }
@@ -1549,11 +1585,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   '&.Mui-disabled': { bgcolor: '#d1d5db', color: '#9ca3af' },
                 }}
               >
-                {loadingBgRemoval
-                  ? 'Removing background…'
-                  : loadingGenerate3D
-                    ? 'Generating 3D…'
-                    : 'Generate'}
+                {loadingBgRemoval ? 'Submitting…' : 'Generate 3D'}
               </Button>
             </>
           )}

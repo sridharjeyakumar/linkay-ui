@@ -18,6 +18,7 @@ export interface Asset {
   jurisdiction?: string | null;
   mediaFiles?: string[] | null;
   threeDFiles?: string;
+  threeDModelUrl?: string | null;
   liveStream?: string;
   pricePerFraction?: number;
   totalFractions?: number;
@@ -54,6 +55,7 @@ export interface CreateAssetPayload {
   jurisdiction?: string;
   mediaFiles?: string[];
   threeDFiles?: string;
+  threeDModelUrl?: string | null;
   liveStream?: string;
   status?: string;
   custodian?: string;

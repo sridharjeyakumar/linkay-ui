@@ -1,282 +1,419 @@
-import React, { useState } from "react";
+ import React, { useState, Suspense } from "react";
 
-const API =
-  "https://unseemly-showgirl-unmixable.ngrok-free.dev";
+ import axios from "axios";
 
-export default function App() {
 
-  const [files, setFiles] = useState([]);
-  const [previews, setPreviews] = useState([]);
-  const [loadingPreview, setLoadingPreview] =
-    useState(false);
 
-  const [loadingGenerate, setLoadingGenerate] =
-    useState(false);
+ import { Canvas } from "@react-three/fiber";
 
-  const [result, setResult] = useState(null);
+ import {
 
-  // AUTO REMBG PREVIEW
-  const previewRemoveBG = async (
-    selectedFiles
-  ) => {
+   OrbitControls,
 
-    setLoadingPreview(true);
+   Environment,
 
-    const formData = new FormData();
+   Stage,
 
-    for (
-      let i = 0;
-      i < selectedFiles.length;
-      i++
-    ) {
-      formData.append(
-        "files",
-        selectedFiles[i]
-      );
-    }
+   useGLTF,
 
-    try {
+ } from "@react-three/drei";
 
-      const response = await fetch(
-        `${API}/preview-removebg`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
 
-      const data =
-        await response.json();
 
-      if (data.success) {
-        setPreviews(
-          data.previews || []
-        );
-      }
+ const API_KEY = "msy_qFkUKUmyHJPKv4dPpbvJu7bV0wPHRvP63uC0";
 
-    } catch (e) {
-      console.log(e);
-      alert(
-        "Background removal failed"
-      );
-    }
 
-    setLoadingPreview(false);
-  };
 
-  // UPLOAD EVENT
-  const onFiles = (e) => {
+ function Model({ url }) {
 
-    const selected =
-      [...e.target.files];
+   const { scene } = useGLTF(url);
 
-    setFiles(selected);
-    setResult(null);
 
-    // AUTO PREVIEW
-    previewRemoveBG(selected);
-  };
 
-  // GENERATE 3D
-  const generate = async () => {
+   return (
 
-    if (!files.length) {
-      alert(
-        "Upload images first"
-      );
-      return;
-    }
+     <primitive
 
-    setLoadingGenerate(true);
+       object={scene}
 
-    const formData = new FormData();
+       scale={1}
 
-    files.forEach((f) => {
-      formData.append(
-        "files",
-        f
-      );
-    });
+     />
 
-    formData.append(
-      "seed",
-      0
-    );
+   );
 
-    formData.append(
-      "ss_guidance_strength",
-      7.5
-    );
+ }
 
-    formData.append(
-      "ss_sampling_steps",
-      12
-    );
 
-    formData.append(
-      "slat_guidance_strength",
-      3
-    );
 
-    formData.append(
-      "slat_sampling_steps",
-      12
-    );
+ export default function App() {
 
-    formData.append(
-      "multiimage_algo",
-      "stochastic"
-    );
+   const [files, setFiles] = useState([]);
 
-    formData.append(
-      "mesh_simplify",
-      0.95
-    );
+   const [status, setStatus] = useState("");
 
-    formData.append(
-      "texture_size",
-      1024
-    );
+   const [loading, setLoading] = useState(false);
 
-    try {
+   const [viewerUrl, setViewerUrl] = useState("");
 
-      const response =
-        await fetch(
-          `${API}/generate`,
-          {
-            method: "POST",
-            body: formData,
+  const fileToBase64 = (file) =>
+
+     new Promise((resolve, reject) => {
+
+       const reader = new FileReader();
+
+
+
+       reader.onload = () => resolve(reader.result);
+
+       reader.onerror = reject;
+
+
+
+       reader.readAsDataURL(file);
+
+     });
+
+
+
+   const generate3D = async () => {
+
+     try {
+
+       if (files.length === 0) {
+
+         alert("Select images first");
+
+         return;
+
+       }
+
+
+
+       setLoading(true);
+
+       setStatus("Converting images...");
+
+
+
+       const base64Images = await Promise.all(
+
+         Array.from(files).map(fileToBase64)
+
+       );
+
+
+
+       setStatus("Uploading to Meshy...");
+
+
+
+       const createResponse = await axios.post(
+
+         "https://api.meshy.ai/openapi/v1/multi-image-to-3d",
+
+         {
+
+           image_urls: base64Images,
+
+           should_texture: true,
+
+           enable_pbr: true,
+
+           target_formats: ["glb"]
+
+         },
+
+         {
+
+           headers: {
+
+             Authorization: `Bearer ${API_KEY}`,
+
+             "Content-Type": "application/json"
+
+           }
+
+         }
+
+       );
+
+
+
+       const taskId = createResponse.data.result;
+
+
+
+       console.log("Task ID:", taskId);
+
+
+
+       setStatus("Generating 3D Model...");
+
+
+
+      let finished = false;
+
+
+
+       while (!finished) {
+
+         const taskResponse = await axios.get(
+
+           `https://api.meshy.ai/openapi/v1/multi-image-to-3d/${taskId}`,
+
+           {
+
+             headers: {
+
+               Authorization: `Bearer ${API_KEY}`
+
+             }
+
+           }
+
+         );
+
+
+
+         const task = taskResponse.data;
+
+
+
+         console.log(task);
+
+
+
+         setStatus(task.status);
+
+
+
+         if (task.status === "SUCCEEDED") {
+
+           const glbUrl = task.model_urls.glb;
+
+
+
+           console.log("Meshy GLB:", glbUrl);
+
+
+
+           try {
+
+             const response = await fetch(glbUrl);
+
+
+
+             const blob = await response.blob();
+
+
+
+             const localBlobUrl =
+
+               URL.createObjectURL(blob);
+
+
+
+             setViewerUrl(localBlobUrl);
+
+
+
+             setStatus("Completed");
+
+
+
+             finished = true;
+
+           } catch (error) {
+
+             console.error(error);
+
+
+
+             alert(
+
+               "Meshy blocked browser download (CORS). " +
+
+               "Open console and check the error."
+
+             );
+
+
+
+            finished = true;
+
           }
-        );
 
-      const data =
-        await response.json();
+        }
 
-      setResult(data);
 
-    } catch (e) {
-      console.log(e);
-      alert(
-        "Generation failed"
-      );
-    }
 
-    setLoadingGenerate(false);
-  };
+         if (task.status === "FAILED") {
 
-  return (
-    <div
-      style={{
-        padding: 20,
-        fontFamily:
-          "Arial"
-      }}
-    >
+           throw new Error("Generation failed");
 
-      <h2>
-        TRELLIS 3D Generator
-      </h2>
+         }
 
-      {/* Upload */}
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={onFiles}
-      />
 
-      {/* BG Preview */}
-      <h3>
-        Background Removed
-      </h3>
 
-      {loadingPreview && (
-        <p>
-          Removing background...
-        </p>
-      )}
+         if (!finished) {
 
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          flexWrap:
-            "wrap",
-        }}
-      >
-        {previews.map(
-          (img, i) => (
-            <img
-              key={i}
-              src={img}
-              alt=""
-              width="180"
-              style={{
-                border:
-                  "1px solid #ccc",
-                borderRadius:
-                  "8px",
-              }}
-            />
-          )
-        )}
-      </div>
+           await new Promise(resolve =>
+
+             setTimeout(resolve, 10000)
+
+           );
+
+         }
+
+       }
+
+     } catch (error) {
+
+       console.error(error);
+
+
+
+       alert(
+
+         error?.response?.data?.message ||
+
+         error.message ||
+
+         "Unknown Error"
+
+       );
+
+     } finally {
+
+       setLoading(false);
+
+     }
+
+   };
+
+
+
+   return (
+
+     <div
+
+       style={{
+
+         width: "100vw",
+
+         height: "100vh",
+
+         padding: 20,
+
+         boxSizing: "border-box"
+
+       }}
+
+     >
+
+       <h1>Meshy Multi Image To 3D</h1>
+
+
+
+       <input
+
+         type="file"
+
+         multiple
+
+         accept="image/*"
+
+         onChange={(e) => setFiles(e.target.files)}
+
+       />
+
+
+
+       <br />
 
       <br />
 
-      {/* Generate */}
-      {files.length > 0 && (
-        <button
-          onClick={
-            generate
-          }
-          disabled={
-            loadingGenerate
-          }
-        >
-          {loadingGenerate
-            ? "Generating..."
-            : "Generate 3D"}
-        </button>
+
+
+       <button
+
+         onClick={generate3D}
+
+         disabled={loading}
+
+       >
+
+         {loading ? "Generating..." : "Generate 3D"}
+
+       </button>
+
+
+
+       <p>Status: {status}</p>
+
+
+
+       {viewerUrl && (
+
+         <div
+
+           style={{
+
+             width: "100%",
+
+             height: "700px",
+
+             border: "1px solid #ccc"
+
+           }}
+
+         >
+
+           <Canvas
+
+             camera={{
+
+               position: [0, 0, 5],
+
+               fov: 45           }}
+
+           >
+
+             <Suspense fallback={null}>
+
+               <Stage
+
+                 intensity={2}
+
+                 environment="city"
+
+                 adjustCamera
+
+                 shadows
+
+               >
+
+                 <Model url={viewerUrl} />
+
+               </Stage>
+
+
+
+               <Environment preset="city" />
+
+             </Suspense>
+
+
+
+             <OrbitControls />           </Canvas>
+
+         </div>
+
       )}
 
-      {/* Output */}
-      {result && (
-        <div
-          style={{
-            marginTop:
-              30,
-          }}
-        >
+     </div>
 
-          <h3>
-            3D Output
-          </h3>
+   );
 
-          <video
-            controls
-            width="500"
-            src={
-              result.preview_video
-            }
-          />
-
-          <br />
-          <br />
-
-          <a
-            href={
-              result.glb_model
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            Download GLB
-          </a>
-
-        </div>
-      )}
-
-    </div>
-  );
 }
