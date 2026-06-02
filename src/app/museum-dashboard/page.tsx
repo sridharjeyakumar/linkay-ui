@@ -134,8 +134,14 @@ export default function MuseumDashboardPage() {
   useEffect(() => {
     dispatch(fetchAssetsThunk());
     dispatch(loadStoredJobs());
-    auctionApi.list({ status: 'SCHEDULED' }).then((res) => {
-      const ids = new Set<string>(res.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []);
+    Promise.all([
+      auctionApi.list({ status: 'SCHEDULED' }),
+      auctionApi.list({ status: 'LIVE' }),
+    ]).then(([scheduled, live]) => {
+      const ids = new Set<string>([
+        ...(scheduled.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []),
+        ...(live.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []),
+      ]);
       setScheduledAssets(ids);
     }).catch(() => {});
   }, []);
