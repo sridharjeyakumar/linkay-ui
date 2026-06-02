@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Alert, Box, Chip, CircularProgress, Paper, Snackbar,
+  Alert, Box, CircularProgress, Paper, Snackbar,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TableSortLabel, Typography,
+  Typography,
 } from '@mui/material';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { fetchAssetsThunk } from '@/features/assets/assetThunks';
 import { createAuctionThunk, saveDraftAuctionThunk } from '@/features/auction/auctionThunks';
@@ -23,35 +22,27 @@ import type { Asset } from '@/types/asset.types';
 interface AuctionRecord {
   id: string;
   assetId: string;
+  title?: string;
+  description?: string;
   status: string;
+  fractionsAllocated?: number;
+  minPurchaseQty?: number;
+  maxPurchaseQty?: number;
+  startingBidPrice?: number;
+  reservePrice?: number;
+  minIncrement?: number;
+  startDate?: string;
+  startTime?: string;
   endDate?: string;
   endTime?: string;
+  timezone?: string;
+  onchainAuctionId?: string | null;
   bidCount?: number;
   currentBidPrice?: number;
   highestBidderName?: string;
+  asset?: { id: string; title: string; assetType: string };
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const ASSET_TYPE_LABELS: Record<string, string> = {
-  REAL_ESTATE:  'Real Estate',
-  FINE_ART:     'Fine Art',
-  LUXURY_ASSET: 'Luxury Asset',
-  LUXURY_WATCH: 'Luxury Watch',
-  COLLECTIBLE:  'Collectible',
-  MINERAL:      'Mineral',
-  OTHER:        'Other',
-};
-
-const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
-  FINE_ART:     { bg: '#f3e8ff', color: '#7c3aed' },
-  REAL_ESTATE:  { bg: '#fce7f3', color: '#be185d' },
-  LUXURY_ASSET: { bg: '#e0f2fe', color: '#0369a1' },
-  LUXURY_WATCH: { bg: '#dbeafe', color: '#1d4ed8' },
-  COLLECTIBLE:  { bg: '#dcfce7', color: '#16a34a' },
-  MINERAL:      { bg: '#fed7aa', color: '#c2410c' },
-  OTHER:        { bg: '#fef9c3', color: '#b45309' },
-};
 
 const AUCTION_STATUS_CFG: Record<string, { bg: string; color: string; dot: string; label: string }> = {
   LIVE:      { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', label: 'Live' },
@@ -63,32 +54,25 @@ const AUCTION_STATUS_CFG: Record<string, { bg: string; color: string; dot: strin
   CANCELLED: { bg: '#fee2e2', color: '#991b1b', dot: '#ef4444', label: 'Cancelled' },
 };
 
-const STATUS_SORT_ORDER = ['LIVE', 'ACTIVE', 'SCHEDULED', 'DRAFT', 'COMPLETED', 'ENDED', 'CANCELLED'];
-
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
-function formatEndTime(endDate?: string, endTime?: string): string {
-  if (!endDate) return '-';
+// Display the stored date/time exactly as entered — no timezone conversion.
+function formatDateTime(date?: string, time?: string): string {
+  if (!date) return '-';
   try {
-    const iso = endDate.includes('T') ? endDate : `${endDate}T${endTime ?? '00:00'}`;
-    const d = new Date(iso);
-    const mon = d.toLocaleString('en-US', { month: 'short' });
-    const time = d.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    return `${mon} ${d.getDate()}, ${d.getFullYear()} • ${time}`;
+    const [year, month, day] = date.split('-').map(Number);
+    const monthStr = new Date(year, month - 1, day).toLocaleString('en-US', { month: 'short' });
+    if (!time) return `${monthStr} ${day}, ${year}`;
+    const [h, m] = time.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${monthStr} ${day}, ${year} • ${h12}:${String(m).padStart(2, '0')} ${period}`;
   } catch {
-    return endDate;
+    return date;
   }
 }
-
-function isTokenizedApproved(asset: Asset): boolean {
-  return (
-    asset.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
-    asset.tokenization?.tokenizationStatus === 'COMPLETED'
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MyAssetsPage() {
@@ -112,42 +96,18 @@ export default function MyAssetsPage() {
 
   // ── Stats ──
   const liveAuctions      = auctions.filter((a) => a.status === 'LIVE' || a.status === 'ACTIVE').length;
-  const draftAssets       = assets.filter((a) => a.status === 'DRAFT').length;
   const completedAuctions = auctions.filter((a) => a.status === 'COMPLETED' || a.status === 'ENDED').length;
-  const totalAssets       = assets.length;
+  const totalAssets       = auctions.length;
   const upcomingAuctions  = auctions.filter((a) => a.status === 'SCHEDULED').length;
 
   const statCards = [
     { label: 'LIVE AUCTIONS',      value: pad(liveAuctions),      textColor: '#16a34a', bg: '#f0fdf4' },
-    { label: 'DRAFT ASSETS',       value: pad(draftAssets),       textColor: '#ea580c', bg: '#fff7ed' },
     { label: 'COMPLETED AUCTIONS', value: pad(completedAuctions), textColor: '#2563eb', bg: '#eff6ff' },
     { label: 'TOTAL ASSETS',       value: String(totalAssets),    textColor: '#7c3aed', bg: '#f5f3ff' },
     { label: 'UPCOMING AUCTIONS',  value: pad(upcomingAuctions),  textColor: '#b45309', bg: '#fffbeb' },
   ];
 
-  // ── Banner: tokenized assets with no active/scheduled auction ──
-  const activeAuctionAssetIds = new Set(
-    auctions
-      .filter((a) => a.status === 'LIVE' || a.status === 'ACTIVE' || a.status === 'SCHEDULED')
-      .map((a) => a.assetId),
-  );
-  const readyAssets = assets.filter(
-    (a) => isTokenizedApproved(a) && !activeAuctionAssetIds.has(a.id),
-  );
-
-  // ── Table rows: each asset paired with its highest-priority auction ──
-  const tableRows = assets.map((asset) => {
-    const related = auctions
-      .filter((a) => a.assetId === asset.id)
-      .sort(
-        (a, b) =>
-          STATUS_SORT_ORDER.indexOf(a.status.toUpperCase()) -
-          STATUS_SORT_ORDER.indexOf(b.status.toUpperCase()),
-      );
-    return { asset, auction: related[0] ?? null };
-  });
-
-  // ── Auction handlers (mirrors museum-dashboard) ──
+  // ── Auction handlers ──
   function buildPayload(assetId: string, data: AuctionScheduleData | AuctionDraftData) {
     const p = data.pricing;
     return {
@@ -253,86 +213,31 @@ export default function MyAssetsPage() {
       </Box>
 
       {/* ── Launch Auction banner ── */}
-      {readyAssets.length > 0 && (
-        <Paper
-          elevation={0}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: { xs: 'wrap', sm: 'nowrap' },
-            gap: 2,
-            p: { xs: '14px 18px', sm: '16px 24px' },
-            mb: 3,
-            borderRadius: 3,
-            border: '1.5px solid #3b6ef8',
-            bgcolor: '#fff',
-          }}
-        >
-          <Box>
-            <Typography sx={{ fontWeight: 700, fontSize: 15, color: '#111', mb: 0.4 }}>
-              Launch Auction
-            </Typography>
-            <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
-              You have {readyAssets.length} tokenized asset{readyAssets.length > 1 ? 's' : ''} ready to go
-              live. Start your auction and begin receiving bids from investors.
-            </Typography>
-          </Box>
-          <Box
-            component="button"
-            onClick={() => setAuctionAsset(readyAssets[0])}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              bgcolor: '#3b6ef8',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 2,
-              px: 2.5,
-              py: 1.1,
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: 14,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              transition: 'background 0.15s',
-              '&:hover': { bgcolor: '#2d5de0' },
-            }}
-          >
-            <RocketLaunchIcon sx={{ fontSize: 17 }} />
-            Create Auction
-          </Box>
-        </Paper>
-      )}
+  
 
       {/* ── Recent Assets table ── */}
+   
+
+      {/* ── Auctions table ── */}
       <Paper
         elevation={0}
-        sx={{ borderRadius: 1, border: '1px solid #e5e7eb', bgcolor: '#fff', overflow: 'hidden' }}
+        sx={{ borderRadius: 1, border: '1px solid #e5e7eb', bgcolor: '#fff', overflow: 'hidden', mt: 3 }}
       >
         <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2.5, pb: 1.5 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#111' }}>Recent Assets</Typography>
+          <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#111' }}>Auctions</Typography>
           <Typography sx={{ fontSize: 13, color: '#6b7280', mt: 0.3 }}>
-            Monitor tokenization, compliance, marketplace activity, and investor engagement.
+            All auctions created for your assets.
           </Typography>
         </Box>
 
         <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Table sx={{ minWidth: 700 }}>
+          <Table sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow sx={{ bgcolor: '#fafafa', borderTop: '1px solid #f3f4f6' }}>
-                {['Asset', 'Category', 'Auction Status', 'End Time', 'Bidders', 'Current Bid'].map(
+                {['Title', 'Asset', 'Status', 'Start', 'End', 'Fractions', 'Reserve Price', 'Starting Bid'].map(
                   (col) => (
                     <TableCell key={col} sx={thSx}>
-                      <TableSortLabel
-                        sx={{
-                          color: '#6b7280 !important',
-                          '& .MuiTableSortLabel-icon': { color: '#9ca3af !important' },
-                        }}
-                      >
-                        {col}
-                      </TableSortLabel>
+                      {col}
                     </TableCell>
                   ),
                 )}
@@ -340,42 +245,41 @@ export default function MyAssetsPage() {
             </TableHead>
 
             <TableBody>
-              {tableRows.length === 0 ? (
+              {auctions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} sx={{ border: 0, py: 6, textAlign: 'center' }}>
-                    <Typography sx={{ color: '#9ca3af', fontSize: 14 }}>No assets yet</Typography>
+                  <TableCell colSpan={8} sx={{ border: 0, py: 6, textAlign: 'center' }}>
+                    <Typography sx={{ color: '#9ca3af', fontSize: 14 }}>No auctions yet</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                tableRows.map(({ asset, auction }) => {
-                  const catCfg =
-                    CATEGORY_COLORS[asset.assetType] ?? { bg: '#f3f4f6', color: '#374151' };
-                  const statusKey = auction?.status?.toUpperCase();
-                  const statusCfg = statusKey ? AUCTION_STATUS_CFG[statusKey] : null;
+                auctions.map((auction) => {
+                  const statusKey = auction.status?.toUpperCase();
+                  const statusCfg = AUCTION_STATUS_CFG[statusKey] ?? null;
+                  const assetTitle =
+                    auction.asset?.title ??
+                    assets.find((a) => a.id === auction.assetId)?.title ??
+                    auction.assetId;
 
                   return (
-                    <TableRow key={asset.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                    <TableRow key={auction.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                      {/* Title */}
+                      <TableCell sx={{ ...tdSx, fontWeight: 500, color: '#111', maxWidth: 180 }}>
+                        <Typography sx={{ fontSize: 14, fontWeight: 500, color: '#111' }} noWrap>
+                          {auction.title || '-'}
+                        </Typography>
+                        {auction.description && (
+                          <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 0.2 }} noWrap>
+                            {auction.description}
+                          </Typography>
+                        )}
+                      </TableCell>
+
                       {/* Asset */}
-                      <TableCell sx={{ ...tdSx, color: '#111', fontWeight: 500 }}>
-                        {asset.title}
+                      <TableCell sx={{ ...tdSx, color: '#374151', maxWidth: 150 }}>
+                        <Typography sx={{ fontSize: 13 }} noWrap>{assetTitle}</Typography>
                       </TableCell>
 
-                      {/* Category */}
-                      <TableCell sx={tdSx}>
-                        <Chip
-                          label={ASSET_TYPE_LABELS[asset.assetType] ?? asset.assetType}
-                          size="small"
-                          sx={{
-                            bgcolor: catCfg.bg,
-                            color: catCfg.color,
-                            fontWeight: 500,
-                            fontSize: 12,
-                            border: 'none',
-                          }}
-                        />
-                      </TableCell>
-
-                      {/* Auction Status */}
+                      {/* Status */}
                       <TableCell sx={tdSx}>
                         {statusCfg ? (
                           <Box
@@ -390,70 +294,60 @@ export default function MyAssetsPage() {
                               borderRadius: 5,
                               fontSize: 12,
                               fontWeight: 600,
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            <Box
-                              sx={{
-                                width: 7,
-                                height: 7,
-                                borderRadius: '50%',
-                                bgcolor: statusCfg.dot,
-                                flexShrink: 0,
-                              }}
-                            />
+                            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: statusCfg.dot, flexShrink: 0 }} />
                             {statusCfg.label}
                           </Box>
                         ) : (
-                          <Box
-                            sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 0.75,
-                              bgcolor: '#f3f4f6',
-                              color: '#6b7280',
-                              px: 1.25,
-                              py: 0.4,
-                              borderRadius: 10,
-                              fontSize: 12,
-                              fontWeight: 600,
-                            }}
-                          >
-                            <Box
-                              sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#d1d5db', flexShrink: 0 }}
-                            />
-                            Draft
-                          </Box>
+                          <Typography sx={{ fontSize: 13, color: '#9ca3af' }}>{auction.status}</Typography>
                         )}
                       </TableCell>
 
-                      {/* End Time */}
-                      <TableCell sx={{ ...tdSx, color: '#374151', whiteSpace: 'nowrap' }}>
-                        {formatEndTime(auction?.endDate, auction?.endTime)}
+                      {/* Start */}
+                      <TableCell sx={{ ...tdSx, whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontSize: 13, color: '#374151' }}>
+                          {formatDateTime(auction.startDate, auction.startTime)}
+                        </Typography>
+                        {auction.timezone && (
+                          <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.2 }}>
+                            {auction.timezone}
+                          </Typography>
+                        )}
                       </TableCell>
 
-                      {/* Bidders */}
+                      {/* End */}
+                      <TableCell sx={{ ...tdSx, whiteSpace: 'nowrap' }}>
+                        <Typography sx={{ fontSize: 13, color: '#374151' }}>
+                          {formatDateTime(auction.endDate, auction.endTime)}
+                        </Typography>
+                        {auction.timezone && (
+                          <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.2 }}>
+                            {auction.timezone}
+                          </Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Fractions */}
                       <TableCell sx={{ ...tdSx, color: '#374151' }}>
-                        {auction?.bidCount != null ? auction.bidCount : '-'}
+                        {auction.fractionsAllocated != null
+                          ? Number(auction.fractionsAllocated).toLocaleString()
+                          : '-'}
                       </TableCell>
 
-                      {/* Current Bid */}
-                      <TableCell sx={tdSx}>
-                        {auction?.currentBidPrice != null ? (
-                          <Box>
-                            {auction.highestBidderName && (
-                              <Typography
-                                sx={{ fontSize: 13, color: '#111', fontWeight: 500, lineHeight: 1.3 }}
-                              >
-                                {auction.highestBidderName}
-                              </Typography>
-                            )}
-                            <Typography sx={{ fontSize: 13, color: '#374151', lineHeight: 1.3 }}>
-                              ${Number(auction.currentBidPrice).toLocaleString()}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          <Typography sx={{ fontSize: 13, color: '#9ca3af' }}>-</Typography>
-                        )}
+                      {/* Reserve Price */}
+                      <TableCell sx={{ ...tdSx, color: '#374151' }}>
+                        {auction.reservePrice != null
+                          ? `$${Number(auction.reservePrice).toLocaleString()}`
+                          : '-'}
+                      </TableCell>
+
+                      {/* Starting Bid */}
+                      <TableCell sx={{ ...tdSx, color: '#374151' }}>
+                        {auction.startingBidPrice != null
+                          ? `$${Number(auction.startingBidPrice).toLocaleString()}`
+                          : '-'}
                       </TableCell>
                     </TableRow>
                   );
