@@ -45,6 +45,26 @@ export interface Asset {
     tokenizationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'TREASURY_PENDING' | 'TREASURY_APPROVED' | 'TREASURY_REJECTED';
     errorMessage?: string | null;
   } | null;
+  latestAuction?: {
+    id: string;
+    status: 'SCHEDULED' | 'LIVE' | 'ENDED' | 'CANCELLED';
+    startDate: string;
+    startTime: string;
+    endDate: string;
+    endTime: string;
+    onChainAuctionId?: string | null;
+  } | null;
+}
+
+export interface DynamicFieldPayload {
+  id?: string;
+  fieldKey: string;
+  fieldLabel: string;
+  fieldType: string;
+  fieldValue?: string | null;
+  fieldOptions?: Array<{ label: string; value: string }> | null;
+  isRequired: boolean;
+  fieldOrder: number;
 }
 
 export interface CreateAssetPayload {
@@ -69,6 +89,7 @@ export interface CreateAssetPayload {
   pricePerFraction?: number;
   royaltyPercent?: number;
   royaltyWallet?: string;
+  dynamicFields?: DynamicFieldPayload[];
 }
 
 export type UpdateAssetPayload = Partial<CreateAssetPayload>;

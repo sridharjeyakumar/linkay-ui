@@ -181,10 +181,11 @@ function DeclineModal({ open, onClose, onConfirm, loading }: {
 /* ─── Detail Row helper ───────────────────────────────────── */
 
 function DetailRow({ label, value, full }: { label: string; value: string | null | undefined; full?: boolean }) {
+  if (!value) return null;
   return (
     <Box sx={{ gridColumn: full ? '1 / -1' : undefined }}>
       <Typography sx={{ fontSize: '10px', color: '#9CA3AF', fontFamily: 'Inter, sans-serif', mb: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</Typography>
-      <Typography sx={{ fontSize: '12px', color: '#111111', fontFamily: 'Inter, sans-serif', fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.5 }}>{value || '—'}</Typography>
+      <Typography sx={{ fontSize: '12px', color: '#111111', fontFamily: 'Inter, sans-serif', fontWeight: 500, wordBreak: 'break-word', lineHeight: 1.5 }}>{value}</Typography>
     </Box>
   );
 }
@@ -344,13 +345,38 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
               </>
             )}
 
-            <SectionTitle>Asset Details</SectionTitle>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', px: '18px', py: '14px' }}>
-              <DetailRow label="Certification Ref" value={asset.certificationRef} />
-              <DetailRow label="Jurisdiction"       value={asset.jurisdiction} />
-              <DetailRow label="Custodian"          value={asset.custodian} />
-              <DetailRow label="Ownership Entity"   value={asset.ownershipEntity} />
-            </Box>
+            {(asset.certificationRef || asset.jurisdiction || asset.custodian || asset.ownershipEntity) && (
+              <>
+                <SectionTitle>Asset Details</SectionTitle>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', px: '18px', py: '14px' }}>
+                  <DetailRow label="Certification Ref" value={asset.certificationRef} />
+                  <DetailRow label="Jurisdiction"       value={asset.jurisdiction} />
+                  <DetailRow label="Custodian"          value={asset.custodian} />
+                  <DetailRow label="Ownership Entity"   value={asset.ownershipEntity} />
+                </Box>
+              </>
+            )}
+
+            {(() => {
+              const raw = asset.dynamicFields as unknown;
+              const fields: Array<{ fieldLabel?: string; fieldKey: string; fieldValue: unknown }> = Array.isArray(raw)
+                ? raw
+                : typeof raw === 'string'
+                  ? (() => { try { return JSON.parse(raw); } catch { return []; } })()
+                  : [];
+              const visible = fields.filter((f) => f.fieldValue !== null && f.fieldValue !== undefined && String(f.fieldValue).trim() !== '');
+              if (visible.length === 0) return null;
+              return (
+                <>
+                  {/* <SectionTitle>Custom Fields</SectionTitle> */}
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', px: '18px', py: '14px' }}>
+                    {visible.map((f, i) => (
+                      <DetailRow key={i} label={f.fieldLabel || f.fieldKey} value={String(f.fieldValue)} />
+                    ))}
+                  </Box>
+                </>
+              );
+            })()}
 
             {asset.ownershipSplit && asset.ownershipSplit.length > 0 && (
               <>

@@ -1,17 +1,10 @@
 import axiosInstance from './axiosInstance';
 import type { CreateAssetPayload, UpdateAssetPayload } from '@/types/asset.types';
 
-function toFormData(payload: Record<string, unknown>, files?: File[]): FormData {
+function buildMediaFormData(files: File[]): FormData {
   const fd = new FormData();
-  for (const [key, val] of Object.entries(payload)) {
-    if (val !== undefined && val !== null) {
-      fd.append(key, String(val));
-    }
-  }
-  if (files) {
-    for (const file of files) {
-      fd.append('mediaFiles', file);
-    }
+  for (const file of files) {
+    fd.append('mediaFiles', file);
   }
   return fd;
 }
@@ -26,24 +19,29 @@ export const assetApi = {
   previewAsset: (assetId: string) =>
     axiosInstance.get(`/api/v1/assets/preview/${assetId}`),
 
-  createAsset: (payload: CreateAssetPayload, files?: File[]) => {
+  createAsset: async (payload: CreateAssetPayload, files?: File[]) => {
+    // Send JSON first so dynamicFields arrives as a proper array (not a serialized string)
+    const response = await axiosInstance.post('/api/v1/assets/create', payload);
     if (files && files.length > 0) {
-      const fd = toFormData(payload as unknown as Record<string, unknown>, files);
-      return axiosInstance.post('/api/v1/assets/create', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const assetId: string | undefined = response.data?.data?.id ?? response.data?.id;
+      if (assetId) {
+        return axiosInstance.patch(`/api/v1/assets/update/${assetId}`, buildMediaFormData(files), {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
     }
-    return axiosInstance.post('/api/v1/assets/create', payload);
+    return response;
   },
 
-  updateAsset: (assetId: string, payload: UpdateAssetPayload, files?: File[]) => {
+  updateAsset: async (assetId: string, payload: UpdateAssetPayload, files?: File[]) => {
+    // Send JSON first so dynamicFields arrives as a proper array (not a serialized string)
+    const response = await axiosInstance.patch(`/api/v1/assets/update/${assetId}`, payload);
     if (files && files.length > 0) {
-      const fd = toFormData(payload as unknown as Record<string, unknown>, files);
-      return axiosInstance.patch(`/api/v1/assets/update/${assetId}`, fd, {
+      return axiosInstance.patch(`/api/v1/assets/update/${assetId}`, buildMediaFormData(files), {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     }
-    return axiosInstance.patch(`/api/v1/assets/update/${assetId}`, payload);
+    return response;
   },
 
   deleteAsset: (assetId: string) =>

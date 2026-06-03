@@ -408,9 +408,13 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setThreeDFiles(editAsset.threeDFiles ?? '');
       setLiveStream(editAsset.liveStream ?? '');
       setSavedGlbUrl(editAsset.threeDModelUrl ?? '');
+      const rawDynamic = (editAsset as unknown as { dynamicFields?: DField[] | string }).dynamicFields;
+      const parsedDynamic: DField[] = typeof rawDynamic === 'string'
+        ? (() => { try { return JSON.parse(rawDynamic); } catch { return []; } })()
+        : (rawDynamic ?? []);
       setDynamicFields(
-        Array.isArray((editAsset as unknown as { dynamicFields?: DField[] }).dynamicFields)
-          ? ((editAsset as unknown as { dynamicFields?: DField[] }).dynamicFields ?? []).map((f, i) => ({
+        Array.isArray(parsedDynamic)
+          ? parsedDynamic.map((f, i) => ({
               id:           f.id,
               fieldKey:     f.fieldKey     ?? '',
               fieldLabel:   f.fieldLabel   ?? '',
