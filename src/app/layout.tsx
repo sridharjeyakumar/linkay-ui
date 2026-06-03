@@ -17,6 +17,9 @@ const archivo = Archivo({
 export const metadata: Metadata = {
   title: 'Linkay',
   description: 'Invest in tokenized real-world assets',
+  icons: {
+    icon: '/landing/LinkBlock Assets Logo.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
