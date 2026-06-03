@@ -151,6 +151,28 @@ export default function AdminNavbar() {
               gap: '8px',
             }}
           >
+            {/* CMS Editor */}
+            {!isMobile && (
+              <Button
+                component={Link}
+                href="/admin"
+                sx={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#FFFFFF',
+                  bgcolor: '#163B7A',
+                  textTransform: 'none',
+                  borderRadius: '6px',
+                  px: '14px',
+                  py: '6px',
+                  fontFamily: 'Inter, sans-serif',
+                  '&:hover': { bgcolor: '#0f2d5e' },
+                }}
+              >
+                CMS Editor
+              </Button>
+            )}
+
             {/* Bell */}
             <Tooltip title="Notifications">
               <IconButton size="medium" sx={{ color: '#555555' }}>
@@ -319,7 +341,25 @@ export default function AdminNavbar() {
         </List>
 
         {/* Drawer logout */}
-        <Box sx={{ mt: 'auto', p: '16px', borderTop: '1px solid #F0F0F0' }}>
+        <Box sx={{ mt: 'auto', p: '16px', borderTop: '1px solid #F0F0F0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <Button
+            fullWidth
+            component={Link}
+            href="/admin"
+            onClick={() => setDrawerOpen(false)}
+            sx={{
+              bgcolor: '#163B7A',
+              color: '#FFFFFF',
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '14px',
+              fontFamily: 'Inter, sans-serif',
+              '&:hover': { bgcolor: '#0f2d5e' },
+            }}
+          >
+            CMS Editor
+          </Button>
           <Button
             fullWidth
             onClick={handleLogout}
