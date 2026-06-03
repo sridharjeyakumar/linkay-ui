@@ -2,20 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Box, Button, Dialog, IconButton,
+  Box, Button, Checkbox, Dialog, FormControlLabel, IconButton,
   MenuItem, Select, TextField, Typography, CircularProgress, Alert, Slider,
   InputAdornment,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import LinkIcon from '@mui/icons-material/Link';
+import CloseIcon          from '@mui/icons-material/Close';
+import LinkIcon           from '@mui/icons-material/Link';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import RemoveIcon from '@mui/icons-material/Remove';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
-import IosShareIcon from '@mui/icons-material/IosShare';
-import LoopIcon from '@mui/icons-material/Loop';
+import ZoomInIcon         from '@mui/icons-material/ZoomIn';
+import RemoveIcon         from '@mui/icons-material/Remove';
+import AutoFixHighIcon    from '@mui/icons-material/AutoFixHigh';
+import UploadFileIcon     from '@mui/icons-material/UploadFile';
+import ImageOutlinedIcon  from '@mui/icons-material/ImageOutlined';
+import IosShareIcon       from '@mui/icons-material/IosShare';
+import LoopIcon           from '@mui/icons-material/Loop';
+import AddIcon            from '@mui/icons-material/Add';
+import EditOutlinedIcon   from '@mui/icons-material/EditOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import dynamic           from 'next/dynamic';
 import axiosInstance      from '@/api/axiosInstance';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
@@ -51,7 +54,8 @@ function countWords(text: string): number {
 
 // ── Backend 3D API (proxied through Next.js → asset-management-service) ──────
 
-const BACKEND_3D_API = '/api/v1/3d';
+const BACKEND_3D_API      = '/api/v1/3d';
+const DRAFT_FIELDS_KEY    = 'linkay_draft_dynamic_fields';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -263,6 +267,34 @@ function LightboxDialog({ src, onClose }: { src: string; onClose: () => void }) 
 
 // ── props ─────────────────────────────────────────────────────────────────────
 
+// ── Dynamic field type ────────────────────────────────────────────────────────
+interface DField {
+  id?:          string;
+  fieldKey:     string;
+  fieldLabel:   string;
+  fieldType:    'text' | 'number' | 'textarea' | 'date' | 'dropdown';
+  fieldValue:   string;
+  fieldOptions: { label: string; value: string }[] | null;
+  isRequired:   boolean;
+  fieldOrder:   number;
+}
+
+const FIELD_TYPES = [
+  { value: 'text',     label: 'Text' },
+  { value: 'number',   label: 'Number' },
+  { value: 'textarea', label: 'Textarea' },
+  { value: 'date',     label: 'Date' },
+  { value: 'dropdown', label: 'Dropdown' },
+];
+
+const EMPTY_FIELD_FORM = {
+  fieldLabel:   '',
+  fieldType:    'text' as DField['fieldType'],
+  fieldValue:   '',
+  fieldOptions: '',   // comma-separated for dropdown
+  isRequired:   false,
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -290,6 +322,13 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   const [historicalContext, setHistoricalContext] = useState('');
   const [conditionReport, setConditionReport] = useState('');
   const [certificationRef, setCertificationRef] = useState('');
+
+  // Dynamic fields
+  const [dynamicFields, setDynamicFields]   = useState<DField[]>([]);
+  const [fieldDialog, setFieldDialog]       = useState<{ open: boolean; editIndex: number | null }>({ open: false, editIndex: null });
+  const [fieldForm, setFieldForm]           = useState({ ...EMPTY_FIELD_FORM });
+  // multi-add rows (used in Add mode only)
+  const [fieldForms, setFieldForms]         = useState([{ ...EMPTY_FIELD_FORM }]);
 
   // Step 2 – Valuation & Tokenization
   const [valuation, setValuation]               = useState('');
@@ -369,10 +408,29 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setThreeDFiles(editAsset.threeDFiles ?? '');
       setLiveStream(editAsset.liveStream ?? '');
       setSavedGlbUrl(editAsset.threeDModelUrl ?? '');
+      setDynamicFields(
+        Array.isArray((editAsset as unknown as { dynamicFields?: DField[] }).dynamicFields)
+          ? ((editAsset as unknown as { dynamicFields?: DField[] }).dynamicFields ?? []).map((f, i) => ({
+              id:           f.id,
+              fieldKey:     f.fieldKey     ?? '',
+              fieldLabel:   f.fieldLabel   ?? '',
+              fieldType:    (f.fieldType as DField['fieldType']) ?? 'text',
+              fieldValue:   String(f.fieldValue ?? ''),
+              fieldOptions: f.fieldOptions ?? null,
+              isRequired:   f.isRequired   ?? false,
+              fieldOrder:   f.fieldOrder   ?? i,
+            }))
+          : [],
+      );
       setMediaFiles([]);
       setExistingImages(parseMediaFiles(editAsset.mediaFiles));
     } else {
       resetForm();
+      // Restore any unsaved draft fields from localStorage (new asset only)
+      try {
+        const saved = localStorage.getItem(DRAFT_FIELDS_KEY);
+        if (saved) setDynamicFields(JSON.parse(saved));
+      } catch { /* ignore */ }
     }
   }, [editAsset, open]);
 
@@ -383,7 +441,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setValuation(''); setJurisdiction(''); setTokenizePercent(5); setTotalFractions('');
     setRoyalty(''); setRoyaltyWallet(walletAddress);
     setMediaFiles([]); setExistingImages([]); setThreeDFiles(''); setLiveStream('');
-    setGenerated3DFiles([]); setSavedGlbUrl('');
+    setGenerated3DFiles([]); setSavedGlbUrl(''); setDynamicFields([]);
+    localStorage.removeItem(DRAFT_FIELDS_KEY);
     setStep1Errors({});
     setStep2Errors({});
   }
@@ -391,6 +450,83 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   function handleClose() {
     dispatch(clearError());
     onClose();
+  }
+
+  // ── Dynamic field helpers ───────────────────────────────────────────────────
+  function openAddField() {
+    setFieldForm({ ...EMPTY_FIELD_FORM });
+    setFieldDialog({ open: true, editIndex: null });
+  }
+
+  function openEditField(index: number) {
+    const f = dynamicFields[index];
+    setFieldForm({
+      fieldLabel:   f.fieldLabel,
+      fieldType:    f.fieldType,
+      fieldValue:   f.fieldValue,
+      fieldOptions: f.fieldOptions ? f.fieldOptions.map(o => o.label).join(', ') : '',
+      isRequired:   f.isRequired,
+    });
+    setFieldDialog({ open: true, editIndex: index });
+  }
+
+  function closeFieldDialog() {
+    setFieldDialog({ open: false, editIndex: null });
+    setFieldForm({ ...EMPTY_FIELD_FORM });
+    setFieldForms([{ ...EMPTY_FIELD_FORM }]);
+  }
+
+  // helpers for multi-add rows
+  function addFieldRow() {
+    setFieldForms(prev => [...prev, { ...EMPTY_FIELD_FORM }]);
+  }
+  function removeFieldRow(idx: number) {
+    setFieldForms(prev => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx));
+  }
+  function updateFieldRow(idx: number, patch: Partial<typeof EMPTY_FIELD_FORM>) {
+    setFieldForms(prev => prev.map((f, i) => i === idx ? { ...f, ...patch } : f));
+  }
+
+  function toField(form: typeof EMPTY_FIELD_FORM, order: number): DField {
+    const key     = form.fieldLabel.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const options = form.fieldType === 'dropdown' && form.fieldOptions.trim()
+      ? form.fieldOptions.split(',').map(s => ({ label: s.trim(), value: s.trim() })).filter(o => o.label)
+      : null;
+    return {
+      fieldKey:     key,
+      fieldLabel:   form.fieldLabel.trim(),
+      fieldType:    form.fieldType,
+      fieldValue:   form.fieldValue,
+      fieldOptions: options,
+      isRequired:   form.isRequired,
+      fieldOrder:   order,
+    };
+  }
+
+  function saveField() {
+    // Edit mode — single row
+    if (fieldDialog.editIndex !== null) {
+      if (!fieldForm.fieldLabel.trim()) return;
+      const updated = toField(fieldForm, fieldDialog.editIndex);
+      setDynamicFields(prev => prev.map((f, i) => i === fieldDialog.editIndex ? { ...f, ...updated } : f));
+      closeFieldDialog();
+      return;
+    }
+    // Add mode — save all non-empty rows
+    const valid = fieldForms.filter(f => f.fieldLabel.trim());
+    if (!valid.length) return;
+    const startOrder = dynamicFields.length;
+    const newFields  = valid.map((f, i) => toField(f, startOrder + i));
+    setDynamicFields(prev => [...prev, ...newFields]);
+    closeFieldDialog();
+  }
+
+  function deleteField(index: number) {
+    setDynamicFields(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function updateFieldValue(index: number, value: string) {
+    setDynamicFields(prev => prev.map((f, i) => i === index ? { ...f, fieldValue: value } : f));
   }
 
   // ── file handling ───────────────────────────────────────────────────────────
@@ -450,9 +586,22 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setLoadingBgRemoval(false);
       return true;
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } }; message?: string })
-        ?.response?.data?.message ?? (e instanceof Error ? e.message : '3D generation failed');
-      setTrellisError(msg);
+      const raw = (e as { response?: { data?: { message?: string } }; message?: string })
+        ?.response?.data?.message ?? (e instanceof Error ? e.message : '');
+
+      // Map backend error codes to clear user messages
+      let userMsg: string;
+      if (raw === 'MESHY_CREDITS_EXHAUSTED') {
+        userMsg = '⚠️ Meshy AI credits exhausted. Please top up your Meshy account at meshy.ai and try again.';
+      } else if (raw === 'MESHY_TIMEOUT') {
+        userMsg = '⏱ Meshy AI server timed out. Please try again in a few minutes.';
+      } else if (raw === 'MESHY_INVALID_KEY') {
+        userMsg = '🔑 Meshy API key is invalid. Please check the MESHY_API_KEY in the backend .env file.';
+      } else {
+        userMsg = raw || '3D generation failed. Please try again.';
+      }
+
+      setTrellisError(userMsg);
       setLoadingBgRemoval(false);
       return false;
     }
@@ -468,47 +617,80 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     }
   }
 
+  // Persist draft dynamic fields to localStorage (new asset only)
+  useEffect(() => {
+    if (editAsset) return; // edit mode — fields come from DB, no need to cache
+    if (dynamicFields.length === 0) {
+      localStorage.removeItem(DRAFT_FIELDS_KEY);
+    } else {
+      try { localStorage.setItem(DRAFT_FIELDS_KEY, JSON.stringify(dynamicFields)); } catch { /* ignore */ }
+    }
+  }, [dynamicFields, editAsset]);
+
   // Auto-poll Meshy task status while on step 2
   useEffect(() => {
     if (threeDModalStep !== 2 || !meshyTaskId) return;
-    let cancelled = false;
+    let cancelled  = false;
+    const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes max
+    const startedAt  = Date.now();
 
     async function poll() {
       while (!cancelled) {
+        // ── Timeout guard ────────────────────────────────────────────────────
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          setTrellisError('3D generation timed out after 15 minutes. Please try again.');
+          setThreeDModalStep(1);
+          return;
+        }
+
         try {
           const { data } = await axiosInstance.get(`${BACKEND_3D_API}/status/${meshyTaskId}`);
           if (cancelled) return;
+
           if (data.success) {
-            setMeshyProgress(data.data.progress ?? 0);
-            if (data.data.status === 'SUCCEEDED') {
-              setThreeDModalStep(3);
-              // Download video + GLB from Meshy → save on backend → get static URLs
+            const { status, progress } = data.data;
+            setMeshyProgress(progress ?? 0);
+
+            // ── SUCCEEDED ───────────────────────────────────────────────────
+            if (status === 'SUCCEEDED') {
               setLoadingVideo(true);
-              axiosInstance
-                .post(`${BACKEND_3D_API}/save/${meshyTaskId}`)
-                .then(({ data: saveRes }) => {
-                  if (saveRes.success) {
-                    const glbUrl = saveRes.data.glbUrl ?? '';
-                    setGeneratedModel({
-                      preview_video: saveRes.data.videoUrl ?? '',
-                      glb_model:     glbUrl,
-                    });
-                    setSavedGlbUrl(glbUrl);
-                  } else {
-                    setTrellisError('Failed to save 3D files on server.');
-                  }
-                })
-                .catch(() => setTrellisError('Failed to save 3D files. Please try again.'))
-                .finally(() => setLoadingVideo(false));
+              try {
+                // Save to local filesystem first — must complete before download
+                await axiosInstance.post(`${BACKEND_3D_API}/save/${meshyTaskId}`);
+
+                if (cancelled) return;
+
+                // Download GLB as Blob via axiosInstance (auth + backend proxy)
+                const glbRes = await axiosInstance.get(
+                  `${BACKEND_3D_API}/download/${meshyTaskId}`,
+                  { responseType: 'blob' },
+                );
+                if (cancelled) return;
+                const blobUrl = URL.createObjectURL(glbRes.data);
+                setSavedGlbUrl(`${BACKEND_3D_API}/download/${meshyTaskId}`);
+                setGeneratedModel({ preview_video: '', glb_model: blobUrl });
+              } catch (glbErr) {
+                setTrellisError('3D model generated but failed to load viewer. You can still download it.');
+              } finally {
+                setLoadingVideo(false);
+              }
+
+              if (cancelled) return;
+              setThreeDModalStep(3);
               return;
             }
-            if (data.data.status === 'FAILED') {
-              setTrellisError('3D generation failed on server. Please try again.');
+
+            // ── Terminal failure statuses ────────────────────────────────────
+            if (status === 'FAILED' || status === 'EXPIRED' || status === 'CANCELLED') {
+              setTrellisError(`3D generation ${status.toLowerCase()}. Please try again.`);
               setThreeDModalStep(1);
               return;
             }
+
+            // PENDING / IN_PROGRESS — keep polling
           }
         } catch (_) { /* network hiccup — keep polling */ }
+
         await new Promise((r) => setTimeout(r, 5000));
       }
     }
@@ -576,9 +758,9 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       ...(custodian        && { custodian }),
       ...(ownershipEntity  && { ownershipEntity }),
       ...(description      && { description }),
-      ...(historicalContext && { historicalContext }),
-      ...(conditionReport  && { conditionReport }),
-      ...(certificationRef && { certificationRef }),
+      ...(assetType !== 'Real Estate' && historicalContext && { historicalContext }),
+      ...(assetType !== 'Real Estate' && conditionReport  && { conditionReport }),
+      ...(assetType !== 'Real Estate' && certificationRef && { certificationRef }),
       ...(valuation        && { valuation: parseFloat(valuation) }),
       ...(jurisdiction     && { jurisdiction }),
       tokenizedPercent:  tokenizePercent,
@@ -590,6 +772,16 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       ...(threeDFiles      && { threeDFiles }),
       ...(liveStream       && { liveStream }),
       ...(savedGlbUrl      && { threeDModelUrl: savedGlbUrl }),
+      dynamicFields: dynamicFields.map((f, i) => ({
+        ...(f.id && { id: f.id }),
+        fieldKey:     f.fieldKey,
+        fieldLabel:   f.fieldLabel,
+        fieldType:    f.fieldType,
+        fieldValue:   f.fieldValue || null,
+        fieldOptions: f.fieldOptions || null,
+        isRequired:   f.isRequired,
+        fieldOrder:   i,
+      })),
     };
 
     try {
@@ -605,6 +797,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         await dispatch(changeStatusThunk({ assetId: savedId, status: 'REVIEW' })).unwrap();
       }
       dispatch(fetchAssetsThunk());
+      localStorage.removeItem(DRAFT_FIELDS_KEY); // clear draft fields after successful save
       onSuccess?.();
       handleClose();
     } catch {
@@ -623,10 +816,12 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     if (!description.trim())       errs.description       = 'Asset Description is required.';
     else if (countWords(description) > MAX_WORDS)
                                    errs.description       = `Description exceeds ${MAX_WORDS} words.`;
-    if (!historicalContext.trim()) errs.historicalContext = 'Historical Context is required.';
-    else if (countWords(historicalContext) > MAX_WORDS)
-                                   errs.historicalContext = `Historical Context exceeds ${MAX_WORDS} words.`;
-    if (!certificationRef.trim())  errs.certificationRef  = 'Certification Ref is required.';
+    if (assetType !== 'Real Estate') {
+      if (!historicalContext.trim()) errs.historicalContext = 'Historical Context is required.';
+      else if (countWords(historicalContext) > MAX_WORDS)
+                                     errs.historicalContext = `Historical Context exceeds ${MAX_WORDS} words.`;
+      if (!certificationRef.trim())  errs.certificationRef  = 'Certification Ref is required.';
+    }
     setStep1Errors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -718,10 +913,28 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             <StepDots step={step} />
           </Box>
 
-          {/* Step title */}
-          <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#111', letterSpacing: 0.3 }}>
-            {STEP_TITLES[step - 1]}
-          </Typography>
+          {/* Step title + Add Field button (step 1 only) */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography sx={{ fontWeight: 700, fontSize: 18, color: '#111', letterSpacing: 0.3 }}>
+              {STEP_TITLES[step - 1]}
+            </Typography>
+            {step === 1 && (
+              <Button
+                size="small"
+                startIcon={<AddIcon sx={{ fontSize: '15px !important' }} />}
+                onClick={openAddField}
+                sx={{
+                  bgcolor: '#eff6ff', color: '#3b6ef8',
+                  borderRadius: 2, px: 1.5, py: 0.6,
+                  fontSize: 12, fontWeight: 700, textTransform: 'none',
+                  border: '1px solid #bfdbfe',
+                  '&:hover': { bgcolor: '#dbeafe', borderColor: '#93c5fd' },
+                }}
+              >
+                Add Field
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {/* Divider */}
@@ -806,37 +1019,112 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 )}
               </Box>
 
-              {/* Historical Context */}
-              <Box>
-                <Label required>Historical Context</Label>
-                <TextField
-                  fullWidth multiline rows={4} size="small" value={historicalContext}
-                  onChange={(e) => { setHistoricalContext(e.target.value); if (step1Errors.historicalContext) setStep1Errors(p => ({ ...p, historicalContext: '' })); }}
-                  error={!!step1Errors.historicalContext} sx={inputSx}
-                />
-                {step1Errors.historicalContext ? (
-                  <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.historicalContext}</Typography>
-                ) : (
-                  <Typography sx={{ fontSize: 12, mt: 0.5, color: countWords(historicalContext) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}>
-                    {countWords(historicalContext) > MAX_WORDS ? `${countWords(historicalContext)}/${MAX_WORDS} words — over limit` : 'Max 200 words'}
-                  </Typography>
-                )}
-              </Box>
+              {/* Historical Context — hidden for Real Estate */}
+              {assetType !== 'Real Estate' && (
+                <Box>
+                  <Label required>Historical Context</Label>
+                  <TextField
+                    fullWidth multiline rows={4} size="small" value={historicalContext}
+                    onChange={(e) => { setHistoricalContext(e.target.value); if (step1Errors.historicalContext) setStep1Errors(p => ({ ...p, historicalContext: '' })); }}
+                    error={!!step1Errors.historicalContext} sx={inputSx}
+                  />
+                  {step1Errors.historicalContext ? (
+                    <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.historicalContext}</Typography>
+                  ) : (
+                    <Typography sx={{ fontSize: 12, mt: 0.5, color: countWords(historicalContext) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}>
+                      {countWords(historicalContext) > MAX_WORDS ? `${countWords(historicalContext)}/${MAX_WORDS} words — over limit` : 'Max 200 words'}
+                    </Typography>
+                  )}
+                </Box>
+              )}
 
-              {/* Row 3: Condition Report + Certification Ref */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                <Box>
-                  <Label>Condition Report</Label>
-                  <TextField fullWidth size="small" value={conditionReport}
-                    onChange={(e) => setConditionReport(e.target.value)} sx={inputSx} />
+              {/* Row 3: Condition Report + Certification Ref — hidden for Real Estate */}
+              {assetType !== 'Real Estate' && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box>
+                    <Label>Condition Report</Label>
+                    <TextField fullWidth size="small" value={conditionReport}
+                      onChange={(e) => setConditionReport(e.target.value)} sx={inputSx} />
+                  </Box>
+                  <Box>
+                    <Label required>Certification Ref</Label>
+                    <TextField fullWidth size="small" value={certificationRef}
+                      onChange={(e) => { setCertificationRef(e.target.value); if (step1Errors.certificationRef) setStep1Errors(p => ({ ...p, certificationRef: '' })); }}
+                      error={!!step1Errors.certificationRef} helperText={step1Errors.certificationRef} sx={inputSx} />
+                  </Box>
                 </Box>
-                <Box>
-                  <Label required>Certification Ref</Label>
-                  <TextField fullWidth size="small" value={certificationRef}
-                    onChange={(e) => { setCertificationRef(e.target.value); if (step1Errors.certificationRef) setStep1Errors(p => ({ ...p, certificationRef: '' })); }}
-                    error={!!step1Errors.certificationRef} helperText={step1Errors.certificationRef} sx={inputSx} />
-                </Box>
-              </Box>
+              )}
+
+              {/* ── Custom Fields — paired in 2-col grid (textarea = full width) ── */}
+              {(() => {
+                const rows: React.ReactNode[] = [];
+                let i = 0;
+                while (i < dynamicFields.length) {
+                  const field = dynamicFields[i];
+                  const isWide = field.fieldType === 'textarea';
+
+                  // Helper: renders one field box
+                  const renderField = (f: DField, idx: number) => (
+                    <Box key={idx}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
+                          {f.fieldLabel}
+                          {f.isRequired && <Box component="span" sx={{ color: '#ef4444', ml: 0.25 }}>*</Box>}
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 0.25 }}>
+                          <IconButton size="small" onClick={() => openEditField(idx)}
+                            sx={{ color: '#9ca3af', p: 0.4, '&:hover': { color: '#3b6ef8', bgcolor: '#eff6ff' } }}>
+                            <EditOutlinedIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => deleteField(idx)}
+                            sx={{ color: '#9ca3af', p: 0.4, '&:hover': { color: '#ef4444', bgcolor: '#fef2f2' } }}>
+                            <DeleteOutlinedIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      {f.fieldType === 'textarea' ? (
+                        <TextField fullWidth multiline rows={3} size="small"
+                          value={f.fieldValue} onChange={(e) => updateFieldValue(idx, e.target.value)} sx={inputSx} />
+                      ) : f.fieldType === 'dropdown' && f.fieldOptions ? (
+                        <Select fullWidth size="small" displayEmpty
+                          value={f.fieldValue || ''} onChange={(e) => updateFieldValue(idx, e.target.value)} sx={selectSx}>
+                          <MenuItem value=""><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>Select</em></MenuItem>
+                          {f.fieldOptions.map((opt) => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
+                        </Select>
+                      ) : (
+                        <TextField fullWidth size="small"
+                          type={f.fieldType === 'number' ? 'number' : f.fieldType === 'date' ? 'date' : 'text'}
+                          value={f.fieldValue} onChange={(e) => updateFieldValue(idx, e.target.value)} sx={inputSx} />
+                      )}
+                    </Box>
+                  );
+
+                  if (isWide) {
+                    // Textarea: full width alone
+                    rows.push(<Box key={i}>{renderField(field, i)}</Box>);
+                    i += 1;
+                  } else {
+                    // Short field: pair with the next short field (if any)
+                    const next = dynamicFields[i + 1];
+                    const nextIsWide = next && next.fieldType === 'textarea';
+                    if (next && !nextIsWide) {
+                      rows.push(
+                        <Box key={i} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                          {renderField(field, i)}
+                          {renderField(next, i + 1)}
+                        </Box>
+                      );
+                      i += 2;
+                    } else {
+                      // Odd field at end — full width
+                      rows.push(<Box key={i}>{renderField(field, i)}</Box>);
+                      i += 1;
+                    }
+                  }
+                }
+                return rows;
+              })()}
+
             </Box>
           )}
 
@@ -1237,6 +1525,212 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         </Box>
       </Dialog>
 
+      {/* ── Add / Edit Field Dialog ───────────────────────────────────────── */}
+      <Dialog
+        open={fieldDialog.open}
+        onClose={closeFieldDialog}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              p: 0,
+              width: '700px',
+              maxWidth: '94vw',
+              height: '80vh',
+              maxHeight: '80vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            },
+          },
+        }}
+      >
+        {/* Header — pinned, never scrolls */}
+        <Box sx={{ px: 3, pt: 2.5, pb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: 16, color: '#111' }}>
+            {fieldDialog.editIndex !== null ? 'Edit Field' : 'Add Custom Fields'}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* + Add Another Field — top-right corner, Add mode only */}
+            {fieldDialog.editIndex === null && (
+              <Button
+                onClick={addFieldRow}
+                startIcon={<AddIcon sx={{ fontSize: 15 }} />}
+                sx={{
+                  textTransform: 'none', fontSize: 12, fontWeight: 600,
+                  color: '#3b6ef8', bgcolor: '#eff4ff', borderRadius: 2, px: 1.5, py: 0.5,
+                  border: '1.5px dashed #93b4fc',
+                  '&:hover': { bgcolor: '#dbeafe', borderColor: '#3b6ef8' },
+                }}
+              >
+                Add Another Field
+              </Button>
+            )}
+            <IconButton size="small" onClick={closeFieldDialog} sx={{ color: '#6b7280' }}>
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* Body */}
+        <Box
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          sx={{
+            px: 3, py: 2,
+            flex: 1,
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            display: 'flex', flexDirection: 'column', gap: 2,
+            // thin scrollbar
+            '&::-webkit-scrollbar': { width: '3px' },
+            '&::-webkit-scrollbar-track': { background: 'transparent' },
+            '&::-webkit-scrollbar-thumb': { background: '#d1d5db', borderRadius: '4px' },
+            '&::-webkit-scrollbar-thumb:hover': { background: '#9ca3af' },
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#d1d5db transparent',
+          }}>
+
+          {/* ── EDIT MODE: single field ── */}
+          {fieldDialog.editIndex !== null && (
+            <>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>
+                  Field Label <Box component="span" sx={{ color: '#ef4444' }}>*</Box>
+                </Typography>
+                <TextField fullWidth size="small" autoFocus placeholder="e.g. Material, Serial Number, Provenance"
+                  value={fieldForm.fieldLabel} onChange={(e) => setFieldForm(p => ({ ...p, fieldLabel: e.target.value }))} sx={inputSx} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>Field Type</Typography>
+                <Select fullWidth size="small" value={fieldForm.fieldType}
+                  onChange={(e) => setFieldForm(p => ({ ...p, fieldType: e.target.value as DField['fieldType'] }))} sx={selectSx}>
+                  {FIELD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+                </Select>
+              </Box>
+              {fieldForm.fieldType === 'dropdown' && (
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>Options</Typography>
+                  <TextField fullWidth size="small" placeholder="Option 1, Option 2, Option 3"
+                    value={fieldForm.fieldOptions} onChange={(e) => setFieldForm(p => ({ ...p, fieldOptions: e.target.value }))} sx={inputSx} />
+                  <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.5 }}>Separate options with commas</Typography>
+                </Box>
+              )}
+              <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>Default Value</Typography>
+                <TextField fullWidth size="small" placeholder="Optional default value"
+                  type={fieldForm.fieldType === 'number' ? 'number' : fieldForm.fieldType === 'date' ? 'date' : 'text'}
+                  value={fieldForm.fieldValue} onChange={(e) => setFieldForm(p => ({ ...p, fieldValue: e.target.value }))} sx={inputSx} />
+              </Box>
+              <FormControlLabel
+                control={<Checkbox size="small" checked={fieldForm.isRequired}
+                  onChange={(e) => setFieldForm(p => ({ ...p, isRequired: e.target.checked }))}
+                  sx={{ color: '#d1d5db', '&.Mui-checked': { color: '#3b6ef8' } }} />}
+                label={<Typography sx={{ fontSize: 13, color: '#374151' }}>Mark as required</Typography>}
+              />
+            </>
+          )}
+
+          {/* ── ADD MODE: multiple rows ── */}
+          {fieldDialog.editIndex === null && fieldForms.map((row, idx) => (
+            <Box key={idx} sx={{ border: '1px solid #e5e7eb', borderRadius: 2, p: 2, position: 'relative', bgcolor: '#fafafa' }}>
+
+              {/* Row header: "Field N" + delete icon */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Field {idx + 1}
+                </Typography>
+                {fieldForms.length > 1 && (
+                  <IconButton size="small" onClick={() => removeFieldRow(idx)}
+                    sx={{ color: '#ef4444', p: 0.25, '&:hover': { bgcolor: '#fee2e2' } }}>
+                    <DeleteOutlinedIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                )}
+              </Box>
+
+              {/* Label + Type side by side */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
+                <Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151', mb: 0.5 }}>
+                    Field Label <Box component="span" sx={{ color: '#ef4444' }}>*</Box>
+                  </Typography>
+                  <TextField fullWidth size="small" placeholder="e.g. Material"
+                    value={row.fieldLabel}
+                    onChange={(e) => updateFieldRow(idx, { fieldLabel: e.target.value })}
+                    sx={inputSx} autoFocus={idx === 0} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151', mb: 0.5 }}>Field Type</Typography>
+                  <Select fullWidth size="small" value={row.fieldType}
+                    onChange={(e) => updateFieldRow(idx, { fieldType: e.target.value as DField['fieldType'] })} sx={selectSx}>
+                    {FIELD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+                  </Select>
+                </Box>
+              </Box>
+
+              {/* Dropdown options */}
+              {row.fieldType === 'dropdown' && (
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151', mb: 0.5 }}>Options</Typography>
+                  <TextField fullWidth size="small" placeholder="Option 1, Option 2, Option 3"
+                    value={row.fieldOptions}
+                    onChange={(e) => updateFieldRow(idx, { fieldOptions: e.target.value })} sx={inputSx} />
+                  <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.25 }}>Separate options with commas</Typography>
+                </Box>
+              )}
+
+              {/* Default value + Required */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1.5, alignItems: 'center' }}>
+                <Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151', mb: 0.5 }}>Default Value</Typography>
+                  <TextField fullWidth size="small" placeholder="Optional default value"
+                    type={row.fieldType === 'number' ? 'number' : row.fieldType === 'date' ? 'date' : 'text'}
+                    value={row.fieldValue}
+                    onChange={(e) => updateFieldRow(idx, { fieldValue: e.target.value })} sx={inputSx} />
+                </Box>
+                <FormControlLabel sx={{ mt: 2.5, mr: 0 }}
+                  control={<Checkbox size="small" checked={row.isRequired}
+                    onChange={(e) => updateFieldRow(idx, { isRequired: e.target.checked })}
+                    sx={{ color: '#d1d5db', '&.Mui-checked': { color: '#3b6ef8' } }} />}
+                  label={<Typography sx={{ fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>Required</Typography>}
+                />
+              </Box>
+            </Box>
+          ))}
+
+        </Box>
+
+        {/* Footer — always visible at the bottom */}
+        <Box sx={{ px: 3, pb: 2.5, pt: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
+          {fieldDialog.editIndex === null && (
+            <Typography sx={{ fontSize: 12, color: '#9ca3af' }}>
+              {fieldForms.filter(f => f.fieldLabel.trim()).length} of {fieldForms.length} field{fieldForms.length !== 1 ? 's' : ''} ready
+            </Typography>
+          )}
+          {fieldDialog.editIndex !== null && <Box />}
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Button onClick={closeFieldDialog}
+              sx={{ borderRadius: 2, px: 2.5, textTransform: 'none', fontSize: 13, color: '#374151', bgcolor: '#f3f4f6', '&:hover': { bgcolor: '#e5e7eb' } }}>
+              Cancel
+            </Button>
+            <Button onClick={saveField}
+              disabled={fieldDialog.editIndex !== null ? !fieldForm.fieldLabel.trim() : !fieldForms.some(f => f.fieldLabel.trim())}
+              variant="contained"
+              sx={{
+                borderRadius: 2, px: 2.5, textTransform: 'none', fontSize: 13,
+                bgcolor: '#3b6ef8', '&:hover': { bgcolor: '#2d5fe8' },
+                '&.Mui-disabled': { bgcolor: '#d1d5db', color: '#9ca3af' },
+              }}>
+              {fieldDialog.editIndex !== null
+                ? 'Update Field'
+                : `Add Field${fieldForms.filter(f => f.fieldLabel.trim()).length > 1 ? 's' : ''}`}
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+
       {/* 3D Generation Modal */}
       <Dialog
         open={show3DModal}
@@ -1410,8 +1904,11 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     </Typography>
                     <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
                       {meshyProgress > 0
-                        ? `${meshyProgress}% complete — this may take 2–5 minutes`
-                        : 'Processing your images with AI — please wait'}
+                        ? `${meshyProgress}% complete`
+                        : 'Queued — waiting for Meshy AI server...'}
+                    </Typography>
+                    <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 0.5 }}>
+                      This usually takes 3–8 minutes. Max wait: 15 min.
                     </Typography>
                   </Box>
                   {/* Thumbnail strip of uploaded images */}
@@ -1457,33 +1954,25 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 </Box>
 
                 {loadingVideo ? (
-                  /* Downloading & saving GLB from Meshy */
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4 }}>
-                    <CircularProgress size={48} sx={{ color: '#3b6ef8' }} />
-                    <Typography sx={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>
-                      Saving 3D model to server…
-                    </Typography>
+                  /* Fetching GLB blob from backend */
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1.5, py: 4 }}>
+                    <CircularProgress size={40} sx={{ color: '#3b6ef8' }} />
+                    <Typography sx={{ fontSize: 13, color: '#6b7280' }}>Loading 3D viewer…</Typography>
                   </Box>
                 ) : generatedModel?.glb_model ? (
-                  /* GLB saved — render interactive 3D viewer */
+                  /* glb_model is a blob: URL — guaranteed no CORS */
                   <ThreeDViewer glbUrl={generatedModel.glb_model} height={300} />
                 ) : (
-                  /* Fallback while loading */
-                  threeDUploadedFiles.length > 0 && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={URL.createObjectURL(threeDUploadedFiles[0])}
-                      alt="3d-preview"
-                      style={{ maxWidth: '80%', maxHeight: 260, objectFit: 'contain' }}
-                    />
-                  )
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={36} sx={{ color: '#3b6ef8' }} />
+                  </Box>
                 )}
 
-                {generatedModel?.glb_model && !loadingVideo && (
+                {generatedModel?.glb_model && (
                   <Button
                     onClick={() => {
                       const a = document.createElement('a');
-                      a.href = generatedModel.glb_model;
+                      a.href = `${BACKEND_3D_API}/download/${meshyTaskId}`;
                       a.download = `model-${meshyTaskId}.glb`;
                       a.click();
                     }}
