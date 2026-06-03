@@ -1,17 +1,29 @@
 'use client';
 
-import { Suspense, useRef } from 'react';
-import { Canvas }           from '@react-three/fiber';
+import { Suspense, useRef, useEffect } from 'react';
+import { Canvas }                       from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, Center } from '@react-three/drei';
 import { Box, CircularProgress, Typography }            from '@mui/material';
 
 // ── GLB Model loader ──────────────────────────────────────────────────────────
+// glbUrl must be a blob: URL (created from axiosInstance blob fetch).
+// This guarantees CORS can never block it — blob URLs are always same-origin.
 function GLBModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
+
+  // Revoke the blob URL after Three.js has loaded the model from it
+  useEffect(() => {
+    return () => {
+      if (url.startsWith('blob:')) {
+        useGLTF.clear(url);   // clear from drei cache
+      }
+    };
+  }, [url]);
+
   return <Center><primitive object={scene} /></Center>;
 }
 
-// ── Loading fallback shown inside Canvas ──────────────────────────────────────
+// ── Loading fallback ──────────────────────────────────────────────────────────
 function CanvasLoader() {
   return (
     <Box sx={{
@@ -28,7 +40,7 @@ function CanvasLoader() {
 
 // ── Public component ──────────────────────────────────────────────────────────
 interface ThreeDViewerProps {
-  glbUrl: string;
+  glbUrl: string;   // must be a blob: URL
   height?: number;
 }
 
@@ -71,7 +83,7 @@ export default function ThreeDViewer({ glbUrl, height = 320 }: ThreeDViewerProps
         </Canvas>
       </Suspense>
 
-      {/* Hint label */}
+      {/* Hint */}
       <Box sx={{
         position: 'absolute', bottom: 8, left: '50%',
         transform: 'translateX(-50%)',

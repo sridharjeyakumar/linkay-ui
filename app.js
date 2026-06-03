@@ -108,37 +108,63 @@
 
 
 
-       const createResponse = await axios.post(
+      //  const createResponse = await axios.post(
 
-         "https://api.meshy.ai/openapi/v1/multi-image-to-3d",
+      //    "https://api.meshy.ai/openapi/v1/multi-image-to-3d",
 
-         {
+      //    {
 
-           image_urls: base64Images,
+      //      image_urls: base64Images,
 
-           should_texture: true,
+      //      should_texture: true,
 
-           enable_pbr: true,
+      //      enable_pbr: true,
 
-           target_formats: ["glb"]
+      //      target_formats: ["glb"]
 
-         },
+      //    },
 
-         {
+      //    {
 
-           headers: {
+      //      headers: {
 
-             Authorization: `Bearer ${API_KEY}`,
+      //        Authorization: `Bearer ${API_KEY}`,
 
-             "Content-Type": "application/json"
+      //        "Content-Type": "application/json"
 
-           }
+      //      }
 
-         }
+      //    }
 
-       );
+      //  );
 
+const createResponse = await axios.post(
+  "https://api.meshy.ai/openapi/v1/multi-image-to-3d",
+  {
+    image_urls: base64Images,
 
+    ai_model: "meshy-6",
+
+    should_texture: true,
+
+    enable_pbr: true,
+
+    hd_texture: true,
+
+    should_remesh: true,
+
+    topology: "quad",
+
+    target_polycount: 100000,
+
+    target_formats: ["glb"]
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${API_KEY}`
+    }
+  }
+);
 
        const taskId = createResponse.data.result;
 
