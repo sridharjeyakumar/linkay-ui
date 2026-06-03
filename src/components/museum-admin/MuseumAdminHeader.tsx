@@ -133,7 +133,7 @@ export default function MuseumAdminHeader() {
     : user?.email?.[0]?.toUpperCase() ?? '';
 
   const isActive = (href: string) =>
-    href === '/museum-dashboard' ? pathname === href : pathname.startsWith(href);
+    href === '/museum-dashboard' ? pathname === href : (pathname ?? '').startsWith(href);
 
   const handleLogout = async () => {
     setMenuAnchor(null);
