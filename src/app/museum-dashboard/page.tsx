@@ -122,7 +122,7 @@ export default function MuseumDashboardPage() {
   const [draftsOpen,    setDraftsOpen]    = useState(false);
   const [editAsset,     setEditAsset]     = useState<Asset | null>(null);
   const [auctionAsset,  setAuctionAsset]  = useState<Asset | null>(null);
-  const [scheduledAssets, setScheduledAssets] = useState<Set<string>>(new Set());
+  const [scheduledAssets, setScheduledAssets] = useState<Set<string>>(new Set()); // kept for legacy usage
   const [confirmAsset,  setConfirmAsset]  = useState<Asset | null>(null);
   const [statusFilter,  setStatusFilter]  = useState<string | null>(null);
   const [snack,         setSnack]         = useState<{ msg: string; severity: 'success'|'error'|'info' } | null>(null);
@@ -134,16 +134,7 @@ export default function MuseumDashboardPage() {
   useEffect(() => {
     dispatch(fetchAssetsThunk());
     dispatch(loadStoredJobs());
-    Promise.all([
-      auctionApi.list({ status: 'SCHEDULED' }),
-      auctionApi.list({ status: 'LIVE' }),
-    ]).then(([scheduled, live]) => {
-      const ids = new Set<string>([
-        ...(scheduled.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []),
-        ...(live.data?.data?.map((a: { assetId: string }) => a.assetId) ?? []),
-      ]);
-      setScheduledAssets(ids);
-    }).catch(() => {});
+    // latestAuction is now included in each asset from the backend
   }, []);
 
   /* re-fetch assets when any job transitions to completed/failed */
@@ -628,20 +619,32 @@ export default function MuseumDashboardPage() {
                               {isTokenized && !isTokenizing && (
                                 asset.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
                                 asset.tokenization?.tokenizationStatus === 'COMPLETED'
-                              ) && (
-                                <Box component="button"
-                                  onClick={() => !scheduledAssets.has(asset.id) && setAuctionAsset(asset)}
-                                  disabled={scheduledAssets.has(asset.id)}
-                                  sx={{
-                                    ...btnBase,
-                                    bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ede9fe',
-                                    color: scheduledAssets.has(asset.id) ? '#9ca3af' : '#5b21b6',
-                                    cursor: scheduledAssets.has(asset.id) ? 'not-allowed' : 'pointer',
-                                    '&:hover': { bgcolor: scheduledAssets.has(asset.id) ? '#f3f4f6' : '#ddd6fe' },
-                                  }}>
-                                  {scheduledAssets.has(asset.id) ? 'Scheduled' : 'Ready for Auction'}
-                                </Box>
-                              )}
+                              ) && (() => {
+                                const auctionStatus = asset.latestAuction?.status;
+                                const btnConfig: Record<string, { label: string; bg: string; color: string; disabled: boolean }> = {
+                                  SCHEDULED: { label: 'Scheduled',     bg: '#fef9c3', color: '#854d0e', disabled: true  },
+                                  LIVE:      { label: 'Auction Live',  bg: '#dcfce7', color: '#15803d', disabled: true  },
+                                  ENDED:     { label: 'Auction Ended', bg: '#f3f4f6', color: '#9ca3af', disabled: true  },
+                                  CANCELLED: { label: 'Ready for Auction', bg: '#ede9fe', color: '#5b21b6', disabled: false },
+                                };
+                                const cfg = auctionStatus && auctionStatus !== 'CANCELLED'
+                                  ? btnConfig[auctionStatus]
+                                  : btnConfig.CANCELLED;
+                                return (
+                                  <Box component="button"
+                                    onClick={() => !cfg.disabled && setAuctionAsset(asset)}
+                                    disabled={cfg.disabled}
+                                    sx={{
+                                      ...btnBase,
+                                      bgcolor: cfg.bg,
+                                      color:   cfg.color,
+                                      cursor:  cfg.disabled ? 'not-allowed' : 'pointer',
+                                      '&:hover': { bgcolor: cfg.bg },
+                                    }}>
+                                    {cfg.label}
+                                  </Box>
+                                );
+                              })()}
                             </Box>
                           </TableCell>
                         </TableRow>
