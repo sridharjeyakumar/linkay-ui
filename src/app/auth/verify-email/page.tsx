@@ -103,7 +103,7 @@ export default function VerifyEmailPage() {
           }}
         >
           <Image
-            src="/Vector.svg"
+            src="/landing/LinkBlock Assets Logo.svg"
             alt="Linkay Logo"
             width={38}
             height={38}
