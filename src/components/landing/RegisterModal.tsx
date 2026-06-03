@@ -157,7 +157,10 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Not a valid email.';
     if (!form.countryOfResidence) errors.countryOfResidence = 'Please select a country.';
     if (!form.role) errors.role = 'Please select a role.';
-    if (form.password.length < 8)
+    
+    if (form.password.length > 24)
+      errors.password = 'Password must not exceed 24 characters.';
+    else if (form.password.length < 8)
       errors.password = 'Password must be at least 8 characters.';
     else if (!/[A-Z]/.test(form.password))
       errors.password = 'Password must include at least one uppercase letter.';
@@ -174,8 +177,27 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setFieldErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+    const { name, value } = e.target;
+    if ((name === 'password' || name === 'confirmPassword') && value.includes(' ')) {
+      setForm((prev) => ({ ...prev, [name]: value.replace(/ /g, '') }));
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Spaces are not allowed.' }));
+      return;
+    }
+    if ((name === 'password' || name === 'confirmPassword') && value.length > 24) {
+      setForm((prev) => ({ ...prev, [name]: value.slice(0, 24) }));
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Password must not exceed 24 characters.' }));
+      return;
+    }
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handlePasswordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ' ') {
+      e.preventDefault();
+      const name = (e.target as HTMLInputElement).name;
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Spaces are not allowed.' }));
+    }
   };
 
   const handleRoleSelect = (value: string) => {
@@ -388,6 +410,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
               type={showPassword ? 'text' : 'password'}
               value={form.password}
               onChange={handleChange}
+              onKeyDown={handlePasswordKeyDown}
               error={!!fieldErrors.password}
               helperText={fieldErrors.password}
               fullWidth required autoComplete="new-password"
@@ -412,6 +435,7 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
               type={showConfirmPassword ? 'text' : 'password'}
               value={form.confirmPassword}
               onChange={handleChange}
+              onKeyDown={handlePasswordKeyDown}
               error={!!fieldErrors.confirmPassword}
               helperText={fieldErrors.confirmPassword}
               fullWidth required autoComplete="new-password"
