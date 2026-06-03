@@ -146,8 +146,21 @@ export default function LoginModal({ open, onClose, resetToken, verifyToken }: L
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    setFieldErrors((prev) => ({ ...prev, [e.target.name]: '' }));
+    const { name, value } = e.target;
+    if (name === 'password' && value.includes(' ')) {
+      setForm((prev) => ({ ...prev, [name]: value.replace(/ /g, '') }));
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Spaces are not allowed.' }));
+      return;
+    }
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handlePasswordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ' ') {
+      e.preventDefault();
+      setFieldErrors((prev) => ({ ...prev, password: 'Spaces are not allowed.' }));
+    }
   };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
@@ -322,6 +335,7 @@ export default function LoginModal({ open, onClose, resetToken, verifyToken }: L
                 placeholder="Password" name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={form.password} onChange={handleChange}
+                onKeyDown={handlePasswordKeyDown}
                 error={!!fieldErrors.password} helperText={fieldErrors.password}
                 fullWidth required autoComplete="new-password" sx={fieldSx}
                 slotProps={{

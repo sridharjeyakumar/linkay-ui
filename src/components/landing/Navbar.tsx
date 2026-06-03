@@ -21,8 +21,6 @@ import RegisterModal from './RegisterModal';
 import { useRouter } from 'next/navigation';
 import type { NavbarContent } from '@/lib/content';
 
-const NAV_DISABLED = true;
-
 const ICON_MAP: Record<string, Icon> = {
   bank: Bank,
   buildings: Buildings,
@@ -65,22 +63,33 @@ export default function Navbar({ content }: NavbarProps) {
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 20 });
   const [currentHash, setCurrentHash] = useState('');
 
+  // Check if a link is active
   const isLinkActive = (href: string | undefined) => {
     if (!href) return false;
+    
+    // Handle hash links (sections on homepage)
     if (href.startsWith('#')) {
       return pathname === '/' && currentHash === href;
     }
-    return pathname === href || pathname.startsWith(href + '/');
+    
+    // Handle regular page links
+    return pathname === href || (pathname ?? '').startsWith(href + '/');
   };
 
+  // Check if any dropdown item is active
   const isDropdownActive = (dropdown: any[] | undefined) => {
     if (!dropdown) return false;
     return dropdown.some((item) => isLinkActive(item.href));
   };
 
   useEffect(() => {
+    // Update hash on mount and when location changes
     setCurrentHash(window.location.hash);
-    const handleHashChange = () => setCurrentHash(window.location.hash);
+    
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash);
+    };
+    
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
@@ -91,6 +100,8 @@ export default function Navbar({ content }: NavbarProps) {
     return () => window.removeEventListener('linkay:open-register', handler);
   }, []);
 
+  // Fallback: open login modal when PASSWORD_RESET arrives and modal is already closed.
+  // Primary handler is LoginModal's own listener (switches view to 'login' while modal stays open).
   useEffect(() => {
     const channel = new BroadcastChannel('password_reset');
     channel.onmessage = (event) => {
@@ -146,22 +157,14 @@ export default function Navbar({ content }: NavbarProps) {
           transition: 'background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
         }}
       >
-        <Container maxWidth={false} sx={{ maxWidth: '1600px', px: { xs: 2, sm: 4, md: 6 } }}>
+        <Container maxWidth={false} sx={{ maxWidth: '16S00px', px: { xs: 2, sm: 4, md: 6 } }}>
           <Toolbar disableGutters sx={{ py: { xs: 0.5, md: 1 }, minHeight: { xs: 56, md: 64 } }}>
 
             {/* Logo */}
             <Box
               component={Link}
               href="/"
-              onClick={(e: React.MouseEvent) => { if (NAV_DISABLED) e.preventDefault(); }}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                flexGrow: { xs: 1, md: 0 },
-                mr: { md: 5 },
-                textDecoration: 'none',
-                pointerEvents: NAV_DISABLED ? 'none' : 'auto',
-              }}
+              sx={{ display: 'flex', alignItems: 'center', flexGrow: { xs: 1, md: 0 }, mr: { md: 5 }, textDecoration: 'none' }}
             >
               <Image
                 src="/landing/logo.svg"
@@ -180,10 +183,7 @@ export default function Navbar({ content }: NavbarProps) {
                 link.dropdown ? (
                   <Box key={link.label}>
                     <Button
-                      onClick={(e) => {
-                        if (NAV_DISABLED) return;
-                        openDropdown(link.label, e);
-                      }}
+                      onClick={(e) => openDropdown(link.label, e)}
                       endIcon={
                         <KeyboardArrowDownIcon
                           sx={{
@@ -200,17 +200,11 @@ export default function Navbar({ content }: NavbarProps) {
                         textTransform: 'none',
                         px: { md: 1.2, lg: 1.8 },
                         whiteSpace: 'nowrap',
-                        cursor: NAV_DISABLED ? 'default' : 'pointer',
-                        opacity: NAV_DISABLED ? 0.5 : 1,
-                        '&:hover': {
-                          color: NAV_DISABLED ? 'inherit' : '#1565c0',
-                          bgcolor: 'transparent',
-                        },
+                        '&:hover': { color: '#1565c0', bgcolor: 'transparent' },
                       }}
                     >
                       {link.label}
                     </Button>
-                    {/* Menu will never open since openDropdown is blocked */}
                     <Menu
                       anchorEl={anchorEl[link.label]}
                       open={Boolean(anchorEl[link.label])}
@@ -263,16 +257,16 @@ export default function Navbar({ content }: NavbarProps) {
                 ) : (
                   <Button
                     key={link.label}
-                    href={NAV_DISABLED ? undefined : link.href}
                     onClick={(e) => {
-                      if (NAV_DISABLED) { e.preventDefault(); return; }
                       if (link.href?.startsWith('#')) {
                         e.preventDefault();
                         if (window.location.pathname !== '/') {
-                          window.location.href = '/' + link.href;
+                          router.push('/' + link.href);
                         } else {
                           smoothScrollTo(link.href.slice(1));
                         }
+                      } else if (link.href) {
+                        router.push(link.href);
                       }
                     }}
                     sx={{
@@ -282,12 +276,7 @@ export default function Navbar({ content }: NavbarProps) {
                       textTransform: 'none',
                       px: { md: 1.2, lg: 1.8 },
                       whiteSpace: 'nowrap',
-                      cursor: NAV_DISABLED ? 'default' : 'pointer',
-                      opacity: NAV_DISABLED ? 0.5 : 1,
-                      '&:hover': {
-                        color: NAV_DISABLED ? 'inherit' : '#1565c0',
-                        bgcolor: 'transparent',
-                      },
+                      '&:hover': { color: '#1565c0', bgcolor: 'transparent' },
                     }}
                   >
                     {link.label}
@@ -296,7 +285,7 @@ export default function Navbar({ content }: NavbarProps) {
               )}
             </Box>
 
-            {/* Desktop auth buttons — always enabled */}
+            {/* Desktop auth buttons */}
             <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5 }}>
               <Button
                 onClick={() => setLoginOpen(true)}
@@ -414,11 +403,7 @@ export default function Navbar({ content }: NavbarProps) {
           {content.links.map((link) =>
             link.dropdown ? (
               <Box key={link.label}>
-                <ListItemButton
-                  disabled={NAV_DISABLED}
-                  onClick={() => { if (NAV_DISABLED) return; toggleMobileExpand(link.label); }}
-                  sx={{ opacity: NAV_DISABLED ? 0.5 : 1 }}
-                >
+                <ListItemButton onClick={() => toggleMobileExpand(link.label)}>
                   <ListItemText
                     primary={link.label}
                     slotProps={{ primary: { sx: { fontWeight: isDropdownActive(link.dropdown) ? 600 : 500, color: isDropdownActive(link.dropdown) ? '#010303' : '#111827' } } }}
@@ -440,10 +425,8 @@ export default function Navbar({ content }: NavbarProps) {
                       return (
                         <ListItemButton
                           key={item.label}
-                          disabled={NAV_DISABLED}
-                          sx={{ pl: 4, bgcolor: isActive ? 'rgba(21, 101, 192, 0.1)' : 'transparent', opacity: NAV_DISABLED ? 0.5 : 1 }}
+                          sx={{ pl: 4, bgcolor: isActive ? 'rgba(21, 101, 192, 0.1)' : 'transparent' }}
                           onClick={() => {
-                            if (NAV_DISABLED) return;
                             setMobileOpen(false);
                             if (item.href) router.push(item.href);
                           }}
@@ -469,14 +452,12 @@ export default function Navbar({ content }: NavbarProps) {
               <Box key={link.label}>
                 <ListItemButton
                   component="a"
-                  href={NAV_DISABLED ? undefined : link.href}
-                  disabled={NAV_DISABLED}
+                  href={link.href}
                   onClick={(e: React.MouseEvent) => {
-                    if (NAV_DISABLED) { e.preventDefault(); return; }
                     if (link.href?.startsWith('#')) {
                       e.preventDefault();
                       if (window.location.pathname !== '/') {
-                        window.location.href = '/' + link.href;
+                       router.push('/' + link.href);
                       } else {
                         smoothScrollTo(link.href.slice(1));
                       }
@@ -485,7 +466,6 @@ export default function Navbar({ content }: NavbarProps) {
                   }}
                   sx={{
                     bgcolor: isLinkActive(link.href) ? 'rgba(21, 101, 192, 0.1)' : 'transparent',
-                    opacity: NAV_DISABLED ? 0.5 : 1,
                   }}
                 >
                   <ListItemText
@@ -499,7 +479,6 @@ export default function Navbar({ content }: NavbarProps) {
           )}
         </List>
 
-        {/* Mobile auth buttons — always enabled */}
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
           <Button
             variant="outlined"
@@ -520,15 +499,15 @@ export default function Navbar({ content }: NavbarProps) {
                 <Image
                   src="/landing/arrow-default.svg"
                   alt="arrow"
-                  width={20}
-                  height={20}
+                  width={26}
+                  height={26}
                   unoptimized
                   style={{ position: 'absolute', opacity: registerHovered ? 0 : 1, transform: registerHovered ? 'scale(0.6)' : 'scale(1)', transition: 'opacity 0.15s ease, transform 0.15s ease' }}
                 />
                 <Image
                   src="/landing/arrow-hover.svg"
                   alt="arrow"
-                  width={20}
+                  width={20}  
                   height={20}
                   unoptimized
                   style={{ position: 'absolute', opacity: registerHovered ? 1 : 0, transform: registerHovered ? 'scale(1)' : 'scale(0.6)', transition: 'opacity 0.15s ease, transform 0.15s ease' }}

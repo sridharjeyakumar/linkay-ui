@@ -24,7 +24,7 @@ const verifyChannel =
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
 
   const [status, setStatus] = useState<
     'loading' | 'success' | 'error'
@@ -103,7 +103,7 @@ export default function VerifyEmailPage() {
           }}
         >
           <Image
-            src="/Vector.svg"
+            src="/landing/LinkBlock Assets Logo.svg"
             alt="Linkay Logo"
             width={38}
             height={38}

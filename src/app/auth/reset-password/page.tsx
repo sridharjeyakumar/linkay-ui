@@ -74,7 +74,7 @@ const fieldSx = {
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
 
   const [form, setForm] = useState({
     newPassword: '',
@@ -93,17 +93,21 @@ function ResetPasswordContent() {
   const validate = () => {
     const errors: Record<string, string> = {};
 
-    if (
-      form.newPassword.length < 8 ||
-      !PASSWORD_REGEX.test(form.newPassword)
-    ) {
-      errors.newPassword =
-        'Min 8 chars with uppercase, number & special character.';
-    }
+    if (form.newPassword.length > 24)
+      errors.newPassword = 'Password must not exceed 24 characters.';
+    else if (form.newPassword.length < 8)
+      errors.newPassword = 'Password must be at least 8 characters.';
+    else if (!/[A-Z]/.test(form.newPassword))
+      errors.newPassword = 'Password must include at least one uppercase letter.';
+    else if (!/[a-z]/.test(form.newPassword))
+      errors.newPassword = 'Password must include at least one lowercase letter.';
+    else if (!/\d/.test(form.newPassword))
+      errors.newPassword = 'Password must include at least one number.';
+    else if (!/[!@#$%^&*]/.test(form.newPassword))
+      errors.newPassword = 'Password must include at least one special character (!@#$%^&*).';
 
-    if (form.newPassword !== form.confirmPassword) {
+    if (form.newPassword !== form.confirmPassword)
       errors.confirmPassword = 'Passwords do not match.';
-    }
 
     setFieldErrors(errors);
 
@@ -113,15 +117,30 @@ function ResetPasswordContent() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    const { name, value } = e.target;
 
-    setFieldErrors((prev) => ({
-      ...prev,
-      [e.target.name]: '',
-    }));
+    if (value.includes(' ')) {
+      setForm((prev) => ({ ...prev, [name]: value.replace(/ /g, '') }));
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Spaces are not allowed.' }));
+      return;
+    }
+
+    if (value.length > 24) {
+      setForm((prev) => ({ ...prev, [name]: value.slice(0, 24) }));
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Password must not exceed 24 characters.' }));
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handlePasswordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ' ') {
+      e.preventDefault();
+      const name = (e.target as HTMLInputElement).name;
+      setFieldErrors((prev) => ({ ...prev, [name]: 'Spaces are not allowed.' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -304,6 +323,7 @@ function ResetPasswordContent() {
               type={showPassword ? 'text' : 'password'}
               value={form.newPassword}
               onChange={handleChange}
+              onKeyDown={handlePasswordKeyDown}
               error={!!fieldErrors.newPassword}
               helperText={fieldErrors.newPassword}
               fullWidth
@@ -345,6 +365,7 @@ function ResetPasswordContent() {
               type={showConfirmPassword ? 'text' : 'password'}
               value={form.confirmPassword}
               onChange={handleChange}
+              onKeyDown={handlePasswordKeyDown}
               error={!!fieldErrors.confirmPassword}
               helperText={fieldErrors.confirmPassword}
               fullWidth

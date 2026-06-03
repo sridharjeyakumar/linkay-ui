@@ -138,7 +138,7 @@ export default function UserDashboardHeader() {
     : user?.email?.[0]?.toUpperCase() ?? '';
 
   const isActive = (href: string) =>
-    pathname === href || (href !== '/user-dashboard' && pathname.startsWith(href));
+    pathname === href || (href !== '/user-dashboard' && (pathname ?? '').startsWith(href));
 
   return (
     <>

@@ -489,10 +489,9 @@ export default function AdminDashboardPage() {
   const TABLE_COLS = ['Tokenized Asset', 'Asset Owner', 'Valuation', 'Category', 'Actions'];
 
   // Only show items still awaiting a platform decision — hide anything already approved or rejected
-  const pendingQueue = queue.filter(
+const pendingQueue = queue.filter(
     (a) =>
-      a.tokenization?.tokenizationStatus !== 'TREASURY_APPROVED' &&
-      a.tokenization?.tokenizationStatus !== 'TREASURY_REJECTED',
+      a.tokenization?.tokenizationStatus === 'TREASURY_PENDING'
   );
 
   return (
