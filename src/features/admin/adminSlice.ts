@@ -46,7 +46,7 @@ export interface FullAssetDetail {
   royaltyWallet: string | null;
   certificationRef: string | null;
   mediaFiles: unknown;
-  dynamicFields: Array<{ fieldKey: string; fieldValue: unknown }>;
+  dynamicFields: Array<{ fieldKey: string; fieldLabel?: string; fieldValue: unknown }>;
   ownershipSplit: OwnershipEntry[];
   tokenization: { tokenizationStatus: string } | null;
 }
