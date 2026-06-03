@@ -61,7 +61,7 @@ export default function AdminNavbar() {
   const isActive = (href: string) =>
     href === '/admin/dashboard'
       ? pathname === href
-      : pathname.startsWith(href);
+      : (pathname ?? '').startsWith(href);
 
   const handleLogout = async () => {
     setMenuAnchor(null);

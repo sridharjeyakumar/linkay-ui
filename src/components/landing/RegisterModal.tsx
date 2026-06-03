@@ -157,8 +157,16 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Regist
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errors.email = 'Not a valid email.';
     if (!form.countryOfResidence) errors.countryOfResidence = 'Please select a country.';
     if (!form.role) errors.role = 'Please select a role.';
-    if (form.password.length < 8 || !PASSWORD_REGEX.test(form.password))
-      errors.password = 'Min 8 chars with uppercase, number & special character.';
+    if (form.password.length < 8)
+      errors.password = 'Password must be at least 8 characters.';
+    else if (!/[A-Z]/.test(form.password))
+      errors.password = 'Password must include at least one uppercase letter.';
+    else if (!/[a-z]/.test(form.password))
+      errors.password = 'Password must include at least one lowercase letter.';
+    else if (!/\d/.test(form.password))
+      errors.password = 'Password must include at least one number.';
+    else if (!/[!@#$%^&*]/.test(form.password))
+      errors.password = 'Password must include at least one special character (!@#$%^&*).';
     if (form.password !== form.confirmPassword)
       errors.confirmPassword = 'Passwords do not match.';
     setFieldErrors(errors);
