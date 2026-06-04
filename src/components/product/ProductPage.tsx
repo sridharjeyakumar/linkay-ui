@@ -386,9 +386,9 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                 alt={item.title}
                 sx={{
                   display: 'block',
-                  width: '100%',       /* ✅ always fills container */
+                  width: '100%',
                   height: mainImgH,
-                  objectFit: 'cover',
+                  objectFit: 'contain',
                   borderRadius: '11px',
                   mb: thumbGap,
                   flexShrink: 0,
@@ -400,10 +400,11 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)', /* ✅ equal thirds, never fixed px */
+                  gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: thumbGap,
                   height: thumbH,
                   width: '100%',
+                  overflow: 'hidden',
                 }}
               >
                 {thumbs.map((src, i) => (
