@@ -188,7 +188,7 @@ export default function LiveAuctions() {
 
       {auctions.length === 0 ? (
         <Box sx={{ py: 8, textAlign: 'center', bgcolor: '#fafafa', borderRadius: 3, border: '1px dashed #ddd' }}>
-          <Typography sx={{ color: '#aaa', fontSize: 15 }}>No live auctions for this category.</Typography>
+          <Typography sx={{ color: '#aaa', fontSize: 15 }}>No live auctions for this category</Typography>
         </Box>
       ) : (
         <>
