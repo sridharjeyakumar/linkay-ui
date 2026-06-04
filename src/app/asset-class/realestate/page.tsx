@@ -15,8 +15,6 @@ import {
   getRECtaContent,
 } from '@/lib/content';
 
-// Re-read content files on every request (never use Next.js module cache for JSON)
-export const dynamic = 'force-dynamic';
 
 export default function RealEstatePage() {
   const navbar = getNavbarContent();
