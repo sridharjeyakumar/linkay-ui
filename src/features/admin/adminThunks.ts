@@ -113,7 +113,7 @@ export const fetchFullAssetThunk = createAsyncThunk<FullAssetDetail, string, { r
         royaltyWallet:    (a.royaltyWallet    ?? a.royalty_wallet)    as string | null,
         certificationRef: (a.certificationRef ?? a.certification_ref) as string | null,
         mediaFiles:       (a.mediaFiles ?? a.media_files) ?? [],
-        dynamicFields:    (a.dynamicFields ?? a.dynamic_fields ?? []) as Array<{ fieldKey: string; fieldValue: unknown }>,
+        dynamicFields:    (() => { const raw = a.dynamicFields ?? a.dynamic_fields; if (!raw) return []; if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return []; } } return Array.isArray(raw) ? raw : []; })() as Array<{ fieldKey: string; fieldLabel?: string; fieldValue: unknown }>,
         ownershipSplit:   ((a.ownershipSplit ?? a.ownership_split ?? []) as Array<Record<string, unknown>>).map((o) => ({
           ownerName:  (o.ownerName  ?? o.owner_name)  as string,
           ownerType:  (o.ownerType  ?? o.owner_type)  as string,

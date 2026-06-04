@@ -1,14 +1,15 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Box, Grid, Typography } from '@mui/material';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import { Collection } from '@/data/dashboardData';
 import { useDashboardFilter } from '@/context/DashboardFilterContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
 
-function ViewAllButton() {
+function ViewAllButton({ onClick }: { onClick: () => void }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, cursor: 'pointer', mt: 1.5 }}>
+    <Box onClick={onClick} sx={{ display: 'flex', alignItems: 'center', gap: 1.2, cursor: 'pointer', mt: 1.5 }}>
       <Box
         sx={{
           width: 38,
@@ -31,6 +32,7 @@ function ViewAllButton() {
 }
 
 function CollectionCard({ item }: { item: Collection }) {
+  const router = useRouter();
   const [main, t1, t2, t3] = item.previewImages;
 
   return (
@@ -85,7 +87,7 @@ function CollectionCard({ item }: { item: Collection }) {
         </Box>
       </Box>
 
-      <ViewAllButton />
+      <ViewAllButton onClick={() => router.push(`/product/${item.id}`)} />
     </Box>
   );
 }
