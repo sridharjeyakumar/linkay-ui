@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { Archivo } from 'next/font/google';
+import { Archivo, Inter } from 'next/font/google';
 import ReduxProvider from '@/components/providers/ReduxProvider';
 import MuiProvider from '@/components/providers/MuiProvider';
 import SmoothScrollProvider from '@/components/providers/SmoothScrollProvider';
@@ -14,6 +14,13 @@ const archivo = Archivo({
   display: 'swap',
 });
 
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'Linkay',
   description: 'Invest in tokenized real-world assets',
@@ -21,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={archivo.variable}>
+    <html lang="en" className={`${archivo.variable} ${inter.variable}`}>
       <body suppressHydrationWarning>
         <ReduxProvider>
           <MuiProvider>
