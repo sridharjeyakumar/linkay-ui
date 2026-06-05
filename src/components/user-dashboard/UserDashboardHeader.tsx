@@ -24,7 +24,6 @@ import { saveWalletThunk } from '@/features/wallet/walletThunks';
 
 const NAV_LINKS = [
   { label: 'Home', href: '/user-dashboard' },
-  { label: 'Explore', href: '/user-dashboard/explore' },
   { label: 'Portfolio', href: '/user-dashboard/portfolio' },
   { label: 'Auctions', href: '/user-dashboard/auctions' },
   { label: 'Marketplace', href: '/user-dashboard/marketplace' },
@@ -323,6 +322,7 @@ export default function UserDashboardHeader() {
         anchor="right"
         open={mobileDrawerOpen}
         onClose={() => setMobileDrawerOpen(false)}
+        disableScrollLock
         slotProps={{ paper: { sx: { width: 260 } } }}
       >
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e0e0e0' }}>
