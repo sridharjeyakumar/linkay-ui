@@ -500,7 +500,7 @@ export default function MuseumDashboardPage() {
               <Table sx={{ minWidth: 500 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#fafafa', borderTop: '1px solid #f3f4f6' }}>
-                    {['Asset', 'Category', 'Valuation', 'Status', 'Jurisdiction', 'Actions'].map((col) => (
+                    {['Asset', 'Category', 'Valuation', 'Status', 'Jurisdiction', 'Actions',"Transaction"].map((col) => (
                       <TableCell key={col} sx={thCellSx}>
                         <TableSortLabel sx={{ color: '#6b7280 !important', '& .MuiTableSortLabel-icon': { color: '#6b7280 !important' } }}>
                           {col}
@@ -512,7 +512,7 @@ export default function MuseumDashboardPage() {
                 <TableBody>
                   {filteredAssets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} sx={{ border: 0, py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
+                      <TableCell colSpan={7} sx={{ border: 0, py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                           <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
                             <polygon points="24,4 44,24 24,44 4,24" stroke="#3b52a5" strokeWidth="2" fill="none" />
@@ -646,6 +646,28 @@ export default function MuseumDashboardPage() {
                                 );
                               })()}
                             </Box>
+                          </TableCell>
+                          <TableCell sx={{ ...tdCellSx, whiteSpace: 'nowrap', maxWidth: 160 }}>
+                            {asset.transactionHash ? (
+                              <Tooltip title={asset.transactionHash}>
+                                <Typography
+                                  component="a"
+                                  href={`https://amoy.polygonscan.com/tx/${asset.transactionHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  sx={{
+                                    fontSize: { xs: 11, sm: 12 }, color: '#3b82f6', fontFamily: 'monospace',
+                                    overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer',
+                                    textDecoration: 'underline', textDecorationStyle: 'dotted',
+                                    '&:hover': { color: '#1d4ed8' },
+                                  }}
+                                >
+                                  {asset.transactionHash.slice(0, 10)}…{asset.transactionHash.slice(-6)}
+                                </Typography>
+                              </Tooltip>
+                            ) : (
+                              <Typography sx={{ fontSize: { xs: 11, sm: 12 }, color: '#9ca3af' }}>—</Typography>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
