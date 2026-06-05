@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { assetApi } from '@/api/assetApi';
+import { assetApi, type DynamicFieldFileEntry } from '@/api/assetApi';
 import type { CreateAssetPayload, UpdateAssetPayload } from '@/types/asset.types';
 
 function extractErrorMessage(err: unknown, fallback: string): string {
@@ -44,10 +44,13 @@ export const fetchAssetsThunk = createAsyncThunk(
 
 export const createAssetThunk = createAsyncThunk(
   'assets/create',
-  async ({ payload, files }: { payload: CreateAssetPayload; files?: File[] }, { rejectWithValue }) => {
+  async (
+    { payload, files, dynamicFieldFiles = [] }:
+      { payload: CreateAssetPayload; files?: File[]; dynamicFieldFiles?: DynamicFieldFileEntry[] },
+    { rejectWithValue },
+  ) => {
     try {
-      const { data } = await assetApi.createAsset(payload, files);
-      // API returns { success, data: <asset> }
+      const { data } = await assetApi.createAsset(payload, files, dynamicFieldFiles);
       return data.data ?? data;
     } catch (err: unknown) {
       return rejectWithValue(extractErrorMessage(err, 'Failed to create asset'));
@@ -58,12 +61,12 @@ export const createAssetThunk = createAsyncThunk(
 export const updateAssetThunk = createAsyncThunk(
   'assets/update',
   async (
-    { assetId, payload, files }: { assetId: string; payload: UpdateAssetPayload; files?: File[] },
+    { assetId, payload, files, dynamicFieldFiles = [] }:
+      { assetId: string; payload: UpdateAssetPayload; files?: File[]; dynamicFieldFiles?: DynamicFieldFileEntry[] },
     { rejectWithValue },
   ) => {
     try {
-      const { data } = await assetApi.updateAsset(assetId, payload, files);
-      // API returns { success, data: <asset> }
+      const { data } = await assetApi.updateAsset(assetId, payload, files, dynamicFieldFiles);
       return data.data ?? data;
     } catch (err: unknown) {
       return rejectWithValue(extractErrorMessage(err, 'Failed to update asset'));

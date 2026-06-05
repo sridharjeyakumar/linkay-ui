@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent,
-  DialogTitle, IconButton, Paper, Snackbar, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, TableSortLabel,
+  Alert, Box, Button, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent,
+  DialogTitle, Divider, IconButton, MenuItem, Paper, Select, Snackbar, Table, TableBody,
+  TableCell, TableContainer, TableHead, TablePagination, TableRow, TableSortLabel, TextField,
   Tooltip, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import createAssetImg from '@/assets/Create Asset.png';
 import draftsImg from '@/assets/Drafts.png';
 import publishedImg from '@/assets/Published.png';
@@ -126,6 +127,15 @@ export default function MuseumDashboardPage() {
   const [confirmAsset,  setConfirmAsset]  = useState<Asset | null>(null);
   const [statusFilter,  setStatusFilter]  = useState<string | null>(null);
   const [snack,         setSnack]         = useState<{ msg: string; severity: 'success'|'error'|'info' } | null>(null);
+  const [filterOpen,    setFilterOpen]    = useState(false);
+  const [filterAsset,   setFilterAsset]   = useState('');
+  const [filterCategory,  setFilterCategory]  = useState('');
+  const [filterStatus2,   setFilterStatus2]   = useState('');
+  const [filterJurisdiction, setFilterJurisdiction] = useState('');
+  const [filterValMin,  setFilterValMin]  = useState('');
+  const [filterValMax,  setFilterValMax]  = useState('');
+  const [page,         setPage]         = useState(0);   // 0-based (MUI TablePagination)
+  const [rowsPerPage,  setRowsPerPage]  = useState(5);
 
   const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevJobsRef = useRef<typeof jobs>([]);
@@ -274,14 +284,28 @@ export default function MuseumDashboardPage() {
   const published = assets.filter((a) => a.status === 'REVIEW' || (a.status === 'LIVE' && !isAssetTokenized(a)));
   const tokenized = assets.filter((a) => a.status === 'LIVE' && isAssetTokenized(a));
 
-  const filteredAssets = statusFilter
-    ? assets.filter((a) => {
-        if (statusFilter === 'DRAFT')     return a.status === 'DRAFT';
-        if (statusFilter === 'PUBLISHED') return a.status === 'REVIEW' || (a.status === 'LIVE' && !isAssetTokenized(a));
-        if (statusFilter === 'TOKENIZED') return a.status === 'LIVE' && isAssetTokenized(a);
-        return true;
-      })
-    : assets;
+  const filteredAssets = assets.filter((a) => {
+    if (statusFilter) {
+      if (statusFilter === 'DRAFT'     && a.status !== 'DRAFT')                                    return false;
+      if (statusFilter === 'PUBLISHED' && !(a.status === 'REVIEW' || (a.status === 'LIVE' && !isAssetTokenized(a)))) return false;
+      if (statusFilter === 'TOKENIZED' && !(a.status === 'LIVE' && isAssetTokenized(a)))           return false;
+    }
+    if (filterAsset && !a.title.toLowerCase().includes(filterAsset.toLowerCase()))                 return false;
+    if (filterCategory && a.assetType !== filterCategory)                                          return false;
+    if (filterStatus2  && a.status    !== filterStatus2)                                           return false;
+    if (filterJurisdiction && a.jurisdiction !== filterJurisdiction)                               return false;
+    if (filterValMin && Number(a.valuation) < Number(filterValMin))                               return false;
+    if (filterValMax && Number(a.valuation) > Number(filterValMax))                               return false;
+    return true;
+  });
+
+  const safePage    = Math.min(page, Math.max(0, Math.ceil(filteredAssets.length / rowsPerPage) - 1));
+  const pagedAssets = filteredAssets.slice(safePage * rowsPerPage, safePage * rowsPerPage + rowsPerPage);
+
+  // unique values for filter dropdowns
+  const uniqueCategories   = [...new Set(assets.map((a) => a.assetType).filter(Boolean))];
+  const uniqueStatuses     = [...new Set(assets.map((a) => a.status).filter(Boolean))];
+  const uniqueJurisdictions = [...new Set(assets.map((a) => a.jurisdiction).filter(Boolean))];
 
   const totalValue    = assets.reduce((s, a) => s + (Number(a.valuation) || 0), 0);
   const fractionsSold = assets.reduce((s, a) => s + (Number(a.fractionsSold) || 0), 0);
@@ -301,7 +325,7 @@ export default function MuseumDashboardPage() {
       labelColor: '#3b82f6',
       sub: 'Create a new real world asset',
       count: null as string | null,
-      cardBorder: '2px solid #3b82f6',
+      cardBorder: '1px solid #e5e7eb',
       onClick: () => {
         const kycDone    = user?.kycStatus === 'APPROVED';
         const walletDone = !!user?.walletAddress;
@@ -423,8 +447,14 @@ export default function MuseumDashboardPage() {
                   bgcolor: isActive && card.key !== 'create' ? '#eff6ff' : '#fff',
                   minWidth: 0,
                   overflow: 'hidden',
-                  transition: 'box-shadow 0.15s, border-color 0.15s',
-                  '&:hover': { boxShadow: '0 4px 16px rgba(0,0,0,0.09)' },
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  '&:hover': {
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.09)',
+                    // Show blue border on hover for all cards; create card gets 2px blue
+                    ...(card.key === 'create'
+                      ? { border: '2px solid #3b82f6' }
+                      : { borderColor: '#3b82f6' }),
+                  },
                 }}>
 
                   {/* Icon — full image, no background */}
@@ -489,18 +519,140 @@ export default function MuseumDashboardPage() {
 
           {/* ── Recent Assets table ── */}
           <Paper elevation={0} sx={{ borderRadius: { xs: 2, sm: 3 }, border: '1px solid #e5e7eb', mb: { xs: 2, sm: 3 }, bgcolor: '#fff', overflow: 'hidden' }}>
-            <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, sm: 2.5 }, pb: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: { xs: 14, sm: 15, md: 16 }, color: '#111' }}>Recent Assets</Typography>
-              <Typography sx={{ fontSize: { xs: 11, sm: 12, md: 13 }, color: '#6b7280', mt: 0.25 }}>
-                Monitor tokenization, compliance, marketplace activity, and investor engagement.
-              </Typography>
+            <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, sm: 2.5 }, pb: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: { xs: 14, sm: 15, md: 16 }, color: '#111' }}>Recent Assets</Typography>
+                <Typography sx={{ fontSize: { xs: 11, sm: 12, md: 13 }, color: '#6b7280', mt: 0.25 }}>
+                  Monitor tokenization, compliance, marketplace activity, and investor engagement.
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                startIcon={<FilterListIcon sx={{ fontSize: '15px !important' }} />}
+                onClick={() => setFilterOpen((v) => !v)}
+                sx={{
+                  flexShrink: 0,
+                  bgcolor: filterOpen ? '#eff6ff' : '#f3f4f6',
+                  color: filterOpen ? '#3b6ef8' : '#374151',
+                  borderRadius: 2,
+                  px: 1.5,
+                  py: 0.6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  border: filterOpen ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                  '&:hover': { bgcolor: '#dbeafe', color: '#3b6ef8', borderColor: '#93c5fd' },
+                }}
+              >
+                Filter
+                {[filterAsset, filterCategory, filterStatus2, filterJurisdiction, filterValMin, filterValMax].some(Boolean) && (
+                  <Box component="span" sx={{
+                    ml: 0.75, width: 16, height: 16, borderRadius: '50%',
+                    bgcolor: '#3b6ef8', color: '#fff', fontSize: 10, fontWeight: 700,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {[filterAsset, filterCategory, filterStatus2, filterJurisdiction, filterValMin, filterValMax].filter(Boolean).length}
+                  </Box>
+                )}
+              </Button>
             </Box>
+
+            {/* Filter panel */}
+            <Collapse in={filterOpen}>
+              <Divider />
+              <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'flex-end' }}>
+                {/* Asset name */}
+                <Box sx={{ minWidth: 150, flex: '1 1 140px' }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#6b7280', mb: 0.5 }}>Asset</Typography>
+                  <TextField
+                    size="small" placeholder="Search name…" value={filterAsset}
+                    onChange={(e) => { setFilterAsset(e.target.value); setPage(0); }}
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#f3f4f6', borderRadius: '8px', '& fieldset': { border: 'none' }, fontSize: 13 } }}
+                  />
+                </Box>
+                {/* Category */}
+                <Box sx={{ minWidth: 140, flex: '1 1 130px' }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#6b7280', mb: 0.5 }}>Category</Typography>
+                  <Select
+                    size="small" value={filterCategory} displayEmpty
+                    onChange={(e) => { setFilterCategory(e.target.value); setPage(0); }}
+                    sx={{ bgcolor: '#f3f4f6', borderRadius: '8px', fontSize: 13, '& fieldset': { border: 'none' }, minWidth: 130 }}
+                  >
+                    <MenuItem value=""><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>All</em></MenuItem>
+                    {uniqueCategories.map((c) => (
+                      <MenuItem key={c} value={c}>{ASSET_TYPE_LABELS[c] ?? c}</MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+                {/* Valuation min */}
+                <Box sx={{ minWidth: 110, flex: '1 1 100px' }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#6b7280', mb: 0.5 }}>Valuation Min ($)</Typography>
+                  <TextField
+                    size="small" type="number" placeholder="0" value={filterValMin}
+                    onChange={(e) => { setFilterValMin(e.target.value); setPage(0); }}
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#f3f4f6', borderRadius: '8px', '& fieldset': { border: 'none' }, fontSize: 13 } }}
+                  />
+                </Box>
+                {/* Valuation max */}
+                <Box sx={{ minWidth: 110, flex: '1 1 100px' }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#6b7280', mb: 0.5 }}>Valuation Max ($)</Typography>
+                  <TextField
+                    size="small" type="number" placeholder="∞" value={filterValMax}
+                    onChange={(e) => { setFilterValMax(e.target.value); setPage(0); }}
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#f3f4f6', borderRadius: '8px', '& fieldset': { border: 'none' }, fontSize: 13 } }}
+                  />
+                </Box>
+                {/* Status */}
+                <Box sx={{ minWidth: 130, flex: '1 1 120px' }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#6b7280', mb: 0.5 }}>Status</Typography>
+                  <Select
+                    size="small" value={filterStatus2} displayEmpty
+                    onChange={(e) => { setFilterStatus2(e.target.value); setPage(0); }}
+                    sx={{ bgcolor: '#f3f4f6', borderRadius: '8px', fontSize: 13, '& fieldset': { border: 'none' }, minWidth: 120 }}
+                  >
+                    <MenuItem value=""><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>All</em></MenuItem>
+                    {uniqueStatuses.map((s) => (
+                      <MenuItem key={s} value={s}>{s}</MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+                {/* Jurisdiction */}
+                <Box sx={{ minWidth: 150, flex: '1 1 140px' }}>
+                  <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#6b7280', mb: 0.5 }}>Jurisdiction</Typography>
+                  <Select
+                    size="small" value={filterJurisdiction} displayEmpty
+                    onChange={(e) => { setFilterJurisdiction(e.target.value); setPage(0); }}
+                    sx={{ bgcolor: '#f3f4f6', borderRadius: '8px', fontSize: 13, '& fieldset': { border: 'none' }, minWidth: 140 }}
+                  >
+                    <MenuItem value=""><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>All</em></MenuItem>
+                    {uniqueJurisdictions.map((j) => (
+                      <MenuItem key={j} value={j as string}>{j}</MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+                {/* Clear filters */}
+                {[filterAsset, filterCategory, filterStatus2, filterJurisdiction, filterValMin, filterValMax].some(Boolean) && (
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setFilterAsset(''); setFilterCategory(''); setFilterStatus2('');
+                      setFilterJurisdiction(''); setFilterValMin(''); setFilterValMax('');
+                      setPage(0);
+                    }}
+                    sx={{ color: '#ef4444', textTransform: 'none', fontSize: 12, fontWeight: 600, alignSelf: 'flex-end', pb: 0.5 }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </Box>
+              <Divider />
+            </Collapse>
 
             <TableContainer sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <Table sx={{ minWidth: 500 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#fafafa', borderTop: '1px solid #f3f4f6' }}>
-                    {['Asset', 'Category', 'Valuation', 'Status', 'Jurisdiction', 'Actions'].map((col) => (
+                    {['Asset', 'Category', 'Valuation', 'Status', 'Jurisdiction', 'Actions',"Transaction"].map((col) => (
                       <TableCell key={col} sx={thCellSx}>
                         <TableSortLabel sx={{ color: '#6b7280 !important', '& .MuiTableSortLabel-icon': { color: '#6b7280 !important' } }}>
                           {col}
@@ -512,7 +664,7 @@ export default function MuseumDashboardPage() {
                 <TableBody>
                   {filteredAssets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} sx={{ border: 0, py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
+                      <TableCell colSpan={7} sx={{ border: 0, py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                           <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
                             <polygon points="24,4 44,24 24,44 4,24" stroke="#3b52a5" strokeWidth="2" fill="none" />
@@ -526,7 +678,7 @@ export default function MuseumDashboardPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredAssets.map((asset) => {
+                    pagedAssets.map((asset) => {
                       const isDraft      = asset.status === 'DRAFT';
                       const isLive       = asset.status === 'LIVE';
                       const isReview     = asset.status === 'REVIEW';
@@ -647,6 +799,28 @@ export default function MuseumDashboardPage() {
                               })()}
                             </Box>
                           </TableCell>
+                          <TableCell sx={{ ...tdCellSx, whiteSpace: 'nowrap', maxWidth: 160 }}>
+                            {asset.transactionHash ? (
+                              <Tooltip title={asset.transactionHash}>
+                                <Typography
+                                  component="a"
+                                  href={`https://amoy.polygonscan.com/tx/${asset.transactionHash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  sx={{
+                                    fontSize: { xs: 11, sm: 12 }, color: '#3b82f6', fontFamily: 'monospace',
+                                    overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer',
+                                    textDecoration: 'underline', textDecorationStyle: 'dotted',
+                                    '&:hover': { color: '#1d4ed8' },
+                                  }}
+                                >
+                                  {asset.transactionHash.slice(0, 10)}…{asset.transactionHash.slice(-6)}
+                                </Typography>
+                              </Tooltip>
+                            ) : (
+                              <Typography sx={{ fontSize: { xs: 11, sm: 12 }, color: '#9ca3af' }}>—</Typography>
+                            )}
+                          </TableCell>
                         </TableRow>
                       );
                     })
@@ -654,6 +828,35 @@ export default function MuseumDashboardPage() {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* Pagination — "Rows per page: 5 ▼  1–5 of 9  < >" */}
+            <TablePagination
+              component="div"
+              count={filteredAssets.length}
+              page={safePage}
+              onPageChange={(_e, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{
+                borderTop: '1px solid #f3f4f6',
+                color: '#6b7280',
+                fontSize: 13,
+                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                  fontSize: 13,
+                  color: '#6b7280',
+                },
+                '& .MuiTablePagination-select': {
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#374151',
+                },
+                '& .MuiIconButton-root': {
+                  color: '#374151',
+                  '&.Mui-disabled': { opacity: 0.35 },
+                },
+              }}
+            />
           </Paper>
 
           {/* ── Live Tokenization Pipeline ── */}

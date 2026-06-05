@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Navbar from '@/components/landing/Navbar';
 import Minerals from '@/components/landing/asset-class/minerals/Minerals';
 import { getMineralModalContent, getNavbarContent } from '@/lib/content';

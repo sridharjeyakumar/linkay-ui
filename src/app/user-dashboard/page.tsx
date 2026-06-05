@@ -8,6 +8,7 @@ import { DashboardFilterProvider } from '@/context/DashboardFilterContext';
 import FilterSidebar from '@/components/user-dashboard/home/FilterSidebar';
 import TrendingCollections from '@/components/user-dashboard/home/TrendingCollections';
 import LiveAuctions from '@/components/user-dashboard/home/LiveAuctions';
+import UpcomingAuctions from '@/components/user-dashboard/home/UpcomingAuctions';
 
 export default function UserDashboardPage() {
   const dispatch = useAppDispatch();
@@ -30,9 +31,10 @@ export default function UserDashboardPage() {
           <LiveAuctions />
         </Box>
 
-        {/* Right: reserved column matching the header right-controls width.
-            Empty now; add a panel here later if needed. */}
-        <Box sx={{ width: { md: 420 }, flexShrink: 0, display: { xs: 'none', md: 'block' } }} />
+        {/* Right: Upcoming Auctions panel */}
+        <Box sx={{ width: { xs: '100%', md: 267 }, flexShrink: 0, pt: { xs: 2, md: 1.5 } }}>
+          <UpcomingAuctions />
+        </Box>
 
       </Box>
     </DashboardFilterProvider>

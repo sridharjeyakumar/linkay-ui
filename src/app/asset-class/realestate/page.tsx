@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import RealEstate from '@/components/landing/asset-class/realestate/RealEstate';
@@ -13,8 +15,6 @@ import {
   getRECtaContent,
 } from '@/lib/content';
 
-// Re-read content files on every request (never use Next.js module cache for JSON)
-export const dynamic = 'force-dynamic';
 
 export default function RealEstatePage() {
   const navbar = getNavbarContent();
