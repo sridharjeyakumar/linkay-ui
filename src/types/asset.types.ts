@@ -30,6 +30,7 @@ export interface Asset {
   updatedBy?: string;
   ipfsUrl?: string;
   ipfsMetadataUrl?: string;
+  transactionHash?: string | null;
   museumName?: string;
   // New fields
   custodian?: string;
