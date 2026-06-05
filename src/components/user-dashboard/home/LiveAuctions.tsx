@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Box, Button, Grid, IconButton, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { Box, Button, CircularProgress, Grid, IconButton, Typography } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { AuctionItem } from '@/data/dashboardData';
@@ -9,6 +10,15 @@ import { useDashboardFilter } from '@/context/DashboardFilterContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
 
 const ITEMS_PER_PAGE = 3;
+
+function EthIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M7 0.5L2.5 7.3L7 9.8L11.5 7.3L7 0.5Z" fill="#16a34a" />
+      <path d="M7 10.8L2.5 8L7 13.5L11.5 8L7 10.8Z" fill="#16a34a" />
+    </svg>
+  );
+}
 
 function useCountdown(endsAt: Date) {
   const calc = () => {
@@ -27,30 +37,29 @@ function useCountdown(endsAt: Date) {
   return time;
 }
 
-function CountdownBadge({ endsAt }: { endsAt: Date }) {
+function CountdownRow({ endsAt }: { endsAt: Date }) {
   const { h, m, s, done } = useCountdown(endsAt);
   if (done) return null;
-  const label = `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s left`;
   return (
-    <Box
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.5,
-        bgcolor: 'rgba(0,0,0,0.55)',
-        borderRadius: 2,
-        px: 1,
-        py: 0.3,
-      }}
-    >
-      <Typography sx={{ fontSize: 11, color: '#fff', fontWeight: 600, letterSpacing: 0.2 }}>
-        {label}
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 1.5 }}>
+      <Typography component="span" sx={{ fontWeight: 700, fontSize: 13, color: '#06b6d4' }}>
+        {h}h
+      </Typography>
+      <Typography component="span" sx={{ fontWeight: 700, fontSize: 13, color: '#eab308' }}>
+        {' '}{String(m).padStart(2, '0')}m
+      </Typography>
+      <Typography component="span" sx={{ fontWeight: 700, fontSize: 13, color: '#06b6d4' }}>
+        {' '}{String(s).padStart(2, '0')}s
+      </Typography>
+      <Typography component="span" sx={{ fontSize: 13, color: '#666' }}>
+        {' '}left
       </Typography>
     </Box>
   );
 }
 
 function AuctionCard({ item }: { item: AuctionItem }) {
+  const router = useRouter();
   return (
     <Box
       sx={{
@@ -64,45 +73,50 @@ function AuctionCard({ item }: { item: AuctionItem }) {
         '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.1)', transform: 'translateY(-2px)' },
       }}
     >
-      {/* Image + countdown overlay */}
-      <Box sx={{ position: 'relative' }}>
-        <Box
-          component="img"
-          src={item.image}
-          alt={item.title}
-          sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block' }}
-        />
-        <Box sx={{ position: 'absolute', bottom: 8, left: 8 }}>
-          <CountdownBadge endsAt={item.endsAt} />
-        </Box>
-      </Box>
+      {/* Image */}
+      <Box
+        component="img"
+        src={item.image || '/placeholder-asset.jpg'}
+        alt={item.title}
+        sx={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', display: 'block' }}
+      />
 
-      <Box sx={{ px: 1.5, pt: 1.2, pb: 1.5 }}>
-        <Typography noWrap sx={{ fontWeight: 700, fontSize: 13, color: '#111', mb: 0.6 }}>
+      <Box sx={{ px: 2, pt: 1.5, pb: 2 }}>
+        {/* Title */}
+        <Typography noWrap sx={{ fontWeight: 700, fontSize: 15, color: '#111', mb: 1 }}>
           {item.title}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
-          <Typography sx={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>
-            {item.priceEth} ETH
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: '#999' }}>
-            {item.currentIndex}/{item.totalSupply}
+        {/* Price + supply row */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <EthIcon />
+            <Typography sx={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>
+              {item.priceEth} USDT
+            </Typography>
+          </Box>
+          <Typography sx={{ fontSize: 12, color: '#999' }}>
+            {item.currentIndex} of {item.totalSupply}
           </Typography>
         </Box>
 
+        {/* Countdown */}
+        <CountdownRow endsAt={item.endsAt} />
+
+        {/* Button */}
         <Button
           fullWidth
           variant="contained"
           size="small"
+          onClick={() => router.push(`/product/${item.id}`)}
           sx={{
             bgcolor: '#111',
             color: '#fff',
             borderRadius: 6,
             textTransform: 'none',
             fontWeight: 600,
-            fontSize: 12,
-            py: 0.7,
+            fontSize: 13,
+            py: 1,
             boxShadow: 'none',
             '&:hover': { bgcolor: '#333', boxShadow: 'none' },
           }}
@@ -131,8 +145,7 @@ function CarouselNav({
         onClick={onPrev}
         disabled={page === 0}
         sx={{
-          width: 36,
-          height: 36,
+          width: 36, height: 36,
           bgcolor: page === 0 ? '#f0f0f0' : '#111',
           color: page === 0 ? '#bbb' : '#fff',
           borderRadius: '50%',
@@ -147,8 +160,7 @@ function CarouselNav({
         onClick={onNext}
         disabled={page >= total - 1}
         sx={{
-          width: 36,
-          height: 36,
+          width: 36, height: 36,
           bgcolor: page >= total - 1 ? '#f0f0f0' : '#111',
           color: page >= total - 1 ? '#bbb' : '#fff',
           borderRadius: '50%',
@@ -164,11 +176,12 @@ function CarouselNav({
 
 export default function LiveAuctions() {
   const { activeCategory } = useDashboardFilter();
-  const { auctions } = useDashboardData(activeCategory);
+  const { auctions, auctionsLoading } = useDashboardData(activeCategory);
   const [page, setPage] = useState(0);
 
-  const totalPages = Math.ceil(auctions.length / ITEMS_PER_PAGE);
-  const visible = auctions.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
+  const filtered = auctions.filter((a) => a.endsAt.getTime() - Date.now() > 24 * 3_600_000);
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const visible = filtered.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
 
   useEffect(() => { setPage(0); }, [activeCategory]);
 
@@ -186,7 +199,11 @@ export default function LiveAuctions() {
         </Typography>
       </Box>
 
-      {auctions.length === 0 ? (
+      {auctionsLoading ? (
+        <Box sx={{ py: 8, textAlign: 'center' }}>
+          <CircularProgress size={32} sx={{ color: '#111' }} />
+        </Box>
+      ) : filtered.length === 0 ? (
         <Box sx={{ py: 8, textAlign: 'center', bgcolor: '#fafafa', borderRadius: 3, border: '1px dashed #ddd' }}>
           <Typography sx={{ color: '#aaa', fontSize: 15 }}>No live auctions for this category</Typography>
         </Box>
@@ -213,3 +230,4 @@ export default function LiveAuctions() {
     </Box>
   );
 }
+
