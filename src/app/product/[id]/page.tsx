@@ -60,9 +60,25 @@ function toProductItem(asset: Asset): ProductPageItem {
     auctionEndTime: (() => {
       const a = asset.latestAuction;
       if (!a?.endDate || !a?.endTime) return undefined;
+      if (a.endDateTimeUTC) return a.endDateTimeUTC;
       const t = a.endTime.split(':').length === 2 ? `${a.endTime}:00` : a.endTime;
       return new Date(`${a.endDate}T${t}Z`).toISOString();
     })(),
+    auctionTimezone:      asset.latestAuction?.timezone     ?? undefined,
+    certificationRef:     asset.certificationRef            ?? undefined,
+    conditionReport:      asset.conditionReport             ?? undefined,
+    historicalContext:    asset.historicalContext           ?? undefined,
+    jurisdiction:         asset.jurisdiction                ?? undefined,
+    ownershipEntity:      asset.ownershipEntity             ?? undefined,
+    royaltyPercent:       asset.royaltyPercent              ?? undefined,
+    royaltyWallet:        asset.royaltyWallet               ?? undefined,
+    retainedPercent:      asset.retainedPercent             ?? undefined,
+    tokenizedPercent:     asset.tokenizedPercent            ?? undefined,
+    nftContractAddress:   asset.nftContractAddress          ?? undefined,
+    erc3643ContractAddress: asset.erc3643ContractAddress    ?? undefined,
+    nftTokenId:           asset.nftTokenId                  ?? undefined,
+    transactionHash:      asset.transactionHash             ?? undefined,
+    publishedAt:          asset.publishedAt                 ?? undefined,
   };
 }
 

@@ -26,7 +26,7 @@ function useCountdown(endsAt: Date) {
   return time;
 }
 
-function EndingChip({ endsAt }: { endsAt: Date }) {
+function EndingChip({ endsAt, timezone }: { endsAt: Date; timezone?: string }) {
   const { h, m, s } = useCountdown(endsAt);
   return (
     <Box
@@ -47,6 +47,11 @@ function EndingChip({ endsAt }: { endsAt: Date }) {
       <Typography sx={{ fontSize: 12, color: '#ef4444', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
         {String(h).padStart(2, '0')}h {String(m).padStart(2, '0')}m {String(s).padStart(2, '0')}s
       </Typography>
+      {timezone && (
+        <Typography sx={{ fontSize: 11, color: '#ef4444', opacity: 0.7, fontWeight: 500 }}>
+          {timezone}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -115,7 +120,7 @@ function CollectionCard({ item }: { item: AuctionItem }) {
         <Typography noWrap sx={{ fontWeight: 700, fontSize: { xs: 15, md: 18 }, color: '#111' }}>
           {item.title}
         </Typography>
-        <EndingChip endsAt={item.endsAt} />
+        <EndingChip endsAt={item.endsAt} timezone={item.timezone} />
       </Box>
 
       <ViewAllButton onClick={() => router.push(`/product/${item.id}`)} />

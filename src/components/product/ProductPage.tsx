@@ -25,8 +25,24 @@ export interface ProductPageItem {
   ipfsUrl?: string;
   ipfsMetadataUrl?: string;
   auctionEndTime?: string;
+  auctionTimezone?: string;
   currentBid?: number;
   activities?: ActivityItem[];
+  // Additional information fields
+  certificationRef?: string;
+  conditionReport?: string;
+  historicalContext?: string;
+  jurisdiction?: string;
+  ownershipEntity?: string;
+  royaltyPercent?: number;
+  royaltyWallet?: string;
+  retainedPercent?: number;
+  tokenizedPercent?: number;
+  nftContractAddress?: string;
+  erc3643ContractAddress?: string;
+  nftTokenId?: number;
+  transactionHash?: string;
+  publishedAt?: string;
 }
 
 interface ActivityItem {
@@ -246,6 +262,67 @@ function IpfsRow({ label, href }: { label: string; href?: string }) {
   );
 }
 
+/* ─── Additional Information ─────────────────────────────────────────────── */
+function truncateAddress(addr: string) {
+  return addr.length > 18 ? `${addr.slice(0, 10)}…${addr.slice(-8)}` : addr;
+}
+
+function InfoRow({ label, value, href }: { label: string; value: string; href?: string }) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, py: '10px', borderBottom: '1px solid #f3f3f3' }}>
+      <Typography sx={{ fontSize: 13, color: '#888', flexShrink: 0, minWidth: 140 }}>{label}</Typography>
+      {href ? (
+        <Box
+          component="a"
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.5, textDecoration: 'none', '&:hover span': { textDecoration: 'underline' } }}
+        >
+          <Typography component="span" sx={{ fontSize: 13, fontWeight: 600, color: '#1e40af', wordBreak: 'break-all', textAlign: 'right' }}>
+            {value}
+          </Typography>
+          <OpenInNewIcon sx={{ fontSize: 12, color: '#1e40af', flexShrink: 0 }} />
+        </Box>
+      ) : (
+        <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', textAlign: 'right', wordBreak: 'break-word' }}>
+          {value}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+function AdditionalInfo({ item }: { item: ProductPageItem }) {
+  const rows: { label: string; value: string; href?: string }[] = [];
+
+  if (item.jurisdiction)        rows.push({ label: 'Jurisdiction',           value: item.jurisdiction });
+  if (item.ownershipEntity)     rows.push({ label: 'Ownership Entity',       value: item.ownershipEntity });
+  if (item.certificationRef)    rows.push({ label: 'Certification Ref',      value: item.certificationRef });
+  if (item.conditionReport)     rows.push({ label: 'Condition Report',       value: item.conditionReport });
+  if (item.historicalContext)   rows.push({ label: 'Historical Context',     value: item.historicalContext });
+  if (item.tokenizedPercent != null) rows.push({ label: 'Tokenized',         value: `${item.tokenizedPercent}%` });
+  if (item.retainedPercent  != null) rows.push({ label: 'Retained',          value: `${item.retainedPercent}%` });
+  if (item.royaltyPercent   != null) rows.push({ label: 'Royalty',           value: `${item.royaltyPercent}%` });
+  if (item.royaltyWallet)       rows.push({ label: 'Royalty Wallet',         value: truncateAddress(item.royaltyWallet) });
+  if (item.nftTokenId != null)  rows.push({ label: 'NFT Token ID',           value: String(item.nftTokenId) });
+  if (item.nftContractAddress)  rows.push({ label: 'NFT Contract',           value: truncateAddress(item.nftContractAddress) });
+  if (item.erc3643ContractAddress) rows.push({ label: 'ERC-3643 Contract',   value: truncateAddress(item.erc3643ContractAddress) });
+  if (item.transactionHash)     rows.push({ label: 'Transaction Hash',       value: truncateAddress(item.transactionHash) });
+  if (item.ipfsMetadataUrl)     rows.push({ label: 'IPFS Metadata',          value: 'View on IPFS', href: item.ipfsMetadataUrl });
+  if (item.publishedAt)         rows.push({ label: 'Published',              value: new Date(item.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) });
+
+  if (rows.length === 0) return (
+    <Typography sx={{ fontSize: 14, color: '#888' }}>No additional information available.</Typography>
+  );
+
+  return (
+    <Box>
+      {rows.map((r) => <InfoRow key={r.label} {...r} />)}
+    </Box>
+  );
+}
+
 /* ─── ProductPage (with internal data fetching) ──────────────────────────── */
 export default function ProductPage({ item: itemProp }: Partial<ProductPageProps>) {
   const theme = useTheme();
@@ -388,11 +465,10 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                   display: 'block',
                   width: '100%',
                   height: mainImgH,
-                  objectFit: 'contain',
+                  objectFit: 'cover',
                   borderRadius: '11px',
                   mb: thumbGap,
                   flexShrink: 0,
-                  bgcolor: '#f5f5f5',
                 }}
               />
 
@@ -441,9 +517,11 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                 {item.description}
               </Typography>
             </AccordionRow>
-            <AccordionRow label="Additional Information" />
-            <AccordionRow label="Documents" />
-            <Divider />
+            <AccordionRow label="Additional Information">
+              <AdditionalInfo item={item} />
+            </AccordionRow>
+            {/* <AccordionRow label="Documents1" /> */}
+            {/* <Divider /> */}
           </Box>
 
           {/* ════════════════ RIGHT COLUMN ════════════════ */}
@@ -493,6 +571,11 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                   {String(timeLeft.m).padStart(2, '0')}m&nbsp;
                   {String(timeLeft.s).padStart(2, '0')}s
                 </Typography>
+                {item.auctionTimezone && (
+                  <Typography sx={{ fontSize: 11, color: '#ef4444', opacity: 0.7, fontWeight: 500 }}>
+                    {item.auctionTimezone}
+                  </Typography>
+                )}
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                 <Typography sx={{ fontSize: 13, color: '#888' }}>Current Bid</Typography>
@@ -501,7 +584,7 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                   ⬥
                 </Box>
                 <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#3b82f6' }}>
-                  {(item.currentBid ?? 0).toFixed(2)} ETH
+                  {(item.currentBid ?? 0).toFixed(2)} USDT
                 </Typography>
               </Box>
             </Box>

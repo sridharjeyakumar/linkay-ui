@@ -36,6 +36,7 @@ export interface AuctionItem {
   currentIndex: number;
   image: string;
   endsAt: Date;
+  timezone?: string;
 }
 
 // TODO: replace with API-provided URLs
