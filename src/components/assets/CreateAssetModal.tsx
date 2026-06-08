@@ -1291,19 +1291,44 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                             </Box>
                           )}
 
-                          {/* Show existing saved file value from DB (edit mode, files not re-picked) */}
-                          {!dynamicFieldFiles[idx]?.length && f.fieldValue && (
-                            <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
-                              {(Array.isArray(f.fieldValue) ? f.fieldValue as string[] : [f.fieldValue as string]).map((path, pi) => (
-                                <Box key={pi} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, px: 1.25, py: 0.4, bgcolor: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
-                                  <UploadFileIcon sx={{ fontSize: 13, color: '#3b6ef8' }} />
-                                  <Typography sx={{ fontSize: 11, color: '#1d4ed8', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {path.split('/').pop()}
-                                  </Typography>
-                                </Box>
-                              ))}
-                            </Box>
-                          )}
+                          {/* Show existing saved file entries from DB (edit mode, files not re-picked) */}
+                          {!dynamicFieldFiles[idx]?.length && f.fieldValue && (() => {
+                            // fieldValue is now an array of { name, mimeType, size, data } objects
+                            const entries: Array<{ name: string; mimeType: string; size: number; data: string }> =
+                              Array.isArray(f.fieldValue)
+                                ? (f.fieldValue as unknown[]).map((v) =>
+                                    typeof v === 'object' && v !== null && 'data' in v
+                                      ? v as { name: string; mimeType: string; size: number; data: string }
+                                      : { name: String(v), mimeType: '', size: 0, data: '' }
+                                  )
+                                : [];
+                            if (!entries.length) return null;
+                            return (
+                              <Box sx={{ mt: 1.25, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {entries.map((entry, pi) => {
+                                  const isImg = entry.mimeType.startsWith('image/');
+                                  return (
+                                    <Box key={pi} sx={{ position: 'relative', '&:hover .db-rm': { opacity: 1 } }}>
+                                      <Box
+                                        onClick={() => isImg && entry.data && setLightboxSrc(entry.data)}
+                                        sx={{ width: 64, height: 64, borderRadius: 2, overflow: 'hidden', border: '1.5px solid #bfdbfe', bgcolor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isImg ? 'zoom-in' : 'default' }}
+                                      >
+                                        {isImg && entry.data ? (
+                                          /* eslint-disable-next-line @next/next/no-img-element */
+                                          <img src={entry.data} alt={entry.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                          <UploadFileIcon sx={{ color: '#3b6ef8', fontSize: 26 }} />
+                                        )}
+                                      </Box>
+                                      <Typography sx={{ fontSize: 9, color: '#1d4ed8', mt: 0.25, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                                        {entry.name}
+                                      </Typography>
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+                            );
+                          })()}
                         </Box>
                       ) : (
                         <TextField fullWidth size="small"
