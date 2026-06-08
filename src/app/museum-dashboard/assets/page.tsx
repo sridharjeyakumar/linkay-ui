@@ -103,7 +103,7 @@ export default function MyAssetsPage() {
   const statCards = [
     { label: 'LIVE AUCTIONS',      value: pad(liveAuctions),      textColor: '#16a34a', bg: '#f0fdf4' },
     { label: 'COMPLETED AUCTIONS', value: pad(completedAuctions), textColor: '#2563eb', bg: '#eff6ff' },
-    { label: 'TOTAL ASSETS',       value: String(totalAssets),    textColor: '#7c3aed', bg: '#f5f3ff' },
+    { label: 'TOTAL ASSETS',       value: pad(totalAssets),       textColor: '#7c3aed', bg: '#f5f3ff' },
     { label: 'UPCOMING AUCTIONS',  value: pad(upcomingAuctions),  textColor: '#b45309', bg: '#fffbeb' },
   ];
 
