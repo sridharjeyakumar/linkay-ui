@@ -2,7 +2,6 @@
 
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import TuneIcon from '@mui/icons-material/Tune';
-import { CATEGORIES } from '@/data/dashboardData';
 import { useDashboardFilter } from '@/context/DashboardFilterContext';
 
 function CategoryPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -47,7 +46,7 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
 }
 
 function DesktopSidebar() {
-  const { activeCategory, setActiveCategory } = useDashboardFilter();
+  const { activeCategory, setActiveCategory, availableCategories } = useDashboardFilter();
 
   return (
     <Box
@@ -68,7 +67,7 @@ function DesktopSidebar() {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {CATEGORIES.map((cat) => (
+        {availableCategories.map((cat) => (
           <CategoryPill
             key={cat}
             label={cat}
@@ -82,7 +81,7 @@ function DesktopSidebar() {
 }
 
 function MobileChipBar() {
-  const { activeCategory, setActiveCategory } = useDashboardFilter();
+  const { activeCategory, setActiveCategory, availableCategories } = useDashboardFilter();
 
   return (
     <Box
@@ -96,7 +95,7 @@ function MobileChipBar() {
         '&::-webkit-scrollbar': { display: 'none' },
       }}
     >
-      {CATEGORIES.map((cat) => (
+      {availableCategories.map((cat) => (
         <CategoryPill
           key={cat}
           label={cat}
@@ -110,6 +109,6 @@ function MobileChipBar() {
 
 export default function FilterSidebar() {
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   return isDesktop ? <DesktopSidebar /> : <MobileChipBar />;
 }

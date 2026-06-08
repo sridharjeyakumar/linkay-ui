@@ -1,166 +1,127 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Box, Typography } from '@mui/material';
-
-import { MOCK_COLLECTIONS } from '@/data/dashboardData';
-
-import ProductPage, {
-  ProductPageItem,
-} from '@/components/product/ProductPage';
-
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { assetApi } from '@/api/assetApi';
+import type { Asset } from '@/types/asset.types';
+import ProductPage, { ProductPageItem } from '@/components/product/ProductPage';
 import UserDashboardLayout from '@/app/user-dashboard/layout';
-/**
- * Mock product-level data
- */
-const PRODUCT_MOCK_DEFAULTS: Record<
-  string,
-  Partial<ProductPageItem>
-> = {
-  'col-1': {
-    totalValuation: 5400000,
-    pricePerFraction: 1000,
-    lockupMonths: 12,
-    totalFractions: 5400,
-    fractionsRemaining: 3200,
-  },
 
-  'col-2': {
-    totalValuation: 150000,
-    pricePerFraction: 150,
-    lockupMonths: 6,
-    totalFractions: 1000,
-    fractionsRemaining: 650,
-  },
-
-  'col-3': {
-    totalValuation: 320000,
-    pricePerFraction: 200,
-    lockupMonths: 9,
-    totalFractions: 1600,
-    fractionsRemaining: 900,
-  },
-
-  'col-4': {
-    totalValuation: 640000,
-    pricePerFraction: 50,
-    lockupMonths: 3,
-    totalFractions: 12800,
-    fractionsRemaining: 8000,
-  },
-
-  'col-5': {
-    totalValuation: 900000,
-    pricePerFraction: 500,
-    lockupMonths: 18,
-    totalFractions: 1800,
-    fractionsRemaining: 1100,
-  },
-
-  'col-6': {
-    totalValuation: 380000,
-    pricePerFraction: 250,
-    lockupMonths: 6,
-    totalFractions: 1520,
-    fractionsRemaining: 760,
-  },
-
-  'col-7': {
-    totalValuation: 225000,
-    pricePerFraction: 100,
-    lockupMonths: 9,
-    totalFractions: 2250,
-    fractionsRemaining: 1400,
-  },
-
-  'col-8': {
-    totalValuation: 300000,
-    pricePerFraction: 125,
-    lockupMonths: 6,
-    totalFractions: 2400,
-    fractionsRemaining: 1800,
-  },
+const ASSET_TYPE_LABEL: Record<string, string> = {
+  REAL_ESTATE:  'Real Estate',
+  FINE_ART:     'Fine Arts',
+  COLLECTIBLE:  'Collectible',
+  LUXURY_ASSET: 'Luxury Asset',
+  LUXURY_WATCH: 'Luxury Watch',
+  OTHER:        'Other',
 };
+
+function parseImages(raw: unknown): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return (raw as string[]).filter(Boolean);
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch { return []; }
+  }
+  return [];
+}
+
+function toProductItem(asset: Asset): ProductPageItem {
+  const images = parseImages(asset.mediaFiles);
+  const hero = images[0] || '';
+  const img4: [string, string, string, string] = [
+    hero,
+    images[1] || hero,
+    images[2] || hero,
+    images[3] || hero,
+  ];
+
+  const fractionsSold = asset.fractionsSold ?? 0;
+  const totalFractions = asset.totalFractions ?? 0;
+
+  return {
+    id:                 asset.id,
+    title:              asset.title,
+    category:           ASSET_TYPE_LABEL[asset.assetType] ?? asset.assetType,
+    custodyService:     asset.custodian ?? 'Linkay Custody Services',
+    images:             img4,
+    totalValuation:     Number(asset.valuation ?? 0),
+    pricePerFraction:   Number(asset.pricePerFraction ?? 0),
+    compliance:         asset.compliance ?? 'ERC-3643',
+    lockupMonths:       parseInt(asset.lockupPeriod ?? '0') || 0,
+    totalFractions,
+    fractionsRemaining: totalFractions - fractionsSold,
+    description:        asset.description,
+    ipfsUrl:            asset.ipfsUrl ?? undefined,
+    ipfsMetadataUrl:    asset.ipfsMetadataUrl ?? undefined,
+    auctionEndTime: (() => {
+      const a = asset.latestAuction;
+      if (!a?.endDate || !a?.endTime) return undefined;
+      if (a.endDateTimeUTC) return a.endDateTimeUTC;
+      const t = a.endTime.split(':').length === 2 ? `${a.endTime}:00` : a.endTime;
+      return new Date(`${a.endDate}T${t}Z`).toISOString();
+    })(),
+    auctionTimezone:      asset.latestAuction?.timezone     ?? undefined,
+    certificationRef:     asset.certificationRef            ?? undefined,
+    conditionReport:      asset.conditionReport             ?? undefined,
+    historicalContext:    asset.historicalContext           ?? undefined,
+    jurisdiction:         asset.jurisdiction                ?? undefined,
+    ownershipEntity:      asset.ownershipEntity             ?? undefined,
+    royaltyPercent:       asset.royaltyPercent              ?? undefined,
+    royaltyWallet:        asset.royaltyWallet               ?? undefined,
+    retainedPercent:      asset.retainedPercent             ?? undefined,
+    tokenizedPercent:     asset.tokenizedPercent            ?? undefined,
+    nftContractAddress:   asset.nftContractAddress          ?? undefined,
+    erc3643ContractAddress: asset.erc3643ContractAddress    ?? undefined,
+    nftTokenId:           asset.nftTokenId                  ?? undefined,
+    transactionHash:      asset.transactionHash             ?? undefined,
+    publishedAt:          asset.publishedAt                 ?? undefined,
+  };
+}
 
 export default function ProductRoute() {
   const { id } = useParams<{ id: string }>();
+  const [item, setItem] = useState<ProductPageItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  /**
-   * Find collection using URL id
-   */
-  const col = MOCK_COLLECTIONS.find(
-    (c) => c.id === id
-  );
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    assetApi
+      .listAll()
+      .then(({ data }) => {
+        const assets: Asset[] = Array.isArray(data?.data) ? data.data : [];
+        const asset = assets.find((a) => a.id === id);
+        if (!asset?.id) { setError(true); return; }
+        setItem(toProductItem(asset));
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-  /**
-   * If no product found
-   */
-  if (!col) {
+  if (loading) {
     return (
       <UserDashboardLayout>
-        <Box sx={{ p: 5 }}>
-          <Typography>
-            Product not found.
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <CircularProgress sx={{ color: '#111' }} />
         </Box>
       </UserDashboardLayout>
     );
   }
 
-  /**
-   * Extra mock values
-   */
-  const extras =
-    PRODUCT_MOCK_DEFAULTS[col.id] ?? {};
-
-  /**
-   * Final product object
-   */
-  const item: ProductPageItem = {
-    id: col.id,
-
-    title: col.title,
-
-    category: col.category,
-
-    custodyService:
-      'Linkay Custody Services',
-
-    images: col.previewImages as [
-      string,
-      string,
-      string,
-      string
-    ],
-
-    totalValuation:
-      extras.totalValuation ?? 150000,
-
-    pricePerFraction:
-      extras.pricePerFraction ?? 150,
-
-    compliance: 'ERC - 3643',
-
-    lockupMonths:
-      extras.lockupMonths ?? 6,
-
-    totalFractions:
-      extras.totalFractions ?? 1000,
-
-    fractionsRemaining:
-      extras.fractionsRemaining ?? 650,
-
-    description:
-      `${col.title} offers fractionalised ownership through blockchain tokenisation. ` +
-      `Each fraction grants proportional rights and yield participation in this ` +
-      `${col.category.toLowerCase()} asset, secured by Linkay Custody Services.`,
-
-    ipfsUrl:
-      `https://ipfs.io/ipfs/Qm_${col.id}`,
-
-    ipfsMetadataUrl:
-      `https://ipfs.io/ipfs/Qm_${col.id}_meta`,
-  };
+  if (error || !item) {
+    return (
+      <UserDashboardLayout>
+        <Box sx={{ p: 5 }}>
+          <Typography>Product not found.</Typography>
+        </Box>
+      </UserDashboardLayout>
+    );
+  }
 
   return (
     <UserDashboardLayout>

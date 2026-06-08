@@ -272,7 +272,7 @@ interface DField {
   id?:          string;
   fieldKey:     string;
   fieldLabel:   string;
-  fieldType:    'text' | 'number' | 'textarea' | 'date' | 'dropdown';
+  fieldType:    'text' | 'number' | 'textarea' | 'date' | 'dropdown' | 'file_upload';
   fieldValue:   string;
   fieldOptions: { label: string; value: string }[] | null;
   isRequired:   boolean;
@@ -280,11 +280,12 @@ interface DField {
 }
 
 const FIELD_TYPES = [
-  { value: 'text',     label: 'Text' },
-  { value: 'number',   label: 'Number' },
-  { value: 'textarea', label: 'Textarea' },
-  { value: 'date',     label: 'Date' },
-  { value: 'dropdown', label: 'Dropdown' },
+  { value: 'text',        label: 'Text' },
+  { value: 'number',      label: 'Number' },
+  { value: 'textarea',    label: 'Textarea' },
+  { value: 'date',        label: 'Date' },
+  { value: 'dropdown',    label: 'Dropdown' },
+  { value: 'file_upload', label: 'File Upload' },
 ];
 
 const EMPTY_FIELD_FORM = {
@@ -347,6 +348,19 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
 
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  // AI suggest
+  const [aiSuggestLoading, setAiSuggestLoading] = useState(false);
+
+  // Dynamic field file uploads: fieldIndex → File[] (multiple files per field)
+  const [dynamicFieldFiles, setDynamicFieldFiles] = useState<Record<number, File[]>>({});
+  // Temp files for the Add dialog rows (rowIndex → File[]) — moved to dynamicFieldFiles on saveField
+  const [dialogTempFiles,   setDialogTempFiles]   = useState<Record<number, File[]>>({});
+  // Temp files for Edit dialog
+  const [dialogEditFiles,   setDialogEditFiles]   = useState<File[]>([]);
+
+  // Object URLs for new media file previews
+  const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
 
   // Validation errors
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
@@ -446,6 +460,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setRoyalty(''); setRoyaltyWallet(walletAddress);
     setMediaFiles([]); setExistingImages([]); setThreeDFiles(''); setLiveStream('');
     setGenerated3DFiles([]); setSavedGlbUrl(''); setDynamicFields([]);
+    setDynamicFieldFiles({}); setDialogTempFiles({}); setDialogEditFiles([]);
     localStorage.removeItem(DRAFT_FIELDS_KEY);
     setStep1Errors({});
     setStep2Errors({});
@@ -467,10 +482,12 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setFieldForm({
       fieldLabel:   f.fieldLabel,
       fieldType:    f.fieldType,
-      fieldValue:   f.fieldValue,
+      fieldValue:   Array.isArray(f.fieldValue) ? (f.fieldValue as string[]).join(', ') : (f.fieldValue ?? ''),
       fieldOptions: f.fieldOptions ? f.fieldOptions.map(o => o.label).join(', ') : '',
       isRequired:   f.isRequired,
     });
+    // Pre-load existing File objects for this field (if any were already picked in this session)
+    setDialogEditFiles(dynamicFieldFiles[index] ?? []);
     setFieldDialog({ open: true, editIndex: index });
   }
 
@@ -478,6 +495,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     setFieldDialog({ open: false, editIndex: null });
     setFieldForm({ ...EMPTY_FIELD_FORM });
     setFieldForms([{ ...EMPTY_FIELD_FORM }]);
+    setDialogTempFiles({});
+    setDialogEditFiles([]);
   }
 
   // helpers for multi-add rows
@@ -513,14 +532,27 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       if (!fieldForm.fieldLabel.trim()) return;
       const updated = toField(fieldForm, fieldDialog.editIndex);
       setDynamicFields(prev => prev.map((f, i) => i === fieldDialog.editIndex ? { ...f, ...updated } : f));
+      // Persist any newly picked files back into dynamicFieldFiles
+      if (dialogEditFiles.length > 0) {
+        setDynamicFieldFiles(prev => ({ ...prev, [fieldDialog.editIndex!]: dialogEditFiles }));
+      }
       closeFieldDialog();
       return;
     }
     // Add mode — save all non-empty rows
-    const valid = fieldForms.filter(f => f.fieldLabel.trim());
-    if (!valid.length) return;
+    const validIndices = fieldForms.map((f, i) => ({ form: f, rowIdx: i })).filter(({ form }) => form.fieldLabel.trim());
+    if (!validIndices.length) return;
     const startOrder = dynamicFields.length;
-    const newFields  = valid.map((f, i) => toField(f, startOrder + i));
+    const newFields  = validIndices.map(({ form }, i) => toField(form, startOrder + i));
+    // Move dialogTempFiles for each valid row into dynamicFieldFiles at the new field index
+    setDynamicFieldFiles(prev => {
+      const next = { ...prev };
+      validIndices.forEach(({ rowIdx }, i) => {
+        const files = dialogTempFiles[rowIdx];
+        if (files?.length) next[startOrder + i] = files;
+      });
+      return next;
+    });
     setDynamicFields(prev => [...prev, ...newFields]);
     closeFieldDialog();
   }
@@ -618,6 +650,36 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       if (threeDUploadedFiles.length === 0) return;
       const ok = await callGenerate3DTask(threeDUploadedFiles);
       if (ok) setThreeDModalStep(2); // step 2 auto-polls via useEffect
+    }
+  }
+
+  // Manage object URLs for media file previews — revoke stale ones on change
+  useEffect(() => {
+    const urls = mediaFiles.map((f) =>
+      f.type.startsWith('image/') ? URL.createObjectURL(f) : '',
+    );
+    setMediaPreviewUrls(urls);
+    return () => { urls.forEach((u) => u && URL.revokeObjectURL(u)); };
+  }, [mediaFiles]);
+
+  // AI suggest for Asset Description
+  async function handleAiSuggest() {
+    if (!title.trim()) return;
+    setAiSuggestLoading(true);
+    try {
+      const { data } = await axiosInstance.post('/api/v1/ai/suggest-description', {
+        title: title.trim(),
+        assetType: ASSET_TYPE_MAP[assetType] ?? assetType,
+        custodian: custodian.trim(),
+      });
+      if (data?.data?.description) {
+        setDescription(data.data.description);
+        setStep1Errors((p) => ({ ...p, description: '' }));
+      }
+    } catch {
+      // silently ignore — user can type manually
+    } finally {
+      setAiSuggestLoading(false);
     }
   }
 
@@ -789,12 +851,26 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     };
 
     try {
+      // Build flat dynamic field file entries with their field indices
+      const dynamicFieldEntries = Object.entries(dynamicFieldFiles).flatMap(
+        ([idxStr, files]) => (files ?? []).map((file) => ({ file, fieldIndex: Number(idxStr) })),
+      );
+
       let savedId: string;
       if (editAsset) {
-        const updated = await dispatch(updateAssetThunk({ assetId: editAsset.id, payload, files: mediaFiles })).unwrap();
+        const updated = await dispatch(updateAssetThunk({
+          assetId: editAsset.id,
+          payload,
+          files: mediaFiles,
+          dynamicFieldFiles: dynamicFieldEntries,
+        })).unwrap();
         savedId = updated.id;
       } else {
-        const created = await dispatch(createAssetThunk({ payload, files: mediaFiles })).unwrap();
+        const created = await dispatch(createAssetThunk({
+          payload,
+          files: mediaFiles,
+          dynamicFieldFiles: dynamicFieldEntries,
+        })).unwrap();
         savedId = created.id;
       }
       if (!asDraft) {
@@ -864,6 +940,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
         open={open}
         onClose={handleClose}
         maxWidth={false}
+        disableScrollLock   // MUI's own scroll-lock causes the shift; our hook handles it
         slotProps={{
           paper: {
             sx: {
@@ -877,6 +954,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
+              outline: 'none',       // remove black focus ring
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
             },
           },
         }}
@@ -1008,7 +1087,38 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
 
               {/* Asset Description */}
               <Box>
-                <Label required>Asset Description</Label>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111' }}>
+                    Asset Description
+                    <Box component="span" sx={{ color: '#ef4444', ml: 0.25 }}>*</Box>
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={handleAiSuggest}
+                    disabled={aiSuggestLoading || !title.trim()}
+                    startIcon={
+                      aiSuggestLoading
+                        ? <CircularProgress size={11} sx={{ color: '#fff' }} />
+                        : <AutoFixHighIcon sx={{ fontSize: '13px !important' }} />
+                    }
+                    sx={{
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
+                      color: '#fff',
+                      borderRadius: 2,
+                      px: 1.5,
+                      py: 0.4,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: 'none',
+                      minWidth: 0,
+                      lineHeight: 1.4,
+                      '&:hover': { background: 'linear-gradient(135deg, #6d28d9 0%, #be185d 100%)' },
+                      '&.Mui-disabled': { background: '#e5e7eb', color: '#9ca3af' },
+                    }}
+                  >
+                    {aiSuggestLoading ? 'Generating…' : 'AI Suggest'}
+                  </Button>
+                </Box>
                 <TextField
                   fullWidth multiline rows={4} size="small" value={description}
                   onChange={(e) => { setDescription(e.target.value); if (step1Errors.description) setStep1Errors(p => ({ ...p, description: '' })); }}
@@ -1095,6 +1205,131 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                           <MenuItem value=""><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>Select</em></MenuItem>
                           {f.fieldOptions.map((opt) => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                         </Select>
+                      ) : f.fieldType === 'file_upload' ? (
+                        <Box>
+                          {/* Click-to-add zone */}
+                          <Box
+                            onClick={() => {
+                              const inp = document.createElement('input');
+                              inp.type = 'file'; inp.multiple = true;
+                              inp.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt,.csv';
+                              inp.onchange = (ev) => {
+                                const picked = Array.from((ev.target as HTMLInputElement).files ?? []);
+                                if (picked.length) {
+                                  setDynamicFieldFiles((prev) => ({
+                                    ...prev,
+                                    [idx]: [...(prev[idx] ?? []), ...picked],
+                                  }));
+                                  // fieldValue becomes list of filenames (comma-separated)
+                                  updateFieldValue(idx, [...(dynamicFieldFiles[idx] ?? []), ...picked].map(fi => fi.name).join(', '));
+                                }
+                              };
+                              inp.click();
+                            }}
+                            sx={{
+                              border: '1.5px dashed',
+                              borderColor: (dynamicFieldFiles[idx]?.length || f.fieldValue) ? '#3b6ef8' : '#d1d5db',
+                              borderRadius: 2, p: 1.5,
+                              display: 'flex', alignItems: 'center', gap: 1.5,
+                              cursor: 'pointer',
+                              bgcolor: (dynamicFieldFiles[idx]?.length || f.fieldValue) ? '#eff6ff' : '#fafafa',
+                              transition: 'all 0.2s',
+                              '&:hover': { borderColor: '#3b6ef8', bgcolor: '#eff6ff' },
+                            }}
+                          >
+                            <Box sx={{ width: 44, height: 44, bgcolor: '#f3f4f6', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <FileUploadOutlinedIcon sx={{ color: '#9ca3af', fontSize: 22 }} />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+                                {(dynamicFieldFiles[idx]?.length ?? 0) > 0
+                                  ? `${dynamicFieldFiles[idx].length} file${dynamicFieldFiles[idx].length > 1 ? 's' : ''} selected · Click to add more`
+                                  : 'Click to upload files'}
+                              </Typography>
+                              <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.25 }}>
+                                Images, PDF, DOCX, XLSX, ZIP · Max 50 MB each · Multiple files allowed
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          {/* Thumbnails of newly picked files */}
+                          {(dynamicFieldFiles[idx]?.length ?? 0) > 0 && (
+                            <Box sx={{ mt: 1.25, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                              {(dynamicFieldFiles[idx] ?? []).map((file, fi) => {
+                                const isImg  = file.type.startsWith('image/');
+                                const objUrl = isImg ? URL.createObjectURL(file) : '';
+                                return (
+                                  <Box key={fi} sx={{ position: 'relative', '&:hover .df-rm': { opacity: 1 } }}>
+                                    <Box
+                                      onClick={() => isImg && objUrl && setLightboxSrc(objUrl)}
+                                      sx={{ width: 64, height: 64, borderRadius: 2, overflow: 'hidden', border: '1.5px solid #e5e7eb', bgcolor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isImg ? 'zoom-in' : 'default', '&:hover': isImg ? { borderColor: '#3b6ef8' } : {} }}
+                                    >
+                                      {isImg ? (
+                                        /* eslint-disable-next-line @next/next/no-img-element */
+                                        <img src={objUrl} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                      ) : (
+                                        <UploadFileIcon sx={{ color: '#9ca3af', fontSize: 26 }} />
+                                      )}
+                                    </Box>
+                                    <Typography sx={{ fontSize: 9, color: '#6b7280', mt: 0.25, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                                      {file.name.length > 9 ? file.name.slice(0, 8) + '…' : file.name}
+                                    </Typography>
+                                    <IconButton className="df-rm" size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDynamicFieldFiles((prev) => {
+                                          const updated = (prev[idx] ?? []).filter((_, j) => j !== fi);
+                                          return { ...prev, [idx]: updated };
+                                        });
+                                      }}
+                                      sx={{ position: 'absolute', top: -5, right: -5, width: 16, height: 16, bgcolor: '#fff', border: '1px solid #e5e7eb', opacity: 0, transition: 'opacity 0.15s', p: 0, '&:hover': { bgcolor: '#fee2e2', borderColor: '#ef4444' } }}>
+                                      <CloseIcon sx={{ fontSize: 10, color: '#374151' }} />
+                                    </IconButton>
+                                  </Box>
+                                );
+                              })}
+                            </Box>
+                          )}
+
+                          {/* Show existing saved file entries from DB (edit mode, files not re-picked) */}
+                          {!dynamicFieldFiles[idx]?.length && f.fieldValue && (() => {
+                            // fieldValue is now an array of { name, mimeType, size, data } objects
+                            const entries: Array<{ name: string; mimeType: string; size: number; data: string }> =
+                              Array.isArray(f.fieldValue)
+                                ? (f.fieldValue as unknown[]).map((v) =>
+                                    typeof v === 'object' && v !== null && 'data' in v
+                                      ? v as { name: string; mimeType: string; size: number; data: string }
+                                      : { name: String(v), mimeType: '', size: 0, data: '' }
+                                  )
+                                : [];
+                            if (!entries.length) return null;
+                            return (
+                              <Box sx={{ mt: 1.25, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {entries.map((entry, pi) => {
+                                  const isImg = entry.mimeType.startsWith('image/');
+                                  return (
+                                    <Box key={pi} sx={{ position: 'relative', '&:hover .db-rm': { opacity: 1 } }}>
+                                      <Box
+                                        onClick={() => isImg && entry.data && setLightboxSrc(entry.data)}
+                                        sx={{ width: 64, height: 64, borderRadius: 2, overflow: 'hidden', border: '1.5px solid #bfdbfe', bgcolor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isImg ? 'zoom-in' : 'default' }}
+                                      >
+                                        {isImg && entry.data ? (
+                                          /* eslint-disable-next-line @next/next/no-img-element */
+                                          <img src={entry.data} alt={entry.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                          <UploadFileIcon sx={{ color: '#3b6ef8', fontSize: 26 }} />
+                                        )}
+                                      </Box>
+                                      <Typography sx={{ fontSize: 9, color: '#1d4ed8', mt: 0.25, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                                        {entry.name}
+                                      </Typography>
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+                            );
+                          })()}
+                        </Box>
                       ) : (
                         <TextField fullWidth size="small"
                           type={f.fieldType === 'number' ? 'number' : f.fieldType === 'date' ? 'date' : 'text'}
@@ -1143,6 +1378,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={valuation}
                     onChange={(e) => { setValuation(e.target.value); if (step2Errors.valuation) setStep2Errors(p => ({ ...p, valuation: '' })); }}
+                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.valuation} helperText={step2Errors.valuation}
                     sx={inputSx}
                     slotProps={{
@@ -1215,6 +1451,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
                     onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
+                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.totalFractions}
                     helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% tokenization → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
                     sx={inputSx}
@@ -1359,23 +1596,89 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     Max size: {MAX_FILE_MB} mb each file
                   </Typography>
 
-                  {mediaFiles.length > 0 && (
-                    <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.75, justifyContent: 'center' }}>
-                      {mediaFiles.map((f, i) => (
-                        <Box key={i} sx={{
-                          px: 1.5, py: 0.25, bgcolor: '#e8e7ff', borderRadius: 10,
-                          fontSize: 12, color: '#5a52e0', fontWeight: 500,
-                        }}>
-                          {f.name}
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
+
 </Box>
 
                 <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 0.75 }}>
                   Add your media files here and you can upload up to {MAX_FILES} files max
                 </Typography>
+
+                {/* Image thumbnails with preview and remove */}
+                {mediaFiles.length > 0 && (
+                  <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {mediaFiles.map((f, i) => {
+                      const isImg = f.type.startsWith('image/');
+                      const previewUrl = mediaPreviewUrls[i] ?? '';
+                      return (
+                        <Box
+                          key={i}
+                          sx={{ position: 'relative', '&:hover .rm-btn': { opacity: 1 } }}
+                        >
+                          <Box
+                            onClick={() => isImg && previewUrl && setLightboxSrc(previewUrl)}
+                            sx={{
+                              width: 72, height: 72, borderRadius: 2, overflow: 'hidden',
+                              border: '2px solid #e5e7eb',
+                              bgcolor: '#f3f4f6',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: isImg ? 'pointer' : 'default',
+                              transition: 'border-color 0.15s',
+                              '&:hover': isImg ? { borderColor: '#3b6ef8' } : {},
+                            }}
+                          >
+                            {isImg && previewUrl ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={previewUrl} alt={f.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <UploadFileIcon sx={{ color: '#9ca3af', fontSize: 26 }} />
+                            )}
+                          </Box>
+                          {/* Hover zoom hint */}
+                          {isImg && (
+                            <Box sx={{
+                              position: 'absolute', inset: 0, borderRadius: 2,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              bgcolor: 'rgba(0,0,0,0)', transition: 'bgcolor 0.15s',
+                              pointerEvents: 'none',
+                            }} />
+                          )}
+                          {/* File name tooltip */}
+                          <Typography sx={{
+                            fontSize: 10, color: '#6b7280', mt: 0.25,
+                            maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap', textAlign: 'center',
+                          }}>
+                            {f.name.length > 9 ? f.name.slice(0, 8) + '…' : f.name}
+                          </Typography>
+                          {/* Remove button */}
+                          <IconButton
+                            className="rm-btn"
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMediaFiles((prev) => prev.filter((_, j) => j !== i));
+                            }}
+                            sx={{
+                              position: 'absolute', top: -6, right: -6,
+                              width: 18, height: 18,
+                              bgcolor: '#fff',
+                              border: '1.5px solid #e5e7eb',
+                              opacity: 0,
+                              transition: 'opacity 0.15s',
+                              p: 0,
+                              '&:hover': { bgcolor: '#fee2e2', borderColor: '#ef4444' },
+                            }}
+                          >
+                            <CloseIcon sx={{ fontSize: 11, color: '#374151' }} />
+                          </IconButton>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                )}
 
                 <input
                   ref={fileInputRef} type="file" multiple hidden
@@ -1622,12 +1925,80 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.5 }}>Separate options with commas</Typography>
                 </Box>
               )}
-              <Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>Default Value</Typography>
-                <TextField fullWidth size="small" placeholder="Optional default value"
-                  type={fieldForm.fieldType === 'number' ? 'number' : fieldForm.fieldType === 'date' ? 'date' : 'text'}
-                  value={fieldForm.fieldValue} onChange={(e) => setFieldForm(p => ({ ...p, fieldValue: e.target.value }))} sx={inputSx} />
-              </Box>
+              {fieldForm.fieldType === 'file_upload' ? (
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>
+                    Default Files <Typography component="span" sx={{ fontSize: 11, color: '#9ca3af', fontWeight: 400 }}>(optional — pre-upload files for this field)</Typography>
+                  </Typography>
+                  {/* Drop/click zone */}
+                  <Box
+                    onClick={() => {
+                      const inp = document.createElement('input');
+                      inp.type = 'file'; inp.multiple = true;
+                      inp.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt,.csv';
+                      inp.onchange = (ev) => {
+                        const picked = Array.from((ev.target as HTMLInputElement).files ?? []);
+                        if (picked.length) setDialogEditFiles(prev => [...prev, ...picked]);
+                      };
+                      inp.click();
+                    }}
+                    sx={{
+                      border: '1.5px dashed', borderColor: dialogEditFiles.length ? '#3b6ef8' : '#d1d5db',
+                      borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 1.5,
+                      cursor: 'pointer', bgcolor: dialogEditFiles.length ? '#eff6ff' : '#fafafa',
+                      transition: 'all 0.2s', '&:hover': { borderColor: '#3b6ef8', bgcolor: '#eff6ff' },
+                    }}
+                  >
+                    <Box sx={{ width: 40, height: 40, bgcolor: '#f3f4f6', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FileUploadOutlinedIcon sx={{ color: '#9ca3af', fontSize: 22 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+                        Click to upload default files
+                      </Typography>
+                      <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 0.25 }}>
+                        Images, PDF, DOCX, XLSX, ZIP · Max 50 MB each · Multiple files allowed
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {/* Thumbnails of picked files */}
+                  {dialogEditFiles.length > 0 && (
+                    <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {dialogEditFiles.map((f, fi) => {
+                        const isImg  = f.type.startsWith('image/');
+                        const objUrl = isImg ? URL.createObjectURL(f) : '';
+                        return (
+                          <Box key={fi} sx={{ position: 'relative', '&:hover .dlg-rm': { opacity: 1 } }}>
+                            <Box sx={{ width: 64, height: 64, borderRadius: 1.5, overflow: 'hidden', border: '1.5px solid #e5e7eb', bgcolor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {isImg ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={objUrl} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <UploadFileIcon sx={{ color: '#9ca3af', fontSize: 24 }} />
+                              )}
+                            </Box>
+                            <Typography sx={{ fontSize: 9, color: '#6b7280', mt: 0.25, maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                              {f.name.length > 8 ? f.name.slice(0, 7) + '…' : f.name}
+                            </Typography>
+                            <IconButton className="dlg-rm" size="small"
+                              onClick={(e) => { e.stopPropagation(); setDialogEditFiles(prev => prev.filter((_, j) => j !== fi)); }}
+                              sx={{ position: 'absolute', top: -5, right: -5, width: 16, height: 16, bgcolor: '#fff', border: '1px solid #e5e7eb', opacity: 0, transition: 'opacity 0.15s', p: 0, '&:hover': { bgcolor: '#fee2e2', borderColor: '#ef4444' } }}>
+                              <CloseIcon sx={{ fontSize: 10, color: '#374151' }} />
+                            </IconButton>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </Box>
+              ) : (
+                <Box>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111', mb: 0.75 }}>Default Value</Typography>
+                  <TextField fullWidth size="small" placeholder="Optional default value"
+                    type={fieldForm.fieldType === 'number' ? 'number' : fieldForm.fieldType === 'date' ? 'date' : 'text'}
+                    value={fieldForm.fieldValue} onChange={(e) => setFieldForm(p => ({ ...p, fieldValue: e.target.value }))} sx={inputSx} />
+                </Box>
+              )}
               <FormControlLabel
                 control={<Checkbox size="small" checked={fieldForm.isRequired}
                   onChange={(e) => setFieldForm(p => ({ ...p, isRequired: e.target.checked }))}
@@ -1686,21 +2057,98 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               )}
 
               {/* Default value + Required */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1.5, alignItems: 'center' }}>
+              {row.fieldType === 'file_upload' ? (
                 <Box>
-                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151', mb: 0.5 }}>Default Value</Typography>
-                  <TextField fullWidth size="small" placeholder="Optional default value"
-                    type={row.fieldType === 'number' ? 'number' : row.fieldType === 'date' ? 'date' : 'text'}
-                    value={row.fieldValue}
-                    onChange={(e) => updateFieldRow(idx, { fieldValue: e.target.value })} sx={inputSx} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                      Default Files <Typography component="span" sx={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>(optional)</Typography>
+                    </Typography>
+                    <FormControlLabel sx={{ mr: 0 }}
+                      control={<Checkbox size="small" checked={row.isRequired}
+                        onChange={(e) => updateFieldRow(idx, { isRequired: e.target.checked })}
+                        sx={{ color: '#d1d5db', '&.Mui-checked': { color: '#3b6ef8' } }} />}
+                      label={<Typography sx={{ fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>Required</Typography>}
+                    />
+                  </Box>
+                  {/* Click-to-upload zone */}
+                  <Box
+                    onClick={() => {
+                      const inp = document.createElement('input');
+                      inp.type = 'file'; inp.multiple = true;
+                      inp.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt,.csv';
+                      inp.onchange = (ev) => {
+                        const picked = Array.from((ev.target as HTMLInputElement).files ?? []);
+                        if (picked.length) {
+                          setDialogTempFiles(prev => ({ ...prev, [idx]: [...(prev[idx] ?? []), ...picked] }));
+                        }
+                      };
+                      inp.click();
+                    }}
+                    sx={{
+                      border: '1.5px dashed', borderColor: (dialogTempFiles[idx]?.length) ? '#3b6ef8' : '#d1d5db',
+                      borderRadius: 2, p: 1.25, display: 'flex', alignItems: 'center', gap: 1,
+                      cursor: 'pointer', bgcolor: (dialogTempFiles[idx]?.length) ? '#eff6ff' : '#fafafa',
+                      transition: 'all 0.2s', '&:hover': { borderColor: '#3b6ef8', bgcolor: '#eff6ff' },
+                    }}
+                  >
+                    <Box sx={{ width: 32, height: 32, bgcolor: '#f3f4f6', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FileUploadOutlinedIcon sx={{ color: '#9ca3af', fontSize: 18 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                        {(dialogTempFiles[idx]?.length ?? 0) > 0
+                          ? `${dialogTempFiles[idx].length} file${dialogTempFiles[idx].length > 1 ? 's' : ''} selected · Click to add more`
+                          : 'Click to upload default files'}
+                      </Typography>
+                      <Typography sx={{ fontSize: 10, color: '#9ca3af' }}>
+                        Images, PDF, DOCX, XLSX, ZIP · Max 50 MB · Multiple allowed
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {/* File thumbnails */}
+                  {(dialogTempFiles[idx]?.length ?? 0) > 0 && (
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                      {(dialogTempFiles[idx] ?? []).map((f, fi) => {
+                        const isImg  = f.type.startsWith('image/');
+                        const objUrl = isImg ? URL.createObjectURL(f) : '';
+                        return (
+                          <Box key={fi} sx={{ position: 'relative', '&:hover .drow-rm': { opacity: 1 } }}>
+                            <Box sx={{ width: 52, height: 52, borderRadius: 1.5, overflow: 'hidden', border: '1px solid #e5e7eb', bgcolor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {isImg ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={objUrl} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <UploadFileIcon sx={{ color: '#9ca3af', fontSize: 20 }} />
+                              )}
+                            </Box>
+                            <IconButton className="drow-rm" size="small"
+                              onClick={(e) => { e.stopPropagation(); setDialogTempFiles(prev => { const n = {...prev}; n[idx] = (n[idx] ?? []).filter((_, j) => j !== fi); return n; }); }}
+                              sx={{ position: 'absolute', top: -4, right: -4, width: 15, height: 15, bgcolor: '#fff', border: '1px solid #e5e7eb', opacity: 0, transition: 'opacity 0.15s', p: 0, '&:hover': { bgcolor: '#fee2e2' } }}>
+                              <CloseIcon sx={{ fontSize: 9, color: '#374151' }} />
+                            </IconButton>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  )}
                 </Box>
-                <FormControlLabel sx={{ mt: 2.5, mr: 0 }}
-                  control={<Checkbox size="small" checked={row.isRequired}
-                    onChange={(e) => updateFieldRow(idx, { isRequired: e.target.checked })}
-                    sx={{ color: '#d1d5db', '&.Mui-checked': { color: '#3b6ef8' } }} />}
-                  label={<Typography sx={{ fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>Required</Typography>}
-                />
-              </Box>
+              ) : (
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1.5, alignItems: 'center' }}>
+                  <Box>
+                    <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#374151', mb: 0.5 }}>Default Value</Typography>
+                    <TextField fullWidth size="small" placeholder="Optional default value"
+                      type={row.fieldType === 'number' ? 'number' : row.fieldType === 'date' ? 'date' : 'text'}
+                      value={row.fieldValue}
+                      onChange={(e) => updateFieldRow(idx, { fieldValue: e.target.value })} sx={inputSx} />
+                  </Box>
+                  <FormControlLabel sx={{ mt: 2.5, mr: 0 }}
+                    control={<Checkbox size="small" checked={row.isRequired}
+                      onChange={(e) => updateFieldRow(idx, { isRequired: e.target.checked })}
+                      sx={{ color: '#d1d5db', '&.Mui-checked': { color: '#3b6ef8' } }} />}
+                    label={<Typography sx={{ fontSize: 12, color: '#374151', whiteSpace: 'nowrap' }}>Required</Typography>}
+                  />
+                </Box>
+              )}
             </Box>
           ))}
 

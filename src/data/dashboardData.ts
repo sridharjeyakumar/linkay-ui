@@ -36,6 +36,7 @@ export interface AuctionItem {
   currentIndex: number;
   image: string;
   endsAt: Date;
+  timezone?: string;
 }
 
 // TODO: replace with API-provided URLs
@@ -99,6 +100,20 @@ export const MOCK_COLLECTIONS: Collection[] = [
     totalItems: 60,
     previewImages: [img('watch1', 600, 400), img('watch2', 300, 130), img('watch3', 300, 130), img('watch4', 300, 130)],
   },
+];
+
+export interface UpcomingAuction {
+  id: string;
+  title: string;
+  priceEth: number;
+  startsAt: Date;
+  image: string;
+}
+
+export const MOCK_UPCOMING_AUCTIONS: UpcomingAuction[] = [
+  { id: 'upc-1', title: 'The Futr Abstr',   priceEth: 0.25, startsAt: new Date('2026-06-15'), image: img('futr', 120, 120) },
+  { id: 'upc-2', title: 'Lorekien Imperial', priceEth: 0.40, startsAt: new Date('2026-06-15'), image: img('lorekien', 120, 120) },
+  { id: 'upc-3', title: 'Grande Hotel',      priceEth: 0.13, startsAt: new Date('2026-06-15'), image: img('grandehotel', 120, 120) },
 ];
 
 const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000);

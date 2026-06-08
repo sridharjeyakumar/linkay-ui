@@ -30,6 +30,7 @@ export interface Asset {
   updatedBy?: string;
   ipfsUrl?: string;
   ipfsMetadataUrl?: string;
+  transactionHash?: string | null;
   museumName?: string;
   // New fields
   custodian?: string;
@@ -41,6 +42,10 @@ export interface Asset {
   retainedPercent?: number;
   royaltyPercent?: number;
   royaltyWallet?: string;
+  nftContractAddress?: string | null;
+  erc3643ContractAddress?: string | null;
+  nftTokenId?: number | null;
+  publishedAt?: string | null;
   tokenization?: {
     tokenizationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'TREASURY_PENDING' | 'TREASURY_APPROVED' | 'TREASURY_REJECTED';
     errorMessage?: string | null;
@@ -52,6 +57,8 @@ export interface Asset {
     startTime: string;
     endDate: string;
     endTime: string;
+    timezone?: string | null;
+    endDateTimeUTC?: string | null;
     onChainAuctionId?: string | null;
   } | null;
 }
