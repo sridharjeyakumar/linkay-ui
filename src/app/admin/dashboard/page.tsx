@@ -26,6 +26,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import {
@@ -139,9 +141,14 @@ function DeclineModal({ open, onClose, onConfirm, loading }: {
   open: boolean; onClose: () => void; onConfirm: (reason: string) => void; loading: boolean;
 }) {
   const [reason, setReason] = useState('');
+  const MIN = 5;
+  const MAX = 500;
+  const trimmed = reason.trim();
+  const tooShort = trimmed.length > 0 && trimmed.length < MIN;
+  const isValid  = trimmed.length >= MIN && trimmed.length <= MAX;
 
   const handleClose = () => { setReason(''); onClose(); };
-  const handleConfirm = () => { if (reason.trim()) onConfirm(reason); };
+  const handleConfirm = () => { if (isValid) onConfirm(reason); };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: '14px', m: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.12)' } } }}>
@@ -161,14 +168,26 @@ function DeclineModal({ open, onClose, onConfirm, loading }: {
         <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#374151', fontFamily: 'Inter, sans-serif', mb: '8px' }}>
           Reason for Decline
         </Typography>
-        <TextField fullWidth multiline rows={3} placeholder="Enter reason here" value={reason} onChange={(e) => setReason(e.target.value)}
-          sx={{ mb: '24px', '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '13px', fontFamily: 'Inter, sans-serif', color: '#374151', '& fieldset': { borderColor: '#E5E7EB' }, '&:hover fieldset': { borderColor: '#D1D5DB' }, '&.Mui-focused fieldset': { borderColor: '#9CA3AF', borderWidth: '1px' } }, '& .MuiOutlinedInput-input::placeholder': { color: '#9CA3AF', opacity: 1 } }}
+        <TextField fullWidth multiline rows={3} placeholder="Enter reason here" value={reason}
+          onChange={(e) => { if (e.target.value.length <= MAX) setReason(e.target.value); }}
+          error={tooShort}
+          helperText={
+            tooShort
+              ? `Minimum ${MIN} characters required`
+              : undefined
+          }
+          sx={{ mb: '8px', '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '13px', fontFamily: 'Inter, sans-serif', color: '#374151', '& fieldset': { borderColor: '#E5E7EB' }, '&:hover fieldset': { borderColor: '#D1D5DB' }, '&.Mui-focused fieldset': { borderColor: '#9CA3AF', borderWidth: '1px' } }, '& .MuiOutlinedInput-input::placeholder': { color: '#9CA3AF', opacity: 1 } }}
         />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: '16px' }}>
+          <Typography sx={{ fontSize: 11, color: reason.length >= MAX ? '#ef4444' : '#9ca3af', fontFamily: 'Inter, sans-serif' }}>
+            {reason.length} / {MAX}
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Button onClick={handleClose} disabled={loading} sx={{ color: '#374151', fontFamily: 'Inter, sans-serif', fontWeight: 500, fontSize: '13px', textTransform: 'none', px: '4px', py: '8px', minWidth: 0, '&:hover': { bgcolor: 'transparent' } }}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={loading || !reason.trim()} variant="contained" startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <CancelIcon sx={{ fontSize: '16px !important' }} />}
+          <Button onClick={handleConfirm} disabled={loading || !isValid} variant="contained" startIcon={loading ? <CircularProgress size={14} color="inherit" /> : <CancelIcon sx={{ fontSize: '16px !important' }} />}
             sx={{ bgcolor: '#EF4444', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', fontWeight: 600, fontSize: '13px', textTransform: 'none', borderRadius: '20px', px: '16px', py: '8px', boxShadow: 'none', '&:hover': { bgcolor: '#DC2626', boxShadow: 'none' } }}>
             Decline Asset
           </Button>
@@ -205,20 +224,20 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
 }) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const imageBg = asset ? (() => {
-    const GRADIENTS = [
-      'linear-gradient(135deg, #8B6914 0%, #C4956A 40%, #7B5C8D 80%, #4A3B6B 100%)',
-      'linear-gradient(135deg, #1E3A5F 0%, #2563EB 50%, #0EA5E9 100%)',
-      'linear-gradient(135deg, #92400E 0%, #D97706 50%, #B45309 100%)',
-      'linear-gradient(135deg, #374151 0%, #6B7280 50%, #9CA3AF 100%)',
-      'linear-gradient(135deg, #065F46 0%, #10B981 50%, #6EE7B7 100%)',
-    ];
-    const files = parseMediaFiles(asset.mediaFiles);
-    if (files[0]) return `url(${files[0]})`;
-    return GRADIENTS[asset.title.charCodeAt(0) % GRADIENTS.length];
-  })() : 'linear-gradient(135deg, #374151 0%, #6B7280 100%)';
-  const isUrlBg = imageBg.startsWith('url(');
+  const images = asset ? parseMediaFiles(asset.mediaFiles) : [];
+  const GRADIENTS = [
+    'linear-gradient(135deg, #8B6914 0%, #C4956A 40%, #7B5C8D 80%, #4A3B6B 100%)',
+    'linear-gradient(135deg, #1E3A5F 0%, #2563EB 50%, #0EA5E9 100%)',
+    'linear-gradient(135deg, #92400E 0%, #D97706 50%, #B45309 100%)',
+    'linear-gradient(135deg, #374151 0%, #6B7280 50%, #9CA3AF 100%)',
+    'linear-gradient(135deg, #065F46 0%, #10B981 50%, #6EE7B7 100%)',
+  ];
+  const fallbackGradient = asset
+    ? GRADIENTS[asset.title.charCodeAt(0) % GRADIENTS.length]
+    : 'linear-gradient(135deg, #374151 0%, #6B7280 100%)';
 
   const perFraction = asset?.totalFractions && asset?.valuation
     ? `$${(asset.valuation / asset.totalFractions).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
@@ -266,17 +285,117 @@ function ViewModal({ asset, loading, open, onClose, onApprove, onReject }: {
           <CloseIcon sx={{ fontSize: '16px', color: '#374151' }} />
         </IconButton>
 
-        {/* Hero image */}
-        <Box
-          sx={{
-            width: '100%',
-            height: { xs: '150px', sm: '180px' },
-            background: isUrlBg ? undefined : imageBg,
-            backgroundImage: isUrlBg ? imageBg : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
+        {/* Hero image carousel */}
+        <Box sx={{ position: 'relative', width: '100%', height: { xs: '120px', sm: '140px' }, bgcolor: '#f3f4f6', overflow: 'hidden' }}>
+          {images.length > 0 ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={images[activeIndex]}
+              alt={asset?.title ?? ''}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          ) : (
+            <Box sx={{ width: '100%', height: '100%', background: fallbackGradient }} />
+          )}
+
+          {/* Left arrow */}
+          {images.length > 1 && activeIndex > 0 && (
+            <IconButton onClick={() => setActiveIndex(i => i - 1)} size="small"
+              sx={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.45)', color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' } }}>
+              <ChevronLeftIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          )}
+
+          {/* Right arrow */}
+          {images.length > 1 && activeIndex < images.length - 1 && (
+            <IconButton onClick={() => setActiveIndex(i => i + 1)} size="small"
+              sx={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.45)', color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' } }}>
+              <ChevronRightIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          )}
+
+          {/* Dot indicators */}
+          {images.length > 1 && (
+            <Box sx={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 0.5 }}>
+              {images.map((_, i) => (
+                <Box key={i} onClick={() => setActiveIndex(i)} sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: i === activeIndex ? '#fff' : 'rgba(255,255,255,0.45)', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.15)' }} />
+              ))}
+            </Box>
+          )}
+
+          {/* Image counter */}
+          {images.length > 1 && (
+            <Box sx={{ position: 'absolute', top: 6, right: 8, bgcolor: 'rgba(0,0,0,0.45)', borderRadius: '4px', px: 0.75, py: 0.25 }}>
+              <Typography sx={{ fontSize: 10, color: '#fff', fontWeight: 600 }}>
+                {activeIndex + 1} / {images.length}
+              </Typography>
+            </Box>
+          )}
+
+          {/* View full (lightbox) */}
+          {images.length > 0 && (
+            <Box onClick={() => setLightboxOpen(true)} sx={{ position: 'absolute', bottom: 6, right: 8, bgcolor: 'rgba(0,0,0,0.45)', borderRadius: '4px', px: 0.75, py: 0.25, cursor: 'zoom-in' }}>
+              <Typography sx={{ fontSize: 10, color: '#fff', fontWeight: 600, letterSpacing: 0.3 }}>VIEW FULL</Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Lightbox */}
+        {images.length > 0 && (
+          <Dialog open={lightboxOpen} onClose={() => setLightboxOpen(false)} maxWidth={false}
+            slotProps={{
+              paper: { sx: { bgcolor: 'transparent', boxShadow: 'none', m: 0, overflow: 'hidden', width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh' } },
+              backdrop: { sx: { bgcolor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' } },
+            }}>
+            <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+              {/* Close */}
+              <IconButton onClick={() => setLightboxOpen(false)}
+                sx={{ position: 'absolute', top: 16, right: 16, color: '#fff', bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
+                <CloseIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+
+              {/* Counter */}
+              {images.length > 1 && (
+                <Typography sx={{ position: 'absolute', top: 20, left: 20, color: '#fff', fontSize: 13, fontWeight: 600 }}>
+                  {activeIndex + 1} / {images.length}
+                </Typography>
+              )}
+
+              {/* Left arrow */}
+              {images.length > 1 && activeIndex > 0 && (
+                <IconButton onClick={() => setActiveIndex(i => i - 1)}
+                  sx={{ position: 'absolute', left: 16, color: '#fff', bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
+                  <ChevronLeftIcon sx={{ fontSize: 28 }} />
+                </IconButton>
+              )}
+
+              {/* Image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={images[activeIndex]} alt={asset?.title ?? ''}
+                style={{ maxWidth: '85vw', maxHeight: '80vh', display: 'block', borderRadius: 8, objectFit: 'contain' }} />
+
+              {/* Right arrow */}
+              {images.length > 1 && activeIndex < images.length - 1 && (
+                <IconButton onClick={() => setActiveIndex(i => i + 1)}
+                  sx={{ position: 'absolute', right: 16, color: '#fff', bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
+                  <ChevronRightIcon sx={{ fontSize: 28 }} />
+                </IconButton>
+              )}
+
+              {/* Dots */}
+              {images.length > 1 && (
+                <Box sx={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 0.75 }}>
+                  {images.map((_, i) => (
+                    <Box key={i} onClick={() => setActiveIndex(i)}
+                      sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: i === activeIndex ? '#fff' : 'rgba(255,255,255,0.35)', cursor: 'pointer', transition: 'background-color 0.2s' }} />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          </Dialog>
+        )}
 
         {/* Title & summary — only shown once loaded */}
         {!loading && asset && (
