@@ -87,7 +87,7 @@ const JURISDICTIONS = [
 
 const ROYALTY_OPTIONS = ['0%', '1%', '2.5%', '5%', '7.5%', '10%'];
 
-const MAX_WORDS = 200;
+const MAX_WORDS = 1500;
 const MAX_FILES = 10;
 const MAX_FILE_MB = 50;
 
@@ -365,6 +365,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   // Validation errors
   const [step1Errors, setStep1Errors] = useState<Record<string, string>>({});
   const [step2Errors, setStep2Errors] = useState<Record<string, string>>({});
+  const [step3Error,  setStep3Error]  = useState<string>('');
 
   // 3D Generation Modal
   const threeDFileInputRef = useRef<HTMLInputElement>(null);
@@ -385,6 +386,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
   const [loadingVideo, setLoadingVideo] = useState(false);
   const [savedGlbUrl, setSavedGlbUrl] = useState<string>('');
+  const [savingAs, setSavingAs] = useState<'draft' | 'review' | null>(null);
 
   // Auto-calculated price per fraction
   const pricePerFraction = (() => {
@@ -574,6 +576,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       (f) => f.size <= MAX_FILE_MB * 1024 * 1024,
     );
     setMediaFiles((prev) => [...prev, ...dropped].slice(0, MAX_FILES));
+    if (dropped.length > 0) setStep3Error('');
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -581,6 +584,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       (f) => f.size <= MAX_FILE_MB * 1024 * 1024,
     );
     setMediaFiles((prev) => [...prev, ...picked].slice(0, MAX_FILES));
+    if (picked.length > 0) setStep3Error('');
   }
 
   // ── 3D modal file handling ──────────────────────────────────────────────────
@@ -800,6 +804,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   // ── save/submit ─────────────────────────────────────────────────────────────
 
   async function handleSave(asDraft: boolean) {
+    if (!asDraft && !validateStep3()) return;
+    setSavingAs(asDraft ? 'draft' : 'review');
     // Client-side validation before any API call — prevents generic "Validation failed"
     const errs: Record<string, string> = {};
     const titleTrimmed = title.trim();
@@ -812,6 +818,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       errs.assetType = 'Asset Type is required.';
     }
     if (Object.keys(errs).length > 0) {
+      setSavingAs(null);
       setStep1Errors((p) => ({ ...p, ...errs }));
       dispatch(clearError());
       if (step !== 1) setStep(1);
@@ -882,6 +889,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       handleClose();
     } catch {
       // surfaced via Redux error state
+    } finally {
+      setSavingAs(null);
     }
   }
 
@@ -922,6 +931,16 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     }
     setStep2Errors(errs);
     return Object.keys(errs).length === 0;
+  }
+
+  function validateStep3(): boolean {
+    const hasMedia = mediaFiles.length > 0 || existingImages.length > 0;
+    if (!hasMedia) {
+      setStep3Error('At least one media image is required before submitting for review. Please upload an image to continue.');
+      return false;
+    }
+    setStep3Error('');
+    return true;
   }
 
   function handleNext() {
@@ -1031,6 +1050,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
+            scrollbarGutter: 'stable',
             overscrollBehavior: 'contain',
             scrollBehavior: 'smooth',
             px: 3,
@@ -1128,7 +1148,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.description}</Typography>
                 ) : (
                   <Typography sx={{ fontSize: 12, mt: 0.5, color: countWords(description) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}>
-                    {countWords(description) > MAX_WORDS ? `${countWords(description)}/${MAX_WORDS} words — over limit` : 'Max 200 words'}
+                    {countWords(description) > MAX_WORDS ? `${countWords(description)}/${MAX_WORDS} words — over limit` : `${countWords(description)}/${MAX_WORDS} words`}
                   </Typography>
                 )}
               </Box>
@@ -1146,7 +1166,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.historicalContext}</Typography>
                   ) : (
                     <Typography sx={{ fontSize: 12, mt: 0.5, color: countWords(historicalContext) > MAX_WORDS ? '#ef4444' : '#9ca3af' }}>
-                      {countWords(historicalContext) > MAX_WORDS ? `${countWords(historicalContext)}/${MAX_WORDS} words — over limit` : 'Max 200 words'}
+                      {countWords(historicalContext) > MAX_WORDS ? `${countWords(historicalContext)}/${MAX_WORDS} words — over limit` : `${countWords(historicalContext)}/${MAX_WORDS} words`}
                     </Typography>
                   )}
                 </Box>
@@ -1369,7 +1389,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
 
           {/* ══ STEP 2: Valuation & Tokenization ═══════════════════════════════ */}
           {step === 2 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
               {/* Row 1: Valuation + Jurisdiction */}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
@@ -1402,62 +1422,59 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 </Box>
               </Box>
 
-              {/* Row 2: Slider + Total Fractions + Price per Fraction */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1.4fr 1.4fr' }, gap: 2, alignItems: 'start' }}>
-                {/* Slider */}
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
-                    <Label required>Percentage % to Tokenize</Label>
-                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                      <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
-                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#3b6ef8' }}>
-                          {tokenizePercent}% tokenized
-                        </Typography>
-                      </Box>
-                      <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
-                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
-                          {100 - tokenizePercent}% retained
-                        </Typography>
-                      </Box>
+              {/* Row 2: Tokenization Slider */}
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
+                  <Label required>Percentage % to Tokenize</Label>
+                  <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                    <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe', minWidth: 110, textAlign: 'center' }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#3b6ef8' }}>
+                        {tokenizePercent}% tokenized
+                      </Typography>
+                    </Box>
+                    <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0', minWidth: 110, textAlign: 'center' }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
+                        {100 - tokenizePercent}% retained
+                      </Typography>
                     </Box>
                   </Box>
-                  <Box sx={{ px: 0.5, pt: 0.5 }}>
-                    <Slider
-                      value={Number(tokenizePercent) || 0}
-                      onChange={(_, v) => setTokenizePercent(v as number)}
-                      min={0} max={49} step={1}
-                      sx={{
-                        color: '#3b6ef8',
-                        height: 6,
-                        '& .MuiSlider-thumb': {
-                          width: 18, height: 18,
-                          bgcolor: '#3b6ef8',
-                          '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(59,110,248,0.15)' },
-                        },
-                        '& .MuiSlider-track': { bgcolor: '#3b6ef8', border: 'none' },
-                        '& .MuiSlider-rail': { bgcolor: '#e5e7eb' },
-                      }}
-                    />
-                  </Box>
-                  <Typography sx={{ fontSize: 12, color: '#6b7280', mt: 0.25 }}>
-                    {'> 51% belongs to custodian; Max 49%'}
-                  </Typography>
                 </Box>
+                <Box sx={{ px: 0.5, pt: 0.5, width: { xs: '100%', sm: '50%' } }}>
+                  <Slider
+                    value={Number(tokenizePercent) || 0}
+                    onChange={(_, v) => setTokenizePercent(v as number)}
+                    min={0} max={49} step={1}
+                    sx={{
+                      color: '#3b6ef8',
+                      height: 6,
+                      '& .MuiSlider-thumb': {
+                        width: 18, height: 18,
+                        bgcolor: '#3b6ef8',
+                        '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(59,110,248,0.15)' },
+                      },
+                      '& .MuiSlider-track': { bgcolor: '#3b6ef8', border: 'none' },
+                      '& .MuiSlider-rail': { bgcolor: '#e5e7eb' },
+                    }}
+                  />
+                </Box>
+                <Typography sx={{ fontSize: 12, color: '#6b7280', mt: 0.25 }}>
+                  {'> 51% belongs to custodian; Max 49%'}
+                </Typography>
+              </Box>
 
-                {/* Total Fractions */}
+              {/* Row 3: Total Fractions + Price per Fraction */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <Box>
                   <Label required>Total Fractions</Label>
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
                     onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
                     error={!!step2Errors.totalFractions}
-                    helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% tokenization → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
-                    sx={inputSx}
+                    helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
+                    sx={{ ...inputSx, '& .MuiFormHelperText-root': { minHeight: 36, height: 36, lineHeight: '1.4', overflow: 'hidden' } }}
                     slotProps={{ htmlInput: { min: 1 } }}
                   />
                 </Box>
-
-                {/* Price per Fraction (auto-calculated) */}
                 <Box>
                   <Label required>Price per Fraction</Label>
                   <TextField
@@ -1478,18 +1495,18 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     }}
                     slotProps={{
                       input: {
-                        startAdornment: pricePerFraction ? (
+                        startAdornment: (
                           <InputAdornment position="start">
                             <Typography sx={{ color: '#9ca3af', fontSize: 14 }}>$</Typography>
                           </InputAdornment>
-                        ) : undefined,
+                        ),
                       },
                     }}
                   />
                 </Box>
               </Box>
 
-              {/* Row 3: Royalty + Royalty Wallet */}
+              {/* Row 4: Royalty + Royalty Wallet */}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <Box>
                   <Label>Royalty</Label>
@@ -1518,6 +1535,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   </Typography>
                 </Box>
               </Box>
+
             </Box>
           )}
 
@@ -1600,6 +1618,19 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: 0.75 }}>
                   Add your media files here and you can upload up to {MAX_FILES} files max
                 </Typography>
+
+                {/* Media required error */}
+                {step3Error && (
+                  <Box sx={{
+                    display: 'flex', alignItems: 'flex-start', gap: 0.75,
+                    mt: 1, px: 1.5, py: 1,
+                    bgcolor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px',
+                  }}>
+                    <Typography sx={{ fontSize: 13, color: '#dc2626', lineHeight: 1.5 }}>
+                      ⚠️ {step3Error}
+                    </Typography>
+                  </Box>
+                )}
 
                 {/* Image thumbnails with preview and remove */}
                 {mediaFiles.length > 0 && (
@@ -1767,7 +1798,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
           {/* Save Draft */}
           <Button
             onClick={() => handleSave(true)}
-            disabled={actionLoading}
+            disabled={savingAs !== null}
             sx={{
               bgcolor: '#374151',
               color: '#fff',
@@ -1782,7 +1813,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
               '&.Mui-disabled': { bgcolor: '#9ca3af', color: '#fff' },
             }}
           >
-            {actionLoading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Save Draft'}
+            {savingAs === 'draft' ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Save Draft'}
           </Button>
 
           {/* Next / Submit */}
@@ -1809,7 +1840,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
           ) : (
             <Button
               onClick={() => handleSave(false)}
-              disabled={actionLoading}
+              disabled={savingAs !== null}
               sx={{
                 bgcolor: '#3b6ef8',
                 color: '#fff',
@@ -1824,7 +1855,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 '&.Mui-disabled': { bgcolor: '#9ca3af', color: '#fff' },
               }}
             >
-              {actionLoading ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Submit for Review'}
+              {savingAs === 'review' ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : 'Submit for Review'}
             </Button>
           )}
         </Box>

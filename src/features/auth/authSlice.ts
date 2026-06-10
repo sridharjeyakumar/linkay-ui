@@ -62,6 +62,10 @@ const authSlice = createSlice({
         state.accessToken = token;
         sessionStorage.setItem('accessToken', token);
       }
+      const rToken = action.payload.refreshToken ?? action.payload.refresh_token;
+      if (rToken) {
+        sessionStorage.setItem('refreshToken', rToken);
+      }
     });
     builder.addCase(loginThunk.rejected, (state, action) => {
       state.loading = false;
@@ -73,6 +77,7 @@ const authSlice = createSlice({
       state.user = null;
       state.accessToken = null;
       sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('refreshToken');
     });
     builder.addCase(getMeThunk.pending, (state) => {
   state.loading = true;
