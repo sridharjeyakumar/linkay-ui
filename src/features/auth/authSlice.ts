@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState } from '../../types/auth.types';
 import { getMeThunk, loginThunk, logoutThunk, registerThunk } from './authThunks';
-import { saveWalletThunk } from '../wallet/walletThunks';
+import { bindWalletThunk } from '../wallet/walletThunks';
 
 const initialState: AuthState = {
   user: null,
@@ -101,15 +101,13 @@ builder.addCase(getMeThunk.rejected, (state) => {
 });
 
 // Save wallet address
-builder.addCase(saveWalletThunk.fulfilled, (state, action) => {
+builder.addCase(bindWalletThunk.fulfilled, (state, action) => {
   if (state.user) {
-    state.user.walletAddress =
-      action.payload.walletAddress ?? action.payload.wallet_address ?? null;
+    state.user.walletAddress = action.payload.walletAddress ?? null;
   }
-  const newToken = action.payload.accessToken ?? action.payload.access_token;
-  if (newToken) {
-    state.accessToken = newToken;
-    sessionStorage.setItem('accessToken', newToken);
+  if (action.payload.accessToken) {
+    state.accessToken = action.payload.accessToken;
+    sessionStorage.setItem('accessToken', action.payload.accessToken);
   }
 });
   },

@@ -37,11 +37,11 @@ function useCountdown(endsAt: Date) {
   return time;
 }
 
-function CountdownRow({ endsAt }: { endsAt: Date }) {
+function CountdownRow({ endsAt, timezone }: { endsAt: Date; timezone?: string }) {
   const { h, m, s, done } = useCountdown(endsAt);
   if (done) return null;
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 1.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 1.5, flexWrap: 'wrap' }}>
       <Typography component="span" sx={{ fontWeight: 700, fontSize: 13, color: '#06b6d4' }}>
         {h}h
       </Typography>
@@ -54,6 +54,11 @@ function CountdownRow({ endsAt }: { endsAt: Date }) {
       <Typography component="span" sx={{ fontSize: 13, color: '#666' }}>
         {' '}left
       </Typography>
+      {timezone && (
+        <Typography component="span" sx={{ fontSize: 11, color: '#06b6d4', opacity: 0.7, fontWeight: 500 }}>
+          {timezone}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -101,7 +106,7 @@ function AuctionCard({ item }: { item: AuctionItem }) {
         </Box>
 
         {/* Countdown */}
-        <CountdownRow endsAt={item.endsAt} />
+        <CountdownRow endsAt={item.endsAt} timezone={item.timezone} />
 
         {/* Button */}
         <Button

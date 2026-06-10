@@ -174,6 +174,8 @@ export function SupplyPricingStep({ asset, values, onChange }: Props) {
           <TextField
             fullWidth
             size="small"
+            type="number"
+            onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
             value={values.startingBidPrice}
             onChange={(e) => onChange('startingBidPrice', e.target.value)}
             sx={inputSx}
@@ -185,6 +187,8 @@ export function SupplyPricingStep({ asset, values, onChange }: Props) {
           <TextField
             fullWidth
             size="small"
+            type="number"
+            onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
             value={values.reservePrice}
             onChange={(e) => onChange('reservePrice', e.target.value)}
             sx={inputSx}
@@ -200,6 +204,8 @@ export function SupplyPricingStep({ asset, values, onChange }: Props) {
           <TextField
             fullWidth
             size="small"
+            type="number"
+            onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
             value={values.minIncrement}
             onChange={(e) => onChange('minIncrement', e.target.value)}
             sx={inputSx}

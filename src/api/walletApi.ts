@@ -1,5 +1,10 @@
 import axiosInstance from './axiosInstance';
 
-// TODO: confirm endpoint with backend — expected: PATCH /api/v1/users/wallet
-export const saveWalletAddressApi = (walletAddress: string) =>
-  axiosInstance.patch('/api/v1/users/wallet', { walletAddress });
+export const getWalletNonceApi = (address: string) =>
+  axiosInstance.get<{ success: boolean; nonce: string }>(`/api/v1/auth/walletnonce?address=${address}`);
+
+export const bindWalletApi = (address: string, signature: string, nonce: string) =>
+  axiosInstance.post<{ success: boolean; walletAddress: string; accessToken: string }>(
+    '/api/v1/auth/wallet-bind',
+    { address, signature, nonce }
+  );

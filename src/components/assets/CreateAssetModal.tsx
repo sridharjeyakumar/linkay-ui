@@ -1398,6 +1398,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={valuation}
                     onChange={(e) => { setValuation(e.target.value); if (step2Errors.valuation) setStep2Errors(p => ({ ...p, valuation: '' })); }}
+                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.valuation} helperText={step2Errors.valuation}
                     sx={inputSx}
                     slotProps={{
@@ -1469,6 +1470,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
                     onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
+                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.totalFractions}
                     helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
                     sx={{ ...inputSx, '& .MuiFormHelperText-root': { minHeight: 36, height: 36, lineHeight: '1.4', overflow: 'hidden' } }}

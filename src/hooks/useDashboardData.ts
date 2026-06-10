@@ -28,6 +28,9 @@ function toAuctionItem(asset: Asset): AuctionItem | null {
   const auction = asset.latestAuction;
   if (!auction?.endDate || !auction?.endTime) return null;
   const images = parseMediaFiles(asset.mediaFiles);
+  const endsAt = auction.endDateTimeUTC
+    ? new Date(auction.endDateTimeUTC)
+    : new Date(`${auction.endDate}T${auction.endTime.split(':').length === 2 ? `${auction.endTime}:00` : auction.endTime}Z`);
   return {
     id: asset.id,
     title: asset.title,
@@ -36,7 +39,8 @@ function toAuctionItem(asset: Asset): AuctionItem | null {
     totalSupply: asset.totalFractions ?? 0,
     currentIndex: asset.fractionsSold ?? 0,
     image: images[0] ?? '',
-    endsAt: new Date(`${auction.endDate}T${auction.endTime.split(':').length === 2 ? `${auction.endTime}:00` : auction.endTime}Z`),
+    endsAt,
+    timezone: auction.timezone ?? undefined,
   };
 }
 
@@ -58,7 +62,10 @@ export function useDashboardData(activeCategory: Category) {
             if (status !== 'LIVE' && status !== 'SCHEDULED') return false;
             const { endDate, endTime } = a.latestAuction!;
             if (!endDate || !endTime) return false;
-            return new Date(`${endDate}T${endTime.split(':').length === 2 ? `${endTime}:00` : endTime}Z`).getTime() > now;
+            const endMs = a.latestAuction!.endDateTimeUTC
+              ? new Date(a.latestAuction!.endDateTimeUTC).getTime()
+              : new Date(`${endDate}T${endTime.split(':').length === 2 ? `${endTime}:00` : endTime}Z`).getTime();
+            return endMs > now;
           })
           .map(toAuctionItem)
           .filter((a): a is AuctionItem => a !== null);
