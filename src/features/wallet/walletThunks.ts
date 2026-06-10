@@ -1,14 +1,25 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { saveWalletAddressApi } from '@/api/walletApi';
+import { getWalletNonceApi, bindWalletApi } from '@/api/walletApi';
 
-export const saveWalletThunk = createAsyncThunk(
-  'wallet/save',
-  async (walletAddress: string, { rejectWithValue }) => {
+interface BindWalletArgs {
+  address: string;
+  signMessage: (message: string) => Promise<string>;
+}
+
+export const bindWalletThunk = createAsyncThunk(
+  'wallet/bind',
+  async ({ address, signMessage }: BindWalletArgs, { rejectWithValue }) => {
     try {
-      const res = await saveWalletAddressApi(walletAddress);
-      return res.data;
+      const nonceRes = await getWalletNonceApi(address);
+      const { nonce } = nonceRes.data;
+
+      const message = `Sign to verify wallet ownership. Nonce: ${nonce}`;
+      const signature = await signMessage(message);
+
+      const bindRes = await bindWalletApi(address, signature, nonce);
+      return bindRes.data;
     } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to save wallet address');
+      return rejectWithValue(err.response?.data?.message ?? 'Failed to bind wallet');
     }
   }
 );
