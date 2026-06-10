@@ -16,11 +16,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import SumsubWebSdk from '@sumsub/websdk-react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/useAppDispatch';
 import { logoutThunk, getMeThunk } from '@/features/auth/authThunks';
 import { initKycThunk } from '@/features/ekyc/ekycThunks';
-import { saveWalletThunk } from '@/features/wallet/walletThunks';
+import { bindWalletThunk } from '@/features/wallet/walletThunks';
 
 type KycBtnConfig = { label: string; bgColor: string; clickable: boolean } | null;
 
@@ -65,11 +65,13 @@ export default function MuseumAdminHeader() {
   const { openConnectModal } = useConnectModal();
   const { address: wagmiAddress, status: walletStatus } = useAccount();
   const { disconnect: disconnectWallet } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
 
   const [drawerOpen,   setDrawerOpen]   = useState(false);
   const [menuAnchor,   setMenuAnchor]   = useState<null | HTMLElement>(null);
   const [toastMsg,     setToastMsg]     = useState<string | null>(null);
   const [kycModalOpen, setKycModalOpen] = useState(false);
+  const [bindingWallet, setBindingWallet] = useState(false);
 
   const connectedAddress = (walletStatus === 'connected' && wagmiAddress) ? wagmiAddress : null;
   const shortAddress = connectedAddress
@@ -87,14 +89,20 @@ export default function MuseumAdminHeader() {
     }
   }, [user?.id, walletStatus]);
 
-  // Auto-save wallet address to backend on first connect
+  // Bind wallet on first connect — get nonce, sign, call wallet-bind
   useEffect(() => {
-    if (walletStatus === 'connected' && wagmiAddress && user && !user.walletAddress) {
-      dispatch(saveWalletThunk(wagmiAddress))
+    if (walletStatus === 'connected' && wagmiAddress && user && !user.walletAddress && !bindingWallet) {
+      setBindingWallet(true);
+      dispatch(bindWalletThunk({
+        address: wagmiAddress,
+        signMessage: (msg) => signMessageAsync({ message: msg }),
+      }))
         .unwrap()
+        .then(() => dispatch(getMeThunk()))
         .catch(() => {
-          setToastMsg('Wallet connected but could not be saved — please try again.');
-        });
+          setToastMsg('Wallet connected but could not be verified — please try again.');
+        })
+        .finally(() => setBindingWallet(false));
     }
   }, [walletStatus, wagmiAddress, user?.walletAddress]);
 
