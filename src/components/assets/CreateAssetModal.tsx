@@ -936,7 +936,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   function validateStep3(): boolean {
     const hasMedia = mediaFiles.length > 0 || existingImages.length > 0;
     if (!hasMedia) {
-      setStep3Error('At least one media image is required before submitting for review. Please upload an image to continue.');
+      setStep3Error('Asset media images are required. Please upload at least one image before saving.');
       return false;
     }
     setStep3Error('');
@@ -1142,7 +1142,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <TextField
                   fullWidth multiline rows={4} size="small" value={description}
                   onChange={(e) => { setDescription(e.target.value); if (step1Errors.description) setStep1Errors(p => ({ ...p, description: '' })); }}
-                  error={!!step1Errors.description} sx={inputSx}
+                  error={!!step1Errors.description} sx={inputSx} 
                 />
                 {step1Errors.description ? (
                   <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.description}</Typography>
@@ -1389,7 +1389,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
 
           {/* ══ STEP 2: Valuation & Tokenization ═══════════════════════════════ */}
           {step === 2 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
 
               {/* Row 1: Valuation + Jurisdiction */}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
@@ -1398,7 +1398,6 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={valuation}
                     onChange={(e) => { setValuation(e.target.value); if (step2Errors.valuation) setStep2Errors(p => ({ ...p, valuation: '' })); }}
-                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.valuation} helperText={step2Errors.valuation}
                     sx={inputSx}
                     slotProps={{
@@ -1423,60 +1422,62 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 </Box>
               </Box>
 
-              {/* Row 2: Tokenization Slider */}
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
-                  <Label required>Percentage % to Tokenize</Label>
-                  <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                    <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe', minWidth: 110, textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#3b6ef8' }}>
-                        {tokenizePercent}% tokenized
-                      </Typography>
-                    </Box>
-                    <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0', minWidth: 110, textAlign: 'center' }}>
-                      <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
-                        {100 - tokenizePercent}% retained
-                      </Typography>
+              {/* Row 2: Slider + Total Fractions + Price per Fraction */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1.4fr 1.4fr' }, gap: 2, alignItems: 'start' }}>
+                {/* Slider */}
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
+                    <Label required>Percentage % to Tokenize</Label>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                      <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#3b6ef8' }}>
+                          {tokenizePercent}% tokenized
+                        </Typography>
+                      </Box>
+                      <Box sx={{ px: 1.5, py: 0.25, bgcolor: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
+                          {100 - tokenizePercent}% retained
+                        </Typography>
+                      </Box>
                     </Box>
                   </Box>
+                  <Box sx={{ px: 0.5, pt: 0.5 }}>
+                    <Slider
+                      value={Number(tokenizePercent) || 0}
+                      onChange={(_, v) => setTokenizePercent(v as number)}
+                      min={0} max={49} step={1}
+                      sx={{
+                        color: '#3b6ef8',
+                        height: 6,
+                        '& .MuiSlider-thumb': {
+                          width: 18, height: 18,
+                          bgcolor: '#3b6ef8',
+                          '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(59,110,248,0.15)' },
+                        },
+                        '& .MuiSlider-track': { bgcolor: '#3b6ef8', border: 'none' },
+                        '& .MuiSlider-rail': { bgcolor: '#e5e7eb' },
+                      }}
+                    />
+                  </Box>
+                  <Typography sx={{ fontSize: 12, color: '#6b7280', mt: 0.25 }}>
+                    {'> 51% belongs to custodian; Max 49%'}
+                  </Typography>
                 </Box>
-                <Box sx={{ px: 0.5, pt: 0.5, width: { xs: '100%', sm: '50%' } }}>
-                  <Slider
-                    value={Number(tokenizePercent) || 0}
-                    onChange={(_, v) => setTokenizePercent(v as number)}
-                    min={0} max={49} step={1}
-                    sx={{
-                      color: '#3b6ef8',
-                      height: 6,
-                      '& .MuiSlider-thumb': {
-                        width: 18, height: 18,
-                        bgcolor: '#3b6ef8',
-                        '&:hover, &.Mui-focusVisible': { boxShadow: '0 0 0 8px rgba(59,110,248,0.15)' },
-                      },
-                      '& .MuiSlider-track': { bgcolor: '#3b6ef8', border: 'none' },
-                      '& .MuiSlider-rail': { bgcolor: '#e5e7eb' },
-                    }}
-                  />
-                </Box>
-                <Typography sx={{ fontSize: 12, color: '#6b7280', mt: 0.25 }}>
-                  {'> 51% belongs to custodian; Max 49%'}
-                </Typography>
-              </Box>
 
-              {/* Row 3: Total Fractions + Price per Fraction */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                {/* Total Fractions */}
                 <Box>
                   <Label required>Total Fractions</Label>
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
                     onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
-                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.totalFractions}
-                    helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
-                    sx={{ ...inputSx, '& .MuiFormHelperText-root': { minHeight: 36, height: 36, lineHeight: '1.4', overflow: 'hidden' } }}
+                    helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% tokenization → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
+                    sx={inputSx}
                     slotProps={{ htmlInput: { min: 1 } }}
                   />
                 </Box>
+
+                {/* Price per Fraction (auto-calculated) */}
                 <Box>
                   <Label required>Price per Fraction</Label>
                   <TextField
@@ -1497,18 +1498,18 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     }}
                     slotProps={{
                       input: {
-                        startAdornment: (
+                        startAdornment: pricePerFraction ? (
                           <InputAdornment position="start">
                             <Typography sx={{ color: '#9ca3af', fontSize: 14 }}>$</Typography>
                           </InputAdornment>
-                        ),
+                        ) : undefined,
                       },
                     }}
                   />
                 </Box>
               </Box>
 
-              {/* Row 4: Royalty + Royalty Wallet */}
+              {/* Row 3: Royalty + Royalty Wallet */}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                 <Box>
                   <Label>Royalty</Label>
