@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { Box, Button, Dialog, IconButton, Typography } from '@mui/material';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import CloseIcon from '@mui/icons-material/Close';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { ASSET_TYPE_LABELS, fmtCurrency, parseImages } from './shared/styles';
 import type { Asset } from '@/types/asset.types';
 import type { SupplyPricingValues } from './steps/SupplyPricingStep';
@@ -25,10 +27,10 @@ export function AuctionPreviewModal({
 }: Props) {
   useScrollLock(open);
   const images    = parseImages(asset.mediaFiles);
-  const dotCount  = Math.max(images.length, 1);
   const src       = images[activeImageIndex] ?? '';
   const typeLabel = ASSET_TYPE_LABELS[asset.assetType] ?? asset.assetType;
   const custodian = asset.custodian ?? 'Linkay Custodial Services';
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const metrics = [
     asset.valuation            ? `${fmtCurrency(asset.valuation)} Valuation`                : null,
@@ -106,22 +108,14 @@ export function AuctionPreviewModal({
           '&::-webkit-scrollbar-thumb': { background: '#d1d5db', borderRadius: 4 },
         }}
       >
-        {/* Featured image */}
-        <Box
-          sx={{
-            width: '100%',
-            height: 230,
-            borderRadius: '10px',
-            overflow: 'hidden',
-            bgcolor: '#f3f4f6',
-          }}
-        >
+        {/* Featured image carousel */}
+        <Box sx={{ width: '100%', height: 230, borderRadius: '10px', overflow: 'hidden', bgcolor: '#f3f4f6', position: 'relative' }}>
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={src}
               alt={asset.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
           ) : (
@@ -129,25 +123,92 @@ export function AuctionPreviewModal({
               <Typography sx={{ color: '#9ca3af', fontSize: 13 }}>No image available</Typography>
             </Box>
           )}
+
+          {/* Left arrow */}
+          {images.length > 1 && activeImageIndex > 0 && (
+            <IconButton onClick={() => onDotClick(activeImageIndex - 1)} size="small"
+              sx={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.45)', color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' } }}>
+              <ChevronLeftIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          )}
+
+          {/* Right arrow */}
+          {images.length > 1 && activeImageIndex < images.length - 1 && (
+            <IconButton onClick={() => onDotClick(activeImageIndex + 1)} size="small"
+              sx={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.45)', color: '#fff', p: 0.25, '&:hover': { bgcolor: 'rgba(0,0,0,0.65)' } }}>
+              <ChevronRightIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          )}
+
+          {/* Image counter */}
+          {images.length > 1 && (
+            <Box sx={{ position: 'absolute', top: 6, right: 8, bgcolor: 'rgba(0,0,0,0.45)', borderRadius: '4px', px: 0.75, py: 0.25 }}>
+              <Typography sx={{ fontSize: 10, color: '#fff', fontWeight: 600 }}>{activeImageIndex + 1} / {images.length}</Typography>
+            </Box>
+          )}
+
+          {/* Dots overlaid */}
+          {images.length > 1 && (
+            <Box sx={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 0.5 }}>
+              {images.map((_, i) => (
+                <Box key={i} onClick={() => onDotClick(i)}
+                  sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: i === activeImageIndex ? '#fff' : 'rgba(255,255,255,0.45)', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.15)' }} />
+              ))}
+            </Box>
+          )}
+
+          {/* VIEW FULL */}
+          {src && (
+            <Box onClick={() => setLightboxOpen(true)}
+              sx={{ position: 'absolute', bottom: 6, right: 8, bgcolor: 'rgba(0,0,0,0.45)', borderRadius: '4px', px: 0.75, py: 0.25, cursor: 'zoom-in' }}>
+              <Typography sx={{ fontSize: 10, color: '#fff', fontWeight: 600, letterSpacing: 0.3 }}>VIEW FULL</Typography>
+            </Box>
+          )}
         </Box>
 
-        {/* Carousel dots */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mt: 1.5 }}>
-          {Array.from({ length: dotCount }, (_, i) => (
-            <Box
-              key={i}
-              onClick={() => onDotClick(i)}
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: i === activeImageIndex ? '#2563EB' : '#d1d5db',
-                cursor: dotCount > 1 ? 'pointer' : 'default',
-                transition: 'background-color 0.2s',
-              }}
-            />
-          ))}
-        </Box>
+        {/* Lightbox */}
+        {src && (
+          <Dialog open={lightboxOpen} onClose={() => setLightboxOpen(false)} maxWidth={false}
+            slotProps={{
+              paper: { sx: { bgcolor: 'transparent', boxShadow: 'none', m: 0, overflow: 'hidden', width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh' } },
+              backdrop: { sx: { bgcolor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' } },
+            }}>
+            <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconButton onClick={() => setLightboxOpen(false)}
+                sx={{ position: 'absolute', top: 16, right: 16, color: '#fff', bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
+                <CloseIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+              {images.length > 1 && (
+                <Typography sx={{ position: 'absolute', top: 20, left: 20, color: '#fff', fontSize: 13, fontWeight: 600 }}>
+                  {activeImageIndex + 1} / {images.length}
+                </Typography>
+              )}
+              {images.length > 1 && activeImageIndex > 0 && (
+                <IconButton onClick={() => onDotClick(activeImageIndex - 1)}
+                  sx={{ position: 'absolute', left: 16, color: '#fff', bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
+                  <ChevronLeftIcon sx={{ fontSize: 28 }} />
+                </IconButton>
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={asset.title}
+                style={{ maxWidth: '85vw', maxHeight: '80vh', display: 'block', borderRadius: 8, objectFit: 'contain' }} />
+              {images.length > 1 && activeImageIndex < images.length - 1 && (
+                <IconButton onClick={() => onDotClick(activeImageIndex + 1)}
+                  sx={{ position: 'absolute', right: 16, color: '#fff', bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' } }}>
+                  <ChevronRightIcon sx={{ fontSize: 28 }} />
+                </IconButton>
+              )}
+              {images.length > 1 && (
+                <Box sx={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 0.75 }}>
+                  {images.map((_, i) => (
+                    <Box key={i} onClick={() => onDotClick(i)}
+                      sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: i === activeImageIndex ? '#fff' : 'rgba(255,255,255,0.35)', cursor: 'pointer', transition: 'background-color 0.2s' }} />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          </Dialog>
+        )}
 
         {/* Asset title */}
         <Typography
