@@ -6,6 +6,7 @@ import {
   updateAssetThunk,
   deleteAssetThunk,
   previewAssetThunk,
+  changeStatusThunk,
 } from './assetThunks';
 
 const initialState: AssetState = {
@@ -113,6 +114,11 @@ const assetSlice = createSlice({
       .addCase(deleteAssetThunk.rejected, (state, action) => {
         state.actionLoading = false;
         state.error = action.payload as string;
+      })
+      // changeStatus — update the asset in-place so no DRAFT flash before fetchAssets resolves
+      .addCase(changeStatusThunk.fulfilled, (state, action) => {
+        const idx = state.assets.findIndex((a) => a.id === action.payload.id);
+        if (idx !== -1) state.assets[idx] = action.payload;
       })
       // previewAsset
       .addCase(previewAssetThunk.fulfilled, (state, action) => {
