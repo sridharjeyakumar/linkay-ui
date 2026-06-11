@@ -65,7 +65,7 @@ function UpcomingAuctionRow({
               ◆
             </Typography>
             <Typography sx={{ color: '#16a34a', fontSize: 13, fontWeight: 700, lineHeight: 1 }}>
-              {item.priceEth} ETH
+              {item.priceEth} USDT
             </Typography>
           </Box>
           <Typography sx={{ color: '#aaa', fontSize: 11, lineHeight: 1 }}>
