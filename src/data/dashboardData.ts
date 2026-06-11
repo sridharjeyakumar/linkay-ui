@@ -35,6 +35,7 @@ export interface AuctionItem {
   totalSupply: number;
   currentIndex: number;
   image: string;
+  images: string[];
   endsAt: Date;
   timezone?: string;
 }
@@ -127,6 +128,7 @@ export const MOCK_AUCTIONS: AuctionItem[] = [
     totalSupply: 321,
     currentIndex: 1,
     image: img('arthurist', 400, 400),
+    images: [img('arthurist', 400, 400)],
     endsAt: hoursFromNow(3.83),
   },
   {
@@ -137,6 +139,7 @@ export const MOCK_AUCTIONS: AuctionItem[] = [
     totalSupply: 321,
     currentIndex: 1,
     image: img('mbambu', 400, 400),
+    images: [img('mbambu', 400, 400)],
     endsAt: hoursFromNow(5.5),
   },
   {
@@ -147,6 +150,7 @@ export const MOCK_AUCTIONS: AuctionItem[] = [
     totalSupply: 321,
     currentIndex: 1,
     image: img('peacock', 400, 400),
+    images: [img('peacock', 400, 400)],
     endsAt: hoursFromNow(2.1),
   },
   {
@@ -157,6 +161,7 @@ export const MOCK_AUCTIONS: AuctionItem[] = [
     totalSupply: 100,
     currentIndex: 3,
     image: img('goldengate', 400, 400),
+    images: [img('goldengate', 400, 400)],
     endsAt: hoursFromNow(7.25),
   },
   {
@@ -167,6 +172,7 @@ export const MOCK_AUCTIONS: AuctionItem[] = [
     totalSupply: 50,
     currentIndex: 2,
     image: img('ruby', 400, 400),
+    images: [img('ruby', 400, 400)],
     endsAt: hoursFromNow(1.5),
   },
   {
@@ -177,6 +183,7 @@ export const MOCK_AUCTIONS: AuctionItem[] = [
     totalSupply: 200,
     currentIndex: 5,
     image: img('warrior', 400, 400),
+    images: [img('warrior', 400, 400)],
     endsAt: hoursFromNow(4.0),
   },
 ];

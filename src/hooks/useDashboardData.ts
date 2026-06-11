@@ -39,6 +39,7 @@ function toAuctionItem(asset: Asset): AuctionItem | null {
     totalSupply: asset.totalFractions ?? 0,
     currentIndex: asset.fractionsSold ?? 0,
     image: images[0] ?? '',
+    images,
     endsAt,
     timezone: auction.timezone ?? undefined,
   };
