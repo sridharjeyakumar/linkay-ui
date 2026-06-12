@@ -39,8 +39,10 @@ function toAuctionItem(asset: Asset): AuctionItem | null {
     totalSupply: asset.totalFractions ?? 0,
     currentIndex: asset.fractionsSold ?? 0,
     image: images[0] ?? '',
+    images,
     endsAt,
     timezone: auction.timezone ?? undefined,
+    latestAuction: { status: auction.status },
   };
 }
 
@@ -72,7 +74,11 @@ export function useDashboardData(activeCategory: Category) {
         setLiveAssets(items);
 
         const unique = [
-          ...new Set(items.map((a) => a.category)),
+          ...new Set(
+            items
+              .filter((a) => a.latestAuction?.status === 'LIVE')
+              .map((a) => a.category)
+          ),
         ] as Exclude<Category, 'All Categories'>[];
         setAvailableCategories(['All Categories', ...unique]);
       })

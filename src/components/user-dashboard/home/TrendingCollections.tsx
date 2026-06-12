@@ -82,16 +82,19 @@ function ViewAllButton({ onClick }: { onClick: () => void }) {
 
 function CollectionCard({ item }: { item: AuctionItem }) {
   const router = useRouter();
-  const img = item.image || '/placeholder-asset.jpg';
+
+  const raw = item.images?.length > 0 ? item.images : item.image ? [item.image] : [];
+  const displayImages = (raw.length > 0 ? raw : ['/placeholder-asset.jpg']).slice(0, 3);
+  const mainImage = displayImages[0];
+  const thumbnails = displayImages.slice(1);
 
   return (
     <Box>
-      {/* Mosaic: 1 large image left, 3 thumbnails stacked right */}
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '3fr 2fr',
-          gridTemplateRows: 'repeat(3, 1fr)',
+          gridTemplateColumns: thumbnails.length > 0 ? '3fr 2fr' : '1fr',
+          gridTemplateRows: thumbnails.length > 1 ? 'repeat(2, 1fr)' : '1fr',
           gap: '4px',
           aspectRatio: '2 / 1',
           borderRadius: 2,
@@ -100,11 +103,16 @@ function CollectionCard({ item }: { item: AuctionItem }) {
       >
         <Box
           component="img"
-          src={img}
+          src={mainImage}
           alt={item.title}
-          sx={{ gridRow: '1 / 4', width: '100%', height: '100%', objectFit: 'cover' }}
+          sx={{
+            gridRow: thumbnails.length > 0 ? `1 / ${thumbnails.length + 1}` : '1',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
         />
-        {[img, img, img].map((src, i) => (
+        {thumbnails.map((src, i) => (
           <Box
             key={i}
             component="img"
@@ -115,7 +123,6 @@ function CollectionCard({ item }: { item: AuctionItem }) {
         ))}
       </Box>
 
-      {/* Info row: title + chip */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: 1.5 }}>
         <Typography noWrap sx={{ fontWeight: 700, fontSize: { xs: 15, md: 18 }, color: '#111' }}>
           {item.title}
@@ -137,6 +144,7 @@ export default function TrendingCollections() {
   }, [availableCategories]);
 
   const filtered = auctions.filter((a) => {
+    if (a.latestAuction?.status !== 'LIVE') return false;
     const diff = a.endsAt.getTime() - Date.now();
     return diff > 0 && diff <= 24 * 3_600_000;
   });
