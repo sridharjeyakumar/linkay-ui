@@ -74,7 +74,7 @@ function toInt(s: string): number | null {
   return isNaN(n) ? null : n;
 }
 
-function isPricingComplete(p: SupplyPricingValues, totalFractions?: number | null): boolean {
+function isPricingComplete(p: SupplyPricingValues, treasuryFractions?: number | null): boolean {
   if (!p.fractionsAllocated || !p.minPurchaseQty || !p.maxPurchaseQty ||
       !p.startingBidPrice   || !p.reservePrice   || !p.minIncrement) return false;
 
@@ -85,7 +85,7 @@ function isPricingComplete(p: SupplyPricingValues, totalFractions?: number | nul
   if (fa  === null || fa  <= 0) return false;
   if (min === null || min <= 0) return false;
   if (max === null || max <= 0) return false;
-  if (totalFractions != null && fa > totalFractions) return false;
+  if (treasuryFractions != null && fa > treasuryFractions) return false;
   if (min > max) return false;
   if (min > fa)  return false;
   if (max > fa)  return false;
@@ -167,7 +167,11 @@ export function CreateAuctionModal({
   const mainDialogOpen = open && (view === 'step1' || view === 'step2');
   const stepNumber = view === 'step2' ? 2 : 1;
   const canNext = auctionTitle.trim() !== '' && auctionDescription.trim() !== '';
-  const pricingComplete = isPricingComplete(pricing, asset.totalFractions);
+  const treasuryFractions =
+    asset.totalFractions != null && asset.tokenizedPercent != null
+      ? Math.floor((asset.totalFractions * asset.tokenizedPercent) / 100)
+      : asset.totalFractions ?? null;
+  const pricingComplete = isPricingComplete(pricing, treasuryFractions);
 
   return (
     <>
