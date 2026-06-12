@@ -36,11 +36,12 @@ function toInt(s: string): number | null {
 
 // ── validation ─────────────────────────────────────────────────────────────────
 
-function getFractionsError(value: string, maxSupply: number | undefined | null): string {
+function getFractionsError(value: string, treasuryFractions: number | undefined | null): string {
   if (value === '') return '';
   const n = toInt(value);
   if (n === null || n <= 0) return 'Must be at least 1';
-  if (maxSupply != null && n > maxSupply) return `Cannot exceed available supply (${maxSupply})`;
+  if (treasuryFractions != null && n > treasuryFractions)
+    return `Cannot exceed treasury supply (${treasuryFractions})`;
   return '';
 }
 
@@ -80,8 +81,14 @@ function FieldError({ msg }: { msg: string }) {
 // ── component ─────────────────────────────────────────────────────────────────
 
 export function SupplyPricingStep({ asset, values, onChange }: Props) {
+  // Fractions the treasury actually holds — this is the real auction cap
+  const treasuryFractions =
+    asset.totalFractions != null && asset.tokenizedPercent != null
+      ? Math.floor((asset.totalFractions * asset.tokenizedPercent) / 100)
+      : asset.totalFractions ?? null;
+
   const availableSupplyLabel = [
-    asset.totalFractions ? `${asset.totalFractions} fractions` : null,
+    treasuryFractions != null ? `${treasuryFractions} fractions` : null,
     asset.pricePerFraction != null
       ? `$${Number(asset.pricePerFraction).toLocaleString('en-US', { maximumFractionDigits: 3 })} per fraction`
       : null,
@@ -90,7 +97,7 @@ export function SupplyPricingStep({ asset, values, onChange }: Props) {
     .join(' | ');
 
   // Derived errors (computed from current values — no extra state needed)
-  const fractionsError = getFractionsError(values.fractionsAllocated, asset.totalFractions);
+  const fractionsError = getFractionsError(values.fractionsAllocated, treasuryFractions);
   const minQtyError    = getMinQtyError(values.minPurchaseQty, values.fractionsAllocated, values.maxPurchaseQty);
   const maxQtyError    = getMaxQtyError(values.maxPurchaseQty, values.fractionsAllocated, values.minPurchaseQty);
 

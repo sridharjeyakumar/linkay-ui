@@ -349,8 +349,8 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
-  // AI suggest
-  const [aiSuggestLoading, setAiSuggestLoading] = useState(false);
+  // AI enhance
+  const [aiEnhanceLoading, setAiEnhanceLoading] = useState(false);
 
   // Dynamic field file uploads: fieldIndex → File[] (multiple files per field)
   const [dynamicFieldFiles, setDynamicFieldFiles] = useState<Record<number, File[]>>({});
@@ -666,24 +666,22 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
     return () => { urls.forEach((u) => u && URL.revokeObjectURL(u)); };
   }, [mediaFiles]);
 
-  // AI suggest for Asset Description
-  async function handleAiSuggest() {
-    if (!title.trim()) return;
-    setAiSuggestLoading(true);
+  // AI enhance for Asset Description
+  async function handleAiEnhance() {
+    if (!description.trim()) return;
+    setAiEnhanceLoading(true);
     try {
-      const { data } = await axiosInstance.post('/api/v1/ai/suggest-description', {
-        title: title.trim(),
-        assetType: ASSET_TYPE_MAP[assetType] ?? assetType,
-        custodian: custodian.trim(),
+      const { data } = await axiosInstance.post('/api/v1/ai/enhance', {
+        description: description.trim(),
       });
-      if (data?.data?.description) {
-        setDescription(data.data.description);
+      if (data?.data?.enhanced_description) {
+        setDescription(data.data.enhanced_description);
         setStep1Errors((p) => ({ ...p, description: '' }));
       }
     } catch {
-      // silently ignore — user can type manually
+      // silently ignore — user can edit manually
     } finally {
-      setAiSuggestLoading(false);
+      setAiEnhanceLoading(false);
     }
   }
 
@@ -1112,12 +1110,12 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                     Asset Description
                     <Box component="span" sx={{ color: '#ef4444', ml: 0.25 }}>*</Box>
                   </Typography>
-                  <Button
+                  {assetType !== 'Real Estate' && <Button
                     size="small"
-                    onClick={handleAiSuggest}
-                    disabled={aiSuggestLoading || !title.trim()}
+                    onClick={handleAiEnhance}
+                    disabled={aiEnhanceLoading || !description.trim()}
                     startIcon={
-                      aiSuggestLoading
+                      aiEnhanceLoading
                         ? <CircularProgress size={11} sx={{ color: '#fff' }} />
                         : <AutoFixHighIcon sx={{ fontSize: '13px !important' }} />
                     }
@@ -1136,13 +1134,13 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                       '&.Mui-disabled': { background: '#e5e7eb', color: '#9ca3af' },
                     }}
                   >
-                    {aiSuggestLoading ? 'Generating…' : 'AI Suggest'}
-                  </Button>
+                    {aiEnhanceLoading ? 'Enhancing…' : 'AI Enhance'}
+                  </Button>}
                 </Box>
                 <TextField
                   fullWidth multiline rows={4} size="small" value={description}
                   onChange={(e) => { setDescription(e.target.value); if (step1Errors.description) setStep1Errors(p => ({ ...p, description: '' })); }}
-                  error={!!step1Errors.description} sx={inputSx} 
+                  error={!!step1Errors.description} sx={inputSx}
                 />
                 {step1Errors.description ? (
                   <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step1Errors.description}</Typography>
@@ -1398,7 +1396,6 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={valuation}
                     onChange={(e) => { setValuation(e.target.value); if (step2Errors.valuation) setStep2Errors(p => ({ ...p, valuation: '' })); }}
-                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.valuation} helperText={step2Errors.valuation}
                     sx={inputSx}
                     slotProps={{
@@ -1471,7 +1468,6 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                   <TextField
                     fullWidth size="small" type="number" value={totalFractions}
                     onChange={(e) => { setTotalFractions(e.target.value); if (step2Errors.totalFractions) setStep2Errors(p => ({ ...p, totalFractions: '' })); }}
-                    onKeyDown={(e) => { if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault(); }}
                     error={!!step2Errors.totalFractions}
                     helperText={step2Errors.totalFractions || `Recommended: 1000+. With ${tokenizePercent}% tokenization → ${Math.floor((parseInt(totalFractions||'0',10) * tokenizePercent)/100)} public fractions`}
                     sx={inputSx}
