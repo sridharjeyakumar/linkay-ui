@@ -60,6 +60,7 @@ export interface Asset {
     timezone?: string | null;
     endDateTimeUTC?: string | null;
     onChainAuctionId?: string | null;
+    showCountdown?: boolean;
   } | null;
 }
 

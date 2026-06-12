@@ -144,6 +144,7 @@ export default function TrendingCollections() {
   }, [availableCategories]);
 
   const filtered = auctions.filter((a) => {
+    if (a.latestAuction?.status !== 'LIVE') return false;
     const diff = a.endsAt.getTime() - Date.now();
     return diff > 0 && diff <= 24 * 3_600_000;
   });

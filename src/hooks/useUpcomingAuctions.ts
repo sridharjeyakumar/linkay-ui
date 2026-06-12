@@ -44,6 +44,9 @@ export function useUpcomingAuctions() {
               priceEth: Number(a.pricePerFraction ?? 0),
               startsAt: new Date(`${auction.startDate}T${padTime(auction.startTime)}Z`),
               image: images[0] ?? '',
+              latestAuction: {
+                showCountdown: auction.showCountdown ?? false,
+              },
             };
           });
         setAuctions(items);
