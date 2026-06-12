@@ -215,7 +215,7 @@ export default function LiveAuctions() {
       ) : (
         <>
           <Grid container spacing={2}>
-            {visible.map((item) => (
+            {visible.filter((item) => item.latestAuction?.status === 'LIVE').map((item) => (
               <Grid key={item.id} size={{ xs: 12, sm: 4 }}>
                 <AuctionCard item={item} />
               </Grid>

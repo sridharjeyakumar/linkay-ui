@@ -171,7 +171,7 @@ export default function UpcomingAuctions() {
         </Typography>
       ) : (
         <Box>
-          {auctions.map((item) => (
+          {auctions.filter((item) => item.latestAuction.showCountdown).map((item) => (
             <UpcomingAuctionRow key={item.id} item={item} />
           ))}
         </Box>

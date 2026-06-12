@@ -38,6 +38,9 @@ export interface AuctionItem {
   images: string[];
   endsAt: Date;
   timezone?: string;
+  latestAuction?: {
+    status: 'LIVE' | 'SCHEDULED' | 'ENDED' | 'CANCELLED';
+  };
 }
 
 // TODO: replace with API-provided URLs
@@ -109,13 +112,10 @@ export interface UpcomingAuction {
   priceEth: number;
   startsAt: Date;
   image: string;
+  latestAuction: {
+    showCountdown: boolean;
+  };
 }
-
-export const MOCK_UPCOMING_AUCTIONS: UpcomingAuction[] = [
-  { id: 'upc-1', title: 'The Futr Abstr',   priceEth: 0.25, startsAt: new Date('2026-06-15'), image: img('futr', 120, 120) },
-  { id: 'upc-2', title: 'Lorekien Imperial', priceEth: 0.40, startsAt: new Date('2026-06-15'), image: img('lorekien', 120, 120) },
-  { id: 'upc-3', title: 'Grande Hotel',      priceEth: 0.13, startsAt: new Date('2026-06-15'), image: img('grandehotel', 120, 120) },
-];
 
 const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000);
 
