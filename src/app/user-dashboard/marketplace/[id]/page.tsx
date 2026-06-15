@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import { ConfirmPurchaseModal } from '@/components/marketplace/ConfirmPurchaseModal';
 import {
   Box, Typography, Avatar, Button, Tabs, Tab, Dialog, IconButton,
 } from '@mui/material';
@@ -487,6 +488,7 @@ export default function AssetDetailPage() {
   const id = params?.id as string;
   const asset = ASSETS.find((a) => a.id === id) ?? ASSETS[0];
   const [activeTab, setActiveTab] = useState(0);
+  const [buyOpen, setBuyOpen] = useState(false);
 
   return (
     <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 0, sm: 1 }, py: { xs: 2, sm: 3 } }}>
@@ -551,6 +553,7 @@ export default function AssetDetailPage() {
           {/* Buy Now */}
           <Button
             fullWidth
+            onClick={() => setBuyOpen(true)}
             sx={{
               background: 'linear-gradient(270deg, #0EA5E9 0%, #1E40AF 100%)',
               color: '#fff', borderRadius: '50px',
@@ -565,6 +568,18 @@ export default function AssetDetailPage() {
           >
             Buy now
           </Button>
+
+          {/* Confirm Purchase modal */}
+          <ConfirmPurchaseModal
+            open={buyOpen}
+            onClose={() => setBuyOpen(false)}
+            asset={{
+              title: asset.title,
+              images: asset.images,
+              priceUsdt: asset.priceUsdt,
+              priceUsd: asset.priceUsd,
+            }}
+          />
 
           {/* Details / Activity tabs */}
           <Tabs
