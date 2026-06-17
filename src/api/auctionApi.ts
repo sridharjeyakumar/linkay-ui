@@ -39,4 +39,13 @@ export const auctionApi = {
 
   delete: (auctionId: string) =>
     axiosInstance.delete(`/api/v1/auctions/${auctionId}`),
+
+  placeBid: (auctionId: string, payload: { bidderAddress: string; amount: string; txHash: string }) =>
+    axiosInstance.post(`/api/v1/auctions/${auctionId}/bid`, payload),
+
+  listBids: (auctionId: string) =>
+    axiosInstance.get(`/api/v1/auctions/${auctionId}/bids`),
+
+  getPublic: (auctionId: string) =>
+    axiosInstance.get(`/api/v1/auctions/public/${auctionId}`),
 };

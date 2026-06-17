@@ -57,6 +57,8 @@ function toProductItem(asset: Asset): ProductPageItem {
     description:        asset.description,
     ipfsUrl:            asset.ipfsUrl ?? undefined,
     ipfsMetadataUrl:    asset.ipfsMetadataUrl ?? undefined,
+    auctionId:            asset.latestAuction?.id            ?? undefined,
+    onChainAuctionId:     asset.latestAuction?.onChainAuctionId ?? undefined,
     auctionEndTime: (() => {
       const a = asset.latestAuction;
       if (!a?.endDate || !a?.endTime) return undefined;
