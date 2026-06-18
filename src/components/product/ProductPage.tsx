@@ -37,6 +37,7 @@ export interface ProductPageItem {
   auctionEndTime?: string;
   auctionTimezone?: string;
   currentBid?: number;
+  startingBidPrice?: number;
   activities?: ActivityItem[];
   // Additional information fields
   certificationRef?: string;
@@ -55,7 +56,7 @@ export interface ProductPageItem {
   publishedAt?: string;
 }
 
-interface ActivityItem {
+export interface ActivityItem {
   type: 'bid' | 'reserve' | 'mint';
   user: string;
   date: string;
@@ -476,18 +477,36 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
 
   /* ── Bid modal ── */
   type BidStep = 'input' | 'approving' | 'bidding' | 'recording' | 'done';
-  const [bidOpen, setBidOpen]   = useState(false);
+  const [bidOpen, setBidOpen]     = useState(false);
   const [bidAmount, setBidAmount] = useState('');
-  const [bidStep, setBidStep]   = useState<BidStep>('input');
-  const [bidError, setBidError] = useState<string | null>(null);
+  const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
+  const [bidStep, setBidStep]     = useState<BidStep>('input');
+  const [bidError, setBidError]   = useState<string | null>(null);
   const [bidTxHash, setBidTxHash] = useState('');
 
+  const USDC_BALANCE_ABI = [{
+    name: 'balanceOf', type: 'function', stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  }] as const;
+
   const resetBidModal = () => {
-    setBidAmount('');
+    setBidAmount(item?.startingBidPrice ? String(item.startingBidPrice) : '');
     setBidStep('input');
     setBidError(null);
     setBidTxHash('');
   };
+
+  // Load USDC balance when modal opens
+  useEffect(() => {
+    if (!bidOpen || !walletAddress || !USDC_ADDRESS) return;
+    readContract(wagmiConfig, {
+      address: USDC_ADDRESS,
+      abi: USDC_BALANCE_ABI,
+      functionName: 'balanceOf',
+      args: [walletAddress as `0x${string}`],
+    }).then((bal) => setUsdcBalance(Number(bal) / 1e6)).catch(() => {});
+  }, [bidOpen, walletAddress]);
 
   const handleBid = async () => {
     if (!item?.auctionId || !item?.onChainAuctionId) {
@@ -845,14 +864,18 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                   </Typography>
                 )}
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <Typography sx={{ fontSize: 13, color: '#888' }}>Current Bid</Typography>
-                {/* Ethereum diamond */}
-             
-                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#3b82f6' }}>
-                  {(item.currentBid ?? 0).toFixed(2)} USDT
-                </Typography>
-              </Box>
+              {(() => {
+                const topBid = realActivities?.[0]?.amount;
+                if (topBid == null) return null;
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <Typography sx={{ fontSize: 13, color: '#888' }}>Current Bid</Typography>
+                    <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#3b82f6' }}>
+                      {topBid.toFixed(2)} USDT
+                    </Typography>
+                  </Box>
+                );
+              })()}
             </Box>
 
             {/* Make a bid button */}
@@ -906,7 +929,12 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
 
               {/* ── Timeline ── */}
               {(() => {
-                const acts = realActivities ?? item.activities ?? (item.auctionId ? [] : STATIC_ACTIVITIES);
+                // Bids from API; non-bid entries (reserve, mint) always from item.activities or STATIC
+                const bidActs: ActivityItem[] = realActivities ?? [];
+                const nonBidActs: ActivityItem[] = (item.activities ?? (item.auctionId ? [] : STATIC_ACTIVITIES))
+                  .filter(a => a.type !== 'bid');
+                const acts = [...bidActs, ...nonBidActs];
+                const hasBids = bidActs.length > 0;
 
                 const getActivityIcon = (type: ActivityItem['type']) => {
                   if (type === 'reserve') return <LockKey size={18} weight="fill" color="rgba(30,64,175,1)" />;
@@ -936,10 +964,35 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                     '&::-webkit-scrollbar-thumb': { bgcolor: '#e5e7eb', borderRadius: '4px' },
                     '&::-webkit-scrollbar-thumb:hover': { bgcolor: '#d1d5db' },
                   }}>
-                    {acts.length === 0 && (
-                      <Typography sx={{ fontSize: 13, color: '#9ca3af', py: 1 }}>
-                        No bids yet — be the first!
-                      </Typography>
+                    {/* Be the First to Bid — shown only when no bids yet */}
+                    {!hasBids && (
+                      <Box sx={{ display: 'flex', gap: '14px', alignItems: 'flex-start', mb: acts.length > 0 ? 0 : undefined }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 40 }}>
+                          <Box sx={{
+                            width: 40, height: 40, borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #FABD24 0%, #EF4443 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <Box
+                              component="img"
+                              src="/landing/real estate/Bid.svg"
+                              alt=""
+                              sx={{ width: 20, height: 20, filter: 'brightness(0) invert(1)' }}
+                            />
+                          </Box>
+                          {acts.length > 0 && (
+                            <Box sx={{ width: 0, flex: 1, minHeight: 24, my: '3px', borderLeft: '2px dashed #d1d5db' }} />
+                          )}
+                        </Box>
+                        <Box sx={{ pt: '8px', pb: acts.length > 0 ? '18px' : '4px', flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111', lineHeight: 1.5 }}>
+                            Be the First to Bid
+                          </Typography>
+                          <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: '2px' }}>
+                            Open the auction with your bid.
+                          </Typography>
+                        </Box>
+                      </Box>
                     )}
                     {acts.map((act, idx) => {
                       const isLast = idx === acts.length - 1;
@@ -1014,106 +1067,167 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
       <Dialog
         open={bidOpen}
         onClose={() => { if (bidStep !== 'approving' && bidStep !== 'bidding' && bidStep !== 'recording') setBidOpen(false); }}
-        slotProps={{ paper: { sx: { borderRadius: '20px', p: '8px', minWidth: 340, maxWidth: 420 } } }}
+        slotProps={{ paper: { sx: { borderRadius: '20px', overflow: 'hidden', width: { xs: '95vw', sm: 740 }, maxWidth: 740, m: 1 } } }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: 20, pb: 0 }}>
-          {bidStep === 'done' ? 'Bid placed!' : 'Place a bid'}
-        </DialogTitle>
-        <DialogContent sx={{ pt: '16px !important' }}>
-          {bidStep === 'input' && (
-            <>
-              <Typography sx={{ fontSize: 13, color: '#666', mb: '16px' }}>
-                Enter your bid amount in USDC. Your wallet will first approve the transfer, then place the bid on-chain.
-              </Typography>
-              <TextField
-                label="Bid amount (USDC)"
-                type="number"
-                fullWidth
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-              />
-              {bidError && (
-                <Alert severity="error" sx={{ mt: 2, borderRadius: '12px', fontSize: 13 }}>{bidError}</Alert>
-              )}
-            </>
-          )}
+        {/* Processing / done states */}
+        {(bidStep === 'approving' || bidStep === 'bidding' || bidStep === 'recording') && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 5, px: 4 }}>
+            <CircularProgress size={44} sx={{ color: '#EF4443' }} />
+            <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+              {bidStep === 'approving' && 'Approving USDC spend…'}
+              {bidStep === 'bidding'   && 'Placing bid on-chain…'}
+              {bidStep === 'recording' && 'Recording bid…'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#888', textAlign: 'center' }}>
+              Confirm the transaction in your wallet
+            </Typography>
+          </Box>
+        )}
 
-          {(bidStep === 'approving' || bidStep === 'bidding' || bidStep === 'recording') && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 2 }}>
-              <CircularProgress size={40} sx={{ color: '#EF4443' }} />
-              <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#111' }}>
-                {bidStep === 'approving'  && 'Approving USDC spend…'}
-                {bidStep === 'bidding'    && 'Placing bid on-chain…'}
-                {bidStep === 'recording'  && 'Recording bid…'}
-              </Typography>
-              <Typography sx={{ fontSize: 12, color: '#888', textAlign: 'center' }}>
-                Confirm the transaction in your wallet
-              </Typography>
+        {bidStep === 'done' && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 5, px: 4 }}>
+            <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography sx={{ fontSize: 28 }}>✓</Typography>
             </Box>
-          )}
-
-          {bidStep === 'done' && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 1 }}>
-              <Box sx={{ width: 52, height: 52, borderRadius: '50%', bgcolor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography sx={{ fontSize: 26 }}>✓</Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#111' }}>Bid placed!</Typography>
+            <Typography sx={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>
+              Your bid of <strong>{bidAmount} USDC</strong> was placed successfully.
+            </Typography>
+            {bidTxHash && (
+              <Box component="a" href={`https://amoy.polygonscan.com/tx/${bidTxHash}`} target="_blank" rel="noreferrer"
+                sx={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                View on PolygonScan <OpenInNewIcon sx={{ fontSize: 13 }} />
               </Box>
-              <Typography sx={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>
-                Your bid of <strong>{bidAmount} USDC</strong> was placed successfully.
-              </Typography>
-              {bidTxHash && (
-                <Box
-                  component="a"
-                  href={`https://amoy.polygonscan.com/tx/${bidTxHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  sx={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  View on PolygonScan <OpenInNewIcon sx={{ fontSize: 13 }} />
-                </Box>
-              )}
+            )}
+            <Button onClick={() => setBidOpen(false)} fullWidth
+              sx={{ mt: 1, borderRadius: '50px', textTransform: 'none', fontWeight: 600, bgcolor: '#111', color: '#fff', '&:hover': { bgcolor: '#333' } }}>
+              Done
+            </Button>
+          </Box>
+        )}
+
+        {bidStep === 'input' && (
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, minHeight: { sm: 420 } }}>
+
+            {/* Left — image */}
+            <Box sx={{
+              width: { xs: '100%', sm: 260 }, flexShrink: 0,
+              bgcolor: '#f5f5f5',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+              borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
+            }}>
+              <Box component="img" src={uniqueImages[0] ?? ''} alt={item.title}
+                sx={{ width: '100%', height: { xs: 200, sm: '100%' }, objectFit: 'cover', display: 'block' }} />
             </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-          {bidStep === 'input' && (
-            <>
-              <Button
-                onClick={() => setBidOpen(false)}
-                sx={{ borderRadius: '50px', textTransform: 'none', color: '#666', flex: 1 }}
-              >
-                Cancel
-              </Button>
+
+            {/* Right — details */}
+            <Box sx={{ flex: 1, p: { xs: '20px', sm: '28px' }, display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+
+              {/* Header row */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#111', lineHeight: 1.25, pr: 1 }}>
+                  Place a Bid
+                </Typography>
+                <Box onClick={() => setBidOpen(false)} sx={{ cursor: 'pointer', color: '#888', '&:hover': { color: '#111' }, flexShrink: 0 }}>
+                  <CloseIcon sx={{ fontSize: 20 }} />
+                </Box>
+              </Box>
+
+              {/* Asset title */}
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#111', lineHeight: 1.4, mt: '-8px' }}>
+                {item.title}
+              </Typography>
+
+              {/* Auction ends in */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f9f9f9', borderRadius: '10px', px: '14px', py: '10px' }}>
+                <Typography sx={{ fontSize: 12, color: '#888', fontWeight: 500 }}>Auction ends in:</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#ef4444', fontVariantNumeric: 'tabular-nums' }}>
+                  {String(timeLeft.h).padStart(2, '0')}h&nbsp;
+                  {String(timeLeft.m).padStart(2, '0')}m&nbsp;
+                  {String(timeLeft.s).padStart(2, '0')}s
+                </Typography>
+              </Box>
+
+              {/* Your bid */}
+              <Box>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#555', mb: '8px' }}>Your Bid</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: '10px', px: '14px', height: 48 }}>
+                  <Box
+                    component="input"
+                    type="number"
+                    value={bidAmount}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBidAmount(e.target.value)}
+                    sx={{
+                      flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                      fontSize: 16, fontWeight: 700, color: '#111', fontFamily: 'inherit',
+                      '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': { WebkitAppearance: 'none' },
+                    }}
+                  />
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#888', flexShrink: 0 }}>USDT</Typography>
+                </Box>
+                <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: '4px', pl: '2px' }}>
+                  ${parseFloat(bidAmount || '0').toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                </Typography>
+              </Box>
+
+              {/* Info rows */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {[
+                  {
+                    label: 'Minimum bid',
+                    value: item.startingBidPrice != null
+                      ? `${item.startingBidPrice} USDT ($${item.startingBidPrice})`
+                      : '—',
+                  },
+                  {
+                    label: 'Your current balance',
+                    value: usdcBalance != null ? `${usdcBalance.toFixed(0)} USDT ($${usdcBalance.toFixed(0)})` : '—',
+                  },
+                  {
+                    label: 'Total bid amount (2.5%)',
+                    value: bidAmount && parseFloat(bidAmount) > 0
+                      ? `${parseFloat(bidAmount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USDT ($${parseFloat(bidAmount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })})`
+                      : '—',
+                  },
+                ].map(row => (
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography sx={{ fontSize: 12, color: '#9ca3af' }}>{row.label}</Typography>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{row.value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {bidError && (
+                <Alert severity="error" sx={{ borderRadius: '10px', fontSize: 12, py: '4px' }}>{bidError}</Alert>
+              )}
+
+              {/* Disclaimer */}
+              <Typography sx={{ fontSize: 11, color: '#9ca3af', lineHeight: 1.6 }}>
+                Bids placed during an auction cannot be withdrawn. By placing a bid you indicate that you have read and agree to the{' '}
+                <Box component="span" sx={{ color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Auction Terms of Use
+                </Box>
+              </Typography>
+
+              {/* Submit */}
               <Button
                 onClick={handleBid}
                 disabled={!bidAmount || parseFloat(bidAmount) <= 0}
+                fullWidth
                 sx={{
-                  borderRadius: '50px', textTransform: 'none', flex: 2,
+                  height: 50, borderRadius: '50px', textTransform: 'none', fontWeight: 700, fontSize: 15,
                   background: 'linear-gradient(270deg, #EF4443 0%, #FABD24 100%)',
-                  color: '#fff', fontWeight: 600,
-                  '&:hover': { background: 'linear-gradient(270deg, #d63b3a 0%, #e0a91f 100%)' },
+                  color: '#fff', boxShadow: 'none', mt: 'auto',
+                  '&:hover': { background: 'linear-gradient(270deg, #d63b3a 0%, #e0a91f 100%)', boxShadow: 'none' },
                   '&.Mui-disabled': { opacity: 0.45 },
                 }}
               >
-                Confirm bid
+                Submit Bid
               </Button>
-            </>
-          )}
-          {bidStep === 'done' && (
-            <Button
-              onClick={() => setBidOpen(false)}
-              fullWidth
-              sx={{
-                borderRadius: '50px', textTransform: 'none', fontWeight: 600,
-                bgcolor: '#111', color: '#fff',
-                '&:hover': { bgcolor: '#333' },
-              }}
-            >
-              Done
-            </Button>
-          )}
-        </DialogActions>
+            </Box>
+          </Box>
+        )}
       </Dialog>
 
       {/* ── Lightbox ── */}

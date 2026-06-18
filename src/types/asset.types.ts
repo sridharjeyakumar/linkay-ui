@@ -32,6 +32,7 @@ export interface Asset {
   ipfsMetadataUrl?: string;
   transactionHash?: string | null;
   museumName?: string;
+  createdByName?: string | null;
   // New fields
   custodian?: string;
   ownershipEntity?: string;
@@ -61,6 +62,9 @@ export interface Asset {
     endDateTimeUTC?: string | null;
     onChainAuctionId?: string | null;
     showCountdown?: boolean;
+    reservePrice?: number | null;
+    startingBidPrice?: number | null;
+    createdAt?: string;
   } | null;
 }
 
