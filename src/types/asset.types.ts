@@ -65,6 +65,7 @@ export interface Asset {
     reservePrice?: number | null;
     startingBidPrice?: number | null;
     createdAt?: string;
+    settlementStatus?: string | null;
   } | null;
 }
 

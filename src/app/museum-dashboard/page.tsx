@@ -772,11 +772,31 @@ export default function MuseumDashboardPage() {
                                 asset.tokenization?.tokenizationStatus === 'TREASURY_APPROVED' ||
                                 asset.tokenization?.tokenizationStatus === 'COMPLETED'
                               ) && (() => {
-                                const auctionStatus = asset.latestAuction?.status;
+                                const auctionStatus     = asset.latestAuction?.status;
+                                const settlementStatus  = asset.latestAuction?.settlementStatus;
+                                const canReschedule     =
+                                  auctionStatus === 'ENDED' &&
+                                  (settlementStatus === 'RESERVE_NOT_MET' || settlementStatus === 'NO_BIDS');
+
+                                if (canReschedule) {
+                                  return (
+                                    <Box component="button"
+                                      onClick={() => setAuctionAsset(asset)}
+                                      sx={{
+                                        ...btnBase,
+                                        bgcolor: '#ede9fe', color: '#5b21b6',
+                                        cursor: 'pointer',
+                                        '&:hover': { bgcolor: '#ddd6fe' },
+                                      }}>
+                                      Reschedule
+                                    </Box>
+                                  );
+                                }
+
                                 const btnConfig: Record<string, { label: string; bg: string; color: string; disabled: boolean }> = {
-                                  SCHEDULED: { label: 'Scheduled',     bg: '#fef9c3', color: '#854d0e', disabled: true  },
-                                  LIVE:      { label: 'Auction Live',  bg: '#dcfce7', color: '#15803d', disabled: true  },
-                                  ENDED:     { label: 'Auction Ended', bg: '#f3f4f6', color: '#9ca3af', disabled: true  },
+                                  SCHEDULED: { label: 'Scheduled',         bg: '#fef9c3', color: '#854d0e', disabled: true  },
+                                  LIVE:      { label: 'Auction Live',      bg: '#dcfce7', color: '#15803d', disabled: true  },
+                                  ENDED:     { label: 'Auction Ended',     bg: '#f3f4f6', color: '#9ca3af', disabled: true  },
                                   CANCELLED: { label: 'Ready for Auction', bg: '#ede9fe', color: '#5b21b6', disabled: false },
                                 };
                                 const cfg = auctionStatus && auctionStatus !== 'CANCELLED'
