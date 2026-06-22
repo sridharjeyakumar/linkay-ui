@@ -25,6 +25,9 @@ interface AuctionRecord {
   title?: string;
   description?: string;
   status: string;
+  settlementStatus?: string | null;
+  winnerAddress?: string | null;
+  winningBid?: string | null;
   fractionsAllocated?: number;
   minPurchaseQty?: number;
   maxPurchaseQty?: number;
@@ -45,13 +48,16 @@ interface AuctionRecord {
 
 
 const AUCTION_STATUS_CFG: Record<string, { bg: string; color: string; dot: string; label: string }> = {
-  LIVE:      { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', label: 'Live' },
-  ACTIVE:    { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', label: 'Live' },
-  DRAFT:     { bg: '#fef9c3', color: '#854d0e', dot: '#ca8a04', label: 'Draft' },
-  SCHEDULED: { bg: '#fef9c3', color: '#854d0e', dot: '#ca8a04', label: 'Scheduled' },
-  COMPLETED: { bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', label: 'Completed' },
-  ENDED:     { bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', label: 'Completed' },
-  CANCELLED: { bg: '#fee2e2', color: '#991b1b', dot: '#ef4444', label: 'Cancelled' },
+  LIVE:             { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', label: 'Live' },
+  ACTIVE:           { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', label: 'Live' },
+  DRAFT:            { bg: '#fef9c3', color: '#854d0e', dot: '#ca8a04', label: 'Draft' },
+  SCHEDULED:        { bg: '#fef9c3', color: '#854d0e', dot: '#ca8a04', label: 'Scheduled' },
+  COMPLETED:        { bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', label: 'Completed' },
+  ENDED:            { bg: '#dbeafe', color: '#1d4ed8', dot: '#3b82f6', label: 'Ended' },
+  // Settlement outcomes — shown instead of "Ended" when settlementStatus is set
+  SETTLED:          { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', label: 'Settled' },
+  RESERVE_NOT_MET:  { bg: '#fef3c7', color: '#92400e', dot: '#d97706', label: 'Reserve Not Met' },
+  NO_BIDS:          { bg: '#f3f4f6', color: '#4b5563', dot: '#9ca3af', label: 'No Bids' },
 };
 
 function pad(n: number) {
@@ -94,11 +100,12 @@ export default function MyAssetsPage() {
       .catch(() => {});
   }, [dispatch]);
 
-  // ── Stats ──
-  const liveAuctions      = auctions.filter((a) => a.status === 'LIVE' || a.status === 'ACTIVE').length;
-  const completedAuctions = auctions.filter((a) => a.status === 'COMPLETED' || a.status === 'ENDED').length;
-  const totalAssets       = auctions.length;
-  const upcomingAuctions  = auctions.filter((a) => a.status === 'SCHEDULED').length;
+  // ── Stats (exclude cancelled) ──
+  const visibleAuctions   = auctions.filter((a) => a.status?.toUpperCase() !== 'CANCELLED');
+  const liveAuctions      = visibleAuctions.filter((a) => a.status === 'LIVE' || a.status === 'ACTIVE').length;
+  const completedAuctions = visibleAuctions.filter((a) => a.status === 'COMPLETED' || a.status === 'ENDED').length;
+  const totalAssets       = visibleAuctions.length;
+  const upcomingAuctions  = visibleAuctions.filter((a) => a.status === 'SCHEDULED').length;
 
   const statCards = [
     { label: 'LIVE AUCTIONS',      value: pad(liveAuctions),      textColor: '#16a34a', bg: '#f0fdf4' },
@@ -245,20 +252,26 @@ export default function MyAssetsPage() {
             </TableHead>
 
             <TableBody>
-              {auctions.length === 0 ? (
+              {visibleAuctions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} sx={{ border: 0, py: 6, textAlign: 'center' }}>
                     <Typography sx={{ color: '#9ca3af', fontSize: 14 }}>No auctions yet</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                auctions.map((auction) => {
+                visibleAuctions.map((auction) => {
                   const statusKey = auction.status?.toUpperCase();
                   const statusCfg = AUCTION_STATUS_CFG[statusKey] ?? null;
                   const assetTitle =
                     auction.asset?.title ??
                     assets.find((a) => a.id === auction.assetId)?.title ??
                     auction.assetId;
+
+                  const isEnded = statusKey === 'ENDED' || statusKey === 'COMPLETED';
+                  const settlementKey = auction.settlementStatus?.toUpperCase();
+                  const displayCfg = isEnded && settlementKey
+                    ? (AUCTION_STATUS_CFG[settlementKey] ?? statusCfg)
+                    : statusCfg;
 
                   return (
                     <TableRow key={auction.id} hover sx={{ '&:last-child td': { border: 0 } }}>
@@ -281,14 +294,14 @@ export default function MyAssetsPage() {
 
                       {/* Status */}
                       <TableCell sx={tdSx}>
-                        {statusCfg ? (
+                        {displayCfg ? (
                           <Box
                             sx={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 0.75,
-                              bgcolor: statusCfg.bg,
-                              color: statusCfg.color,
+                              bgcolor: displayCfg.bg,
+                              color: displayCfg.color,
                               px: 1.25,
                               py: 0.4,
                               borderRadius: 5,
@@ -297,8 +310,8 @@ export default function MyAssetsPage() {
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: statusCfg.dot, flexShrink: 0 }} />
-                            {statusCfg.label}
+                            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: displayCfg.dot, flexShrink: 0 }} />
+                            {displayCfg.label}
                           </Box>
                         ) : (
                           <Typography sx={{ fontSize: 13, color: '#9ca3af' }}>{auction.status}</Typography>

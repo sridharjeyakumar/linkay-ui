@@ -54,7 +54,7 @@ const authSlice = createSlice({
       state.user = {
         ...raw,
         kycStatus: raw.kycStatus ?? raw.kyc_status ?? null,
-        is_museum_user: raw.is_museum_user ?? raw.isMuseumUser,
+        is_museum_user: raw.is_museum_user ?? raw.isMuseumUser ?? (raw.role === 'MUSEUM_ADMIN'),
         is_user: raw.is_user ?? raw.isUser,
       };
       const token = action.payload.accessToken ?? action.payload.access_token;

@@ -29,6 +29,13 @@ function parseImages(raw: unknown): string[] {
   return [];
 }
 
+function formatActivityDate(iso: string) {
+  return new Date(iso).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+}
+
 function toProductItem(asset: Asset): ProductPageItem {
   const images = parseImages(asset.mediaFiles);
   const hero = images[0] || '';
@@ -39,8 +46,33 @@ function toProductItem(asset: Asset): ProductPageItem {
     images[3] || hero,
   ];
 
-  const fractionsSold = asset.fractionsSold ?? 0;
+  const fractionsSold  = asset.fractionsSold ?? 0;
   const totalFractions = asset.totalFractions ?? 0;
+  const creator        = asset.createdByName ?? asset.museumName ?? 'Platform';
+
+  const activities: import('@/components/product/ProductPage').ActivityItem[] = [];
+
+  // Reserve — from auction reserve_price + auction created_at
+  if (asset.latestAuction) {
+    const a = asset.latestAuction;
+    const reserveDate = a.createdAt
+      ? formatActivityDate(a.createdAt)
+      : formatActivityDate(`${a.startDate}T${a.startTime ?? '00:00:00'}Z`);
+    activities.push({
+      type:   'reserve',
+      user:   creator,
+      date:   reserveDate,
+      amount: a.reservePrice != null ? Number(a.reservePrice) : undefined,
+    });
+  }
+
+  // Mint — from asset published_at + transaction_hash
+  activities.push({
+    type:            'mint',
+    user:            creator,
+    date:            formatActivityDate(asset.publishedAt ?? asset.createdAt),
+    transactionHash: asset.transactionHash ?? undefined,
+  });
 
   return {
     id:                 asset.id,
@@ -57,6 +89,8 @@ function toProductItem(asset: Asset): ProductPageItem {
     description:        asset.description,
     ipfsUrl:            asset.ipfsUrl ?? undefined,
     ipfsMetadataUrl:    asset.ipfsMetadataUrl ?? undefined,
+    auctionId:            asset.latestAuction?.id            ?? undefined,
+    onChainAuctionId:     asset.latestAuction?.onChainAuctionId ?? undefined,
     auctionEndTime: (() => {
       const a = asset.latestAuction;
       if (!a?.endDate || !a?.endTime) return undefined;
@@ -64,7 +98,9 @@ function toProductItem(asset: Asset): ProductPageItem {
       const t = a.endTime.split(':').length === 2 ? `${a.endTime}:00` : a.endTime;
       return new Date(`${a.endDate}T${t}Z`).toISOString();
     })(),
-    auctionTimezone:      asset.latestAuction?.timezone     ?? undefined,
+    auctionTimezone:      asset.latestAuction?.timezone       ?? undefined,
+    startingBidPrice:     asset.latestAuction?.startingBidPrice != null ? Number(asset.latestAuction.startingBidPrice) : undefined,
+    minIncrement:         asset.latestAuction?.minIncrement      != null ? Number(asset.latestAuction.minIncrement)      : undefined,
     certificationRef:     asset.certificationRef            ?? undefined,
     conditionReport:      asset.conditionReport             ?? undefined,
     historicalContext:    asset.historicalContext           ?? undefined,
@@ -79,6 +115,7 @@ function toProductItem(asset: Asset): ProductPageItem {
     nftTokenId:           asset.nftTokenId                  ?? undefined,
     transactionHash:      asset.transactionHash             ?? undefined,
     publishedAt:          asset.publishedAt                 ?? undefined,
+    activities,
   };
 }
 

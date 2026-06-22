@@ -1,13 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Divider, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Typography, Button, Divider, useMediaQuery, useTheme, Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, Alert } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import CloseIcon from '@mui/icons-material/Close';
 import { Diamond, LockKey } from '@phosphor-icons/react';
+import { useAccount, useWriteContract } from 'wagmi';
+import { waitForTransactionReceipt, readContract } from '@wagmi/core';
+import { parseUnits, parseGwei, maxUint256 } from 'viem';
+import { wagmiConfig } from '@/lib/wagmiConfig';
+import { auctionApi } from '@/api/auctionApi';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -27,9 +32,13 @@ export interface ProductPageItem {
   description: string;
   ipfsUrl?: string;
   ipfsMetadataUrl?: string;
+  auctionId?: string;
+  onChainAuctionId?: string;
   auctionEndTime?: string;
   auctionTimezone?: string;
   currentBid?: number;
+  startingBidPrice?: number;
+  minIncrement?: number;
   activities?: ActivityItem[];
   // Additional information fields
   certificationRef?: string;
@@ -48,7 +57,7 @@ export interface ProductPageItem {
   publishedAt?: string;
 }
 
-interface ActivityItem {
+export interface ActivityItem {
   type: 'bid' | 'reserve' | 'mint';
   user: string;
   date: string;
@@ -111,6 +120,8 @@ function transformApiResponse(d: any): ProductPageItem {
     description:        d.description       ?? '',
     ipfsUrl:            d.ipfsUrl           ?? d.ipfs_url             ?? '',
     ipfsMetadataUrl:    d.ipfsMetadataUrl   ?? d.ipfs_metadata_url    ?? '',
+    startingBidPrice:   d.startingBidPrice  ?? d.starting_bid_price   ?? undefined,
+    minIncrement:       d.minIncrement      ?? d.min_increment        ?? undefined,
   };
 }
 
@@ -137,6 +148,8 @@ const DEMO: ProductPageItem = {
   ipfsUrl: 'https://ipfs.io/ipfs/QmDemo',
   ipfsMetadataUrl: 'https://ipfs.io/ipfs/QmDemo/metadata.json',
   auctionEndTime: new Date(Date.now() + 12 * 3600000 + 43 * 60000 + 42000).toISOString(),
+  startingBidPrice: 0.18,
+  minIncrement: 0.02,
   currentBid: 0.33,
   activities: [
     { type: 'bid',     user: 'oneoff316',       date: 'May 5, 2026 at 6:13pm',  amount: 0.33 },
@@ -155,6 +168,43 @@ const STATIC_ACTIVITIES: ActivityItem[] = [
   { type: 'reserve', user: 'Zhannet Podobed',date: 'May 1, 2023 at 4:49pm',  amount: 0.18 },
   { type: 'mint',    user: 'Zhannet Podobed',date: 'May 1, 2026 at 4:46pm' },
 ];
+
+/* ─── Contract config ────────────────────────────────────────────────────── */
+const AUCTION_HOUSE_ADDRESS = (process.env.NEXT_PUBLIC_AUCTION_HOUSE_ADDRESS ?? '') as `0x${string}`;
+const USDC_ADDRESS          = (process.env.NEXT_PUBLIC_USDC_ADDRESS ?? '') as `0x${string}`;
+
+const USDC_APPROVE_ABI = [{
+  name: 'approve',
+  type: 'function',
+  stateMutability: 'nonpayable',
+  inputs: [
+    { name: 'spender', type: 'address' },
+    { name: 'amount',  type: 'uint256' },
+  ],
+  outputs: [{ name: '', type: 'bool' }],
+}] as const;
+
+const USDC_ALLOWANCE_ABI = [{
+  name: 'allowance',
+  type: 'function',
+  stateMutability: 'view',
+  inputs: [
+    { name: 'owner',   type: 'address' },
+    { name: 'spender', type: 'address' },
+  ],
+  outputs: [{ name: '', type: 'uint256' }],
+}] as const;
+
+const AUCTION_PLACE_BID_ABI = [{
+  name: 'placeBid',
+  type: 'function',
+  stateMutability: 'payable',
+  inputs: [
+    { name: 'auctionId', type: 'uint256' },
+    { name: 'bidAmount', type: 'uint256' },
+  ],
+  outputs: [],
+}] as const;
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 const fmt = (n: number) =>
@@ -395,6 +445,10 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
   const isTablet  = useMediaQuery(theme.breakpoints.between('sm', 'md')); // 600–900px
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));     // ≥ 900px
 
+  /* ── Wagmi ── */
+  const { address: walletAddress } = useAccount();
+  const { writeContractAsync }     = useWriteContract();
+
   /* ── State ── */
   const [item, setItem]           = useState<ProductPageItem | null>(itemProp ?? null);
   const [loading, setLoading]     = useState(!itemProp);
@@ -403,6 +457,151 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [timeLeft, setTimeLeft]         = useState({ h: 0, m: 0, s: 0 });
   const [activityOpen, setActivityOpen] = useState(true);
+  const [realActivities, setRealActivities] = useState<ActivityItem[] | null>(null);
+
+  const loadBids = async (auctionId: string) => {
+    try {
+      const { data } = await auctionApi.listBids(auctionId);
+      const bids: any[] = Array.isArray(data?.data) ? data.data : [];
+      setRealActivities(bids.map((b) => ({
+        type:             'bid' as const,
+        user:             b.bidderAddress
+          ? `${b.bidderAddress.slice(0, 6)}…${b.bidderAddress.slice(-4)}`
+          : '—',
+        date:             new Date(b.createdAt).toLocaleString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric',
+          hour: 'numeric', minute: '2-digit', hour12: true,
+        }),
+        amount:           Number(b.amount),
+        transactionHash:  b.txHash ?? undefined,
+      })));
+    } catch {
+      // silently keep whatever was there
+    }
+  };
+
+  /* ── Bid modal ── */
+  type BidStep = 'input' | 'approving' | 'bidding' | 'recording' | 'done';
+  const [bidOpen, setBidOpen]     = useState(false);
+  const [bidAmount, setBidAmount] = useState('');
+  const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
+  const [bidStep, setBidStep]     = useState<BidStep>('input');
+  const [bidError, setBidError]   = useState<string | null>(null);
+  const [bidTxHash, setBidTxHash] = useState('');
+
+  const USDC_BALANCE_ABI = [{
+    name: 'balanceOf', type: 'function', stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  }] as const;
+
+  const getMinBid = () => {
+    const topBid = realActivities?.[0]?.amount;
+    const inc = item?.minIncrement ?? 0;
+    if (topBid != null && topBid > 0) return topBid + inc;
+    return item?.startingBidPrice ?? 0;
+  };
+
+  const resetBidModal = () => {
+    const min = getMinBid();
+    setBidAmount(min > 0 ? String(min) : '');
+    setBidStep('input');
+    setBidError(null);
+    setBidTxHash('');
+  };
+
+  // Load USDC balance when modal opens
+  useEffect(() => {
+    if (!bidOpen || !walletAddress || !USDC_ADDRESS) return;
+    readContract(wagmiConfig, {
+      address: USDC_ADDRESS,
+      abi: USDC_BALANCE_ABI,
+      functionName: 'balanceOf',
+      args: [walletAddress as `0x${string}`],
+    }).then((bal) => setUsdcBalance(Number(bal) / 1e6)).catch(() => {});
+  }, [bidOpen, walletAddress]);
+
+  const handleBid = async () => {
+    if (!item?.auctionId || !item?.onChainAuctionId) {
+      setBidError('Auction ID not available — please refresh the page');
+      return;
+    }
+    if (!walletAddress) {
+      setBidError('Connect your wallet before placing a bid');
+      return;
+    }
+    const parsed = parseFloat(bidAmount);
+    if (!parsed || parsed <= 0) {
+      setBidError('Enter a valid bid amount');
+      return;
+    }
+    const minBid = getMinBid();
+    if (parsed < minBid) {
+      const topBid = realActivities?.[0]?.amount;
+      setBidError(
+        topBid != null && topBid > 0
+          ? `Your bid must be greater than the current bid. Minimum: ${minBid.toFixed(2)} USDT`
+          : `Minimum bid is ${minBid.toFixed(2)} USDT`
+      );
+      return;
+    }
+
+    setBidError(null);
+    const amountWei = parseUnits(bidAmount, 6);
+    // Polygon Amoy: min 30 Gwei, explicit gas limit avoids fallback to block gas limit
+    const approveGas = { maxFeePerGas: parseGwei('35'), maxPriorityFeePerGas: parseGwei('30'), gas: BigInt(80_000) };
+    const bidGas     = { maxFeePerGas: parseGwei('35'), maxPriorityFeePerGas: parseGwei('30'), gas: BigInt(250_000) };
+
+    try {
+      // Check existing allowance — skip approve if already sufficient
+      const allowance = await readContract(wagmiConfig, {
+        address: USDC_ADDRESS,
+        abi: USDC_ALLOWANCE_ABI,
+        functionName: 'allowance',
+        args: [walletAddress as `0x${string}`, AUCTION_HOUSE_ADDRESS],
+      });
+
+      if (allowance < amountWei) {
+        setBidStep('approving');
+        const approveTxHash = await writeContractAsync({
+          address: USDC_ADDRESS,
+          abi: USDC_APPROVE_ABI,
+          functionName: 'approve',
+          args: [AUCTION_HOUSE_ADDRESS, amountWei],
+          ...approveGas,
+        });
+        // Wait for approve to confirm on-chain before placing bid
+        await waitForTransactionReceipt(wagmiConfig, { hash: approveTxHash });
+      }
+
+      setBidStep('bidding');
+      const txHash = await writeContractAsync({
+        address: AUCTION_HOUSE_ADDRESS,
+        abi: AUCTION_PLACE_BID_ABI,
+        functionName: 'placeBid',
+        args: [BigInt(item.onChainAuctionId!), amountWei],
+        ...bidGas,
+      });
+      setBidTxHash(txHash);
+
+      // Wait for confirmation before recording — prevents DB entries for failed txs
+      await waitForTransactionReceipt(wagmiConfig, { hash: txHash });
+
+      setBidStep('recording');
+      await auctionApi.placeBid(item.auctionId!, {
+        bidderAddress: walletAddress,
+        amount: bidAmount,
+        txHash,
+      });
+
+      setBidStep('done');
+      loadBids(item.auctionId!);
+    } catch (e: any) {
+      const msg: string = e?.shortMessage ?? e?.message ?? 'Transaction failed';
+      setBidError(msg.length > 120 ? msg.slice(0, 120) + '…' : msg);
+      setBidStep('input');
+    }
+  };
 
   /* ── Fetch (skipped if item was passed as prop) ── */
   useEffect(() => {
@@ -427,6 +626,11 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
     })();
     return () => { dead = true; };
   }, [itemProp]);
+
+  /* ── Load real bid activity ── */
+  useEffect(() => {
+    if (item?.auctionId) loadBids(item.auctionId);
+  }, [item?.auctionId]);
 
   /* ── Auction countdown ── */
   useEffect(() => {
@@ -683,18 +887,24 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                   </Typography>
                 )}
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <Typography sx={{ fontSize: 13, color: '#888' }}>Current Bid</Typography>
-                {/* Ethereum diamond */}
-             
-                <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#3b82f6' }}>
-                  {(item.currentBid ?? 0).toFixed(2)} USDT
-                </Typography>
-              </Box>
+              {(() => {
+                const topBid = realActivities?.[0]?.amount;
+                if (topBid == null) return null;
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                    <Typography sx={{ fontSize: 13, color: '#888' }}>Current Bid</Typography>
+                    <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#3b82f6' }}>
+                      {topBid.toFixed(2)} USDT
+                    </Typography>
+                  </Box>
+                );
+              })()}
             </Box>
 
             {/* Make a bid button */}
             <Button
+              onClick={() => { resetBidModal(); setBidOpen(true); }}
+              disabled={!item.auctionId || !item.onChainAuctionId}
               startIcon={
                 <Box
                   component="img"
@@ -718,6 +928,7 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                   background: 'linear-gradient(270deg, #d63b3a 0%, #e0a91f 100%)',
                   boxShadow: 'none',
                 },
+                '&.Mui-disabled': { opacity: 0.45 },
               }}
             >
               Make a bid
@@ -741,7 +952,12 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
 
               {/* ── Timeline ── */}
               {(() => {
-                const acts = item.activities ?? STATIC_ACTIVITIES;
+                // Bids from API; non-bid entries (reserve, mint) always from item.activities or STATIC
+                const bidActs: ActivityItem[] = realActivities ?? [];
+                const nonBidActs: ActivityItem[] = (item.activities ?? (item.auctionId ? [] : STATIC_ACTIVITIES))
+                  .filter(a => a.type !== 'bid');
+                const acts = [...bidActs, ...nonBidActs];
+                const hasBids = bidActs.length > 0;
 
                 const getActivityIcon = (type: ActivityItem['type']) => {
                   if (type === 'reserve') return <LockKey size={18} weight="fill" color="rgba(30,64,175,1)" />;
@@ -771,6 +987,36 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                     '&::-webkit-scrollbar-thumb': { bgcolor: '#e5e7eb', borderRadius: '4px' },
                     '&::-webkit-scrollbar-thumb:hover': { bgcolor: '#d1d5db' },
                   }}>
+                    {/* Be the First to Bid — shown only when no bids yet */}
+                    {!hasBids && (
+                      <Box sx={{ display: 'flex', gap: '14px', alignItems: 'flex-start', mb: acts.length > 0 ? 0 : undefined }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 40 }}>
+                          <Box sx={{
+                            width: 40, height: 40, borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #FABD24 0%, #EF4443 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <Box
+                              component="img"
+                              src="/landing/real estate/Bid.svg"
+                              alt=""
+                              sx={{ width: 20, height: 20, filter: 'brightness(0) invert(1)' }}
+                            />
+                          </Box>
+                          {acts.length > 0 && (
+                            <Box sx={{ width: 0, flex: 1, minHeight: 24, my: '3px', borderLeft: '2px dashed #d1d5db' }} />
+                          )}
+                        </Box>
+                        <Box sx={{ pt: '8px', pb: acts.length > 0 ? '18px' : '4px', flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#111', lineHeight: 1.5 }}>
+                            Be the First to Bid
+                          </Typography>
+                          <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: '2px' }}>
+                            Open the auction with your bid.
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
                     {acts.map((act, idx) => {
                       const isLast = idx === acts.length - 1;
                       return (
@@ -839,6 +1085,214 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
           </Box>
         </Box>
       </Box>
+
+      {/* ── Bid modal ── */}
+      <Dialog
+        open={bidOpen}
+        onClose={() => { if (bidStep !== 'approving' && bidStep !== 'bidding' && bidStep !== 'recording') setBidOpen(false); }}
+        slotProps={{ paper: { sx: { borderRadius: '20px', overflow: 'hidden', width: { xs: '95vw', sm: 740 }, maxWidth: 740, m: 1 } } }}
+      >
+        {/* Processing / done states */}
+        {(bidStep === 'approving' || bidStep === 'bidding' || bidStep === 'recording') && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 5, px: 4 }}>
+            <CircularProgress size={44} sx={{ color: '#EF4443' }} />
+            <Typography sx={{ fontSize: 15, fontWeight: 700, color: '#111' }}>
+              {bidStep === 'approving' && 'Approving USDC spend…'}
+              {bidStep === 'bidding'   && 'Placing bid on-chain…'}
+              {bidStep === 'recording' && 'Recording bid…'}
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: '#888', textAlign: 'center' }}>
+              Confirm the transaction in your wallet
+            </Typography>
+          </Box>
+        )}
+
+        {bidStep === 'done' && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 5, px: 4 }}>
+            <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography sx={{ fontSize: 28 }}>✓</Typography>
+            </Box>
+            <Typography sx={{ fontSize: 16, fontWeight: 800, color: '#111' }}>Bid placed!</Typography>
+            <Typography sx={{ fontSize: 14, color: '#374151', textAlign: 'center' }}>
+              Your bid of <strong>{bidAmount} USDC</strong> was placed successfully.
+            </Typography>
+            {bidTxHash && (
+              <Box component="a" href={`https://amoy.polygonscan.com/tx/${bidTxHash}`} target="_blank" rel="noreferrer"
+                sx={{ fontSize: 12, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                View on PolygonScan <OpenInNewIcon sx={{ fontSize: 13 }} />
+              </Box>
+            )}
+            <Button onClick={() => setBidOpen(false)} fullWidth
+              sx={{ mt: 1, borderRadius: '50px', textTransform: 'none', fontWeight: 600, bgcolor: '#111', color: '#fff', '&:hover': { bgcolor: '#333' } }}>
+              Done
+            </Button>
+          </Box>
+        )}
+
+        {bidStep === 'input' && (
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, minHeight: { sm: 420 } }}>
+
+            {/* Left — image */}
+            <Box sx={{
+              width: { xs: '100%', sm: 260 }, flexShrink: 0,
+              bgcolor: '#f5f5f5',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+              borderRadius: { xs: '20px 20px 0 0', sm: '20px 0 0 20px' },
+            }}>
+              <Box component="img" src={uniqueImages[0] ?? ''} alt={item.title}
+                sx={{ width: '100%', height: { xs: 200, sm: '100%' }, objectFit: 'cover', display: 'block' }} />
+            </Box>
+
+            {/* Right — details */}
+            <Box sx={{ flex: 1, p: { xs: '20px', sm: '28px' }, display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+
+              {/* Header row */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Typography sx={{ fontSize: 18, fontWeight: 800, color: '#111', lineHeight: 1.25, pr: 1 }}>
+                  Place a Bid
+                </Typography>
+                <Box onClick={() => setBidOpen(false)} sx={{ cursor: 'pointer', color: '#888', '&:hover': { color: '#111' }, flexShrink: 0 }}>
+                  <CloseIcon sx={{ fontSize: 20 }} />
+                </Box>
+              </Box>
+
+              {/* Asset title */}
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#111', lineHeight: 1.4, mt: '-8px' }}>
+                {item.title}
+              </Typography>
+
+              {/* Auction ends in */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f9f9f9', borderRadius: '10px', px: '14px', py: '10px' }}>
+                <Typography sx={{ fontSize: 12, color: '#888', fontWeight: 500 }}>Auction ends in:</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 700, color: '#ef4444', fontVariantNumeric: 'tabular-nums' }}>
+                  {String(timeLeft.h).padStart(2, '0')}h&nbsp;
+                  {String(timeLeft.m).padStart(2, '0')}m&nbsp;
+                  {String(timeLeft.s).padStart(2, '0')}s
+                </Typography>
+              </Box>
+
+              {/* Your bid */}
+              <Box>
+                <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#555', mb: '8px' }}>Your Bid</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: '10px', px: '10px', height: 48, gap: '6px' }}>
+                  {/* Decrement button */}
+                  <Box
+                    component="button"
+                    onClick={() => {
+                      const inc = item?.minIncrement ?? 1;
+                      const current = parseFloat(bidAmount || '0');
+                      const next = Math.max(getMinBid(), parseFloat((current - inc).toFixed(6)));
+                      setBidAmount(String(next));
+                    }}
+                    sx={{
+                      width: 28, height: 28, flexShrink: 0, border: '1.5px solid #e5e7eb',
+                      borderRadius: '6px', bgcolor: '#f9f9f9', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 700, color: '#555', lineHeight: 1,
+                      p: 0, transition: 'background 0.15s, border-color 0.15s',
+                      '&:hover': { bgcolor: '#f0f0f0', borderColor: '#d1d5db' },
+                      '&:active': { bgcolor: '#e5e5e5' },
+                    }}
+                  >
+                    −
+                  </Box>
+
+                  <Box
+                    component="input"
+                    type="number"
+                    value={bidAmount}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBidAmount(e.target.value)}
+                    sx={{
+                      flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                      fontSize: 16, fontWeight: 700, color: '#111', fontFamily: 'inherit',
+                      textAlign: 'center',
+                      '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': { WebkitAppearance: 'none' },
+                    }}
+                  />
+
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#888', flexShrink: 0 }}>USDT</Typography>
+
+                  {/* Increment button */}
+                  <Box
+                    component="button"
+                    onClick={() => {
+                      const inc = item?.minIncrement ?? 1;
+                      const current = parseFloat(bidAmount || '0');
+                      const next = parseFloat((current + inc).toFixed(6));
+                      setBidAmount(String(next));
+                    }}
+                    sx={{
+                      width: 28, height: 28, flexShrink: 0, border: '1.5px solid #e5e7eb',
+                      borderRadius: '6px', bgcolor: '#f9f9f9', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 700, color: '#555', lineHeight: 1,
+                      p: 0, transition: 'background 0.15s, border-color 0.15s',
+                      '&:hover': { bgcolor: '#f0f0f0', borderColor: '#d1d5db' },
+                      '&:active': { bgcolor: '#e5e5e5' },
+                    }}
+                  >
+                    +
+                  </Box>
+                </Box>
+                <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: '4px', pl: '2px' }}>
+                  Min: {getMinBid().toFixed(2)} USDT
+                  {item?.minIncrement ? ` · Step: ${item.minIncrement} USDT` : ''}
+                </Typography>
+              </Box>
+
+              {/* Info rows */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {[
+                  {
+                    label: 'Your current balance',
+                    value: usdcBalance != null ? `${usdcBalance.toFixed(0)} USDT ($${usdcBalance.toFixed(0)})` : '—',
+                  },
+                  {
+                    label: 'Total bid amount (2.5%)',
+                    value: bidAmount && parseFloat(bidAmount) > 0
+                      ? `${parseFloat(bidAmount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USDT ($${parseFloat(bidAmount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })})`
+                      : '—',
+                  },
+                ].map(row => (
+                  <Box key={row.label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography sx={{ fontSize: 12, color: '#9ca3af' }}>{row.label}</Typography>
+                    <Typography sx={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{row.value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {bidError && (
+                <Alert severity="error" sx={{ borderRadius: '10px', fontSize: 12, py: '4px' }}>{bidError}</Alert>
+              )}
+
+              {/* Disclaimer */}
+              <Typography sx={{ fontSize: 11, color: '#9ca3af', lineHeight: 1.6 }}>
+                Bids placed during an auction cannot be withdrawn. By placing a bid you indicate that you have read and agree to the{' '}
+                <Box component="span" sx={{ color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Auction Terms of Use
+                </Box>
+              </Typography>
+
+              {/* Submit */}
+              <Button
+                onClick={handleBid}
+                disabled={!bidAmount || parseFloat(bidAmount) < getMinBid()}
+                fullWidth
+                sx={{
+                  height: 50, borderRadius: '50px', textTransform: 'none', fontWeight: 700, fontSize: 15,
+                  background: 'linear-gradient(270deg, #EF4443 0%, #FABD24 100%)',
+                  color: '#fff', boxShadow: 'none', mt: 'auto',
+                  '&:hover': { background: 'linear-gradient(270deg, #d63b3a 0%, #e0a91f 100%)', boxShadow: 'none' },
+                  '&.Mui-disabled': { opacity: 0.45 },
+                }}
+              >
+                Submit Bid
+              </Button>
+            </Box>
+          </Box>
+        )}
+      </Dialog>
 
       {/* ── Lightbox ── */}
       {lightboxOpen && (

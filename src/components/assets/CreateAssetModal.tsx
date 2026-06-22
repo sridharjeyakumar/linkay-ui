@@ -79,11 +79,29 @@ const ASSET_TYPE_REVERSE_MAP: Record<string, string> = {
   OTHER:        'Other',
 };
 
-const JURISDICTIONS = [
-  'United States', 'United Kingdom', 'European Union', 'Singapore',
-  'United Arab Emirates', 'Switzerland', 'Germany', 'France',
-  'Japan', 'Canada', 'Australia', 'India', 'Other',
+const JURISDICTIONS: { value: string; label: string }[] = [
+  { value: 'US', label: 'United States' },
+  { value: 'GB', label: 'United Kingdom' },
+  { value: 'EU', label: 'European Union' },
+  { value: 'SG', label: 'Singapore' },
+  { value: 'AE', label: 'United Arab Emirates' },
+  { value: 'CH', label: 'Switzerland' },
+  { value: 'DE', label: 'Germany' },
+  { value: 'FR', label: 'France' },
+  { value: 'JP', label: 'Japan' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'IN', label: 'India' },
+  { value: 'OTHER', label: 'Other' },
 ];
+
+// Migrate legacy full country names to ISO codes for existing assets
+const LEGACY_JURISDICTION_MAP: Record<string, string> = {
+  'United States': 'US', 'United Kingdom': 'GB', 'European Union': 'EU',
+  'Singapore': 'SG', 'United Arab Emirates': 'AE', 'Switzerland': 'CH',
+  'Germany': 'DE', 'France': 'FR', 'Japan': 'JP', 'Canada': 'CA',
+  'Australia': 'AU', 'India': 'IN', 'Other': 'OTHER',
+};
 
 const ROYALTY_OPTIONS = ['0%', '1%', '2.5%', '5%', '7.5%', '10%'];
 
@@ -412,7 +430,7 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
       setConditionReport(editAsset.conditionReport ?? '');
       setCertificationRef(editAsset.certificationRef ?? '');
       setValuation(editAsset.valuation != null ? String(editAsset.valuation) : '');
-      setJurisdiction(editAsset.jurisdiction ?? '');
+      setJurisdiction(LEGACY_JURISDICTION_MAP[editAsset.jurisdiction ?? ''] ?? editAsset.jurisdiction ?? '');
       setTokenizePercent(editAsset.tokenizedPercent != null ? Number(editAsset.tokenizedPercent) : 5);
       setTotalFractions(editAsset.totalFractions != null ? String(editAsset.totalFractions) : '');
       setRoyalty(
@@ -1412,9 +1430,10 @@ export default function CreateAssetModal({ open, onClose, editAsset, onSuccess }
                 <Box>
                   <Label required>Jurisdiction</Label>
                   <Select fullWidth size="small" value={jurisdiction} displayEmpty
+                    renderValue={(val) => JURISDICTIONS.find(j => j.value === val)?.label || <em style={{ color: '#9ca3af', fontStyle: 'normal' }}>Select</em>}
                     onChange={(e) => { setJurisdiction(e.target.value); if (step2Errors.jurisdiction) setStep2Errors(p => ({ ...p, jurisdiction: '' })); }} sx={selectSx}>
                     <MenuItem value="" disabled><em style={{ color: '#9ca3af', fontStyle: 'normal' }}>Select</em></MenuItem>
-                    {JURISDICTIONS.map((j) => <MenuItem key={j} value={j}>{j}</MenuItem>)}
+                    {JURISDICTIONS.map((j) => <MenuItem key={j.value} value={j.value}>{j.label}</MenuItem>)}
                   </Select>
                   {step2Errors.jurisdiction && <Typography sx={{ fontSize: 12, color: '#ef4444', mt: 0.5 }}>{step2Errors.jurisdiction}</Typography>}
                 </Box>
