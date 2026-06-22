@@ -38,6 +38,7 @@ export interface ProductPageItem {
   auctionTimezone?: string;
   currentBid?: number;
   startingBidPrice?: number;
+  minIncrement?: number;
   activities?: ActivityItem[];
   // Additional information fields
   certificationRef?: string;
@@ -119,6 +120,8 @@ function transformApiResponse(d: any): ProductPageItem {
     description:        d.description       ?? '',
     ipfsUrl:            d.ipfsUrl           ?? d.ipfs_url             ?? '',
     ipfsMetadataUrl:    d.ipfsMetadataUrl   ?? d.ipfs_metadata_url    ?? '',
+    startingBidPrice:   d.startingBidPrice  ?? d.starting_bid_price   ?? undefined,
+    minIncrement:       d.minIncrement      ?? d.min_increment        ?? undefined,
   };
 }
 
@@ -145,6 +148,8 @@ const DEMO: ProductPageItem = {
   ipfsUrl: 'https://ipfs.io/ipfs/QmDemo',
   ipfsMetadataUrl: 'https://ipfs.io/ipfs/QmDemo/metadata.json',
   auctionEndTime: new Date(Date.now() + 12 * 3600000 + 43 * 60000 + 42000).toISOString(),
+  startingBidPrice: 0.18,
+  minIncrement: 0.02,
   currentBid: 0.33,
   activities: [
     { type: 'bid',     user: 'oneoff316',       date: 'May 5, 2026 at 6:13pm',  amount: 0.33 },
@@ -490,8 +495,16 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
     outputs: [{ name: '', type: 'uint256' }],
   }] as const;
 
+  const getMinBid = () => {
+    const topBid = realActivities?.[0]?.amount;
+    const inc = item?.minIncrement ?? 0;
+    if (topBid != null && topBid > 0) return topBid + inc;
+    return item?.startingBidPrice ?? 0;
+  };
+
   const resetBidModal = () => {
-    setBidAmount(item?.startingBidPrice ? String(item.startingBidPrice) : '');
+    const min = getMinBid();
+    setBidAmount(min > 0 ? String(min) : '');
     setBidStep('input');
     setBidError(null);
     setBidTxHash('');
@@ -520,6 +533,16 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
     const parsed = parseFloat(bidAmount);
     if (!parsed || parsed <= 0) {
       setBidError('Enter a valid bid amount');
+      return;
+    }
+    const minBid = getMinBid();
+    if (parsed < minBid) {
+      const topBid = realActivities?.[0]?.amount;
+      setBidError(
+        topBid != null && topBid > 0
+          ? `Your bid must be greater than the current bid. Minimum: ${minBid.toFixed(2)} USDT`
+          : `Minimum bid is ${minBid.toFixed(2)} USDT`
+      );
       return;
     }
 
@@ -1152,7 +1175,29 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
               {/* Your bid */}
               <Box>
                 <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#555', mb: '8px' }}>Your Bid</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: '10px', px: '14px', height: 48 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e5e7eb', borderRadius: '10px', px: '10px', height: 48, gap: '6px' }}>
+                  {/* Decrement button */}
+                  <Box
+                    component="button"
+                    onClick={() => {
+                      const inc = item?.minIncrement ?? 1;
+                      const current = parseFloat(bidAmount || '0');
+                      const next = Math.max(getMinBid(), parseFloat((current - inc).toFixed(6)));
+                      setBidAmount(String(next));
+                    }}
+                    sx={{
+                      width: 28, height: 28, flexShrink: 0, border: '1.5px solid #e5e7eb',
+                      borderRadius: '6px', bgcolor: '#f9f9f9', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 700, color: '#555', lineHeight: 1,
+                      p: 0, transition: 'background 0.15s, border-color 0.15s',
+                      '&:hover': { bgcolor: '#f0f0f0', borderColor: '#d1d5db' },
+                      '&:active': { bgcolor: '#e5e5e5' },
+                    }}
+                  >
+                    −
+                  </Box>
+
                   <Box
                     component="input"
                     type="number"
@@ -1161,25 +1206,44 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
                     sx={{
                       flex: 1, border: 'none', outline: 'none', background: 'transparent',
                       fontSize: 16, fontWeight: 700, color: '#111', fontFamily: 'inherit',
+                      textAlign: 'center',
                       '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': { WebkitAppearance: 'none' },
                     }}
                   />
+
                   <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#888', flexShrink: 0 }}>USDT</Typography>
+
+                  {/* Increment button */}
+                  <Box
+                    component="button"
+                    onClick={() => {
+                      const inc = item?.minIncrement ?? 1;
+                      const current = parseFloat(bidAmount || '0');
+                      const next = parseFloat((current + inc).toFixed(6));
+                      setBidAmount(String(next));
+                    }}
+                    sx={{
+                      width: 28, height: 28, flexShrink: 0, border: '1.5px solid #e5e7eb',
+                      borderRadius: '6px', bgcolor: '#f9f9f9', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, fontWeight: 700, color: '#555', lineHeight: 1,
+                      p: 0, transition: 'background 0.15s, border-color 0.15s',
+                      '&:hover': { bgcolor: '#f0f0f0', borderColor: '#d1d5db' },
+                      '&:active': { bgcolor: '#e5e5e5' },
+                    }}
+                  >
+                    +
+                  </Box>
                 </Box>
                 <Typography sx={{ fontSize: 12, color: '#9ca3af', mt: '4px', pl: '2px' }}>
-                  ${parseFloat(bidAmount || '0').toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                  Min: {getMinBid().toFixed(2)} USDT
+                  {item?.minIncrement ? ` · Step: ${item.minIncrement} USDT` : ''}
                 </Typography>
               </Box>
 
               {/* Info rows */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {[
-                  {
-                    label: 'Minimum bid',
-                    value: item.startingBidPrice != null
-                      ? `${item.startingBidPrice} USDT ($${item.startingBidPrice})`
-                      : '—',
-                  },
                   {
                     label: 'Your current balance',
                     value: usdcBalance != null ? `${usdcBalance.toFixed(0)} USDT ($${usdcBalance.toFixed(0)})` : '—',
@@ -1213,7 +1277,7 @@ export default function ProductPage({ item: itemProp }: Partial<ProductPageProps
               {/* Submit */}
               <Button
                 onClick={handleBid}
-                disabled={!bidAmount || parseFloat(bidAmount) <= 0}
+                disabled={!bidAmount || parseFloat(bidAmount) < getMinBid()}
                 fullWidth
                 sx={{
                   height: 50, borderRadius: '50px', textTransform: 'none', fontWeight: 700, fontSize: 15,

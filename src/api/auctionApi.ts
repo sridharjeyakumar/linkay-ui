@@ -48,4 +48,7 @@ export const auctionApi = {
 
   getPublic: (auctionId: string) =>
     axiosInstance.get(`/api/v1/auctions/public/${auctionId}`),
+
+  getWonAuctions: () =>
+    axiosInstance.get('/api/v1/auctions/won'),
 };

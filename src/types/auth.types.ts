@@ -22,6 +22,7 @@ export interface AuthUser {
   is_user?: boolean;
   is_museum_user?: boolean;
   museum_id?: string | null;
+  createdAt?: string;
 }
 
 

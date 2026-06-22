@@ -187,7 +187,7 @@ export default function MuseumDashboardPage() {
     }
   }, [tkError]);
 
-  if (!user || !user.is_museum_user) {
+  if (!user || (!user.is_museum_user && user.role !== 'MUSEUM_ADMIN')) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
         <CircularProgress />

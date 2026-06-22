@@ -64,6 +64,7 @@ export interface Asset {
     showCountdown?: boolean;
     reservePrice?: number | null;
     startingBidPrice?: number | null;
+    minIncrement?: number | null;
     createdAt?: string;
     settlementStatus?: string | null;
   } | null;

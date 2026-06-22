@@ -100,6 +100,7 @@ function toProductItem(asset: Asset): ProductPageItem {
     })(),
     auctionTimezone:      asset.latestAuction?.timezone       ?? undefined,
     startingBidPrice:     asset.latestAuction?.startingBidPrice != null ? Number(asset.latestAuction.startingBidPrice) : undefined,
+    minIncrement:         asset.latestAuction?.minIncrement      != null ? Number(asset.latestAuction.minIncrement)      : undefined,
     certificationRef:     asset.certificationRef            ?? undefined,
     conditionReport:      asset.conditionReport             ?? undefined,
     historicalContext:    asset.historicalContext           ?? undefined,
